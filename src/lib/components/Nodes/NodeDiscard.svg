@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="10.000006mm"
+   height="8.206398mm"
+   viewBox="0 0 10.000006 8.2063981"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="NodeDiscard.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="10.24"
+     inkscape:cx="3.515625"
+     inkscape:cy="9.1308594"
+     inkscape:window-width="2226"
+     inkscape:window-height="1177"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-201.10806,-6.6067453)">
+    <path
+       style="fill:#aa0000;stroke:#000000;stroke-width:0.585711;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 201.72475,10.709942 h 5.35113"
+       id="path2" />
+    <path
+       style="fill:#aa0000;stroke:#000000;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 207.24951,14.466151 V 6.9537378"
+       id="path3" />
+    <path
+       style="fill:#aa0000;stroke:#000000;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 209.07313,13.135521 V 8.2843679"
+       id="path4" />
+    <path
+       style="fill:#aa0000;stroke:#000000;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 210.76107,12.102901 V 9.3169882"
+       id="path5" />
+    <circle
+       style="stroke-dasharray:none;stroke-linecap:round;stroke-width:0.693985;stroke:none;fill:#aa0000;"
+       id="path6"
+       cx="10.709942"
+       cy="-201.82764"
+       r="0.71957994"
+       transform="rotate(90)"
+       inkscape:label="input0"
+       class="input0" />
+  </g>
+</svg>
