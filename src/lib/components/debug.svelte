@@ -1,4 +1,5 @@
 <script>
+  // @ts-nocheck
   import { onMount } from "svelte";
   import svgString from "./Nodes/NodeDiscard.svg?raw";
   let container;  
@@ -15,21 +16,16 @@
     // https://stackoverflow.com/questions/35373882/get-the-global-transform-matrix-of-an-svg-element
     const transformA = getTransformToElement(eltA, container);
     const transformB = getTransformToElement(eltB, container);
-    console.log(transformA);
-    console.log(transformB);
     let ptA = new DOMPoint(a.x + a.width / 2, a.y + a.height / 2);
     let ptB = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2);
     ptA = ptA.matrixTransform(transformA);
-    console.log("avt",  JSON.stringify(ptB.toJSON()))
     ptB = ptB.matrixTransform(transformB);
-    console.log("apres", JSON.stringify(ptB))
     line = {
       x1: ptA.x,
       y1: ptA.y,
       x2: ptB.x,
       y2: ptB.y
     };
-    console.log(line)
   }
 
   onMount(() => {
@@ -37,7 +33,8 @@
     let svgElt = container?.querySelector("svg");
     console.log(svgElt)
     svgElt.setAttribute('x', 100);
-    updateLine(document.getElementById("A"), svgElt.querySelector(".input0"));
+    updateLine(document.getElementById("A"), svgElt.querySelector('[data-secudiag-input="0"]'));
+    svgElt.querySelector('[data-secudiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
   });
 </script>
 

@@ -24,10 +24,10 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="10.24"
-     inkscape:cx="3.515625"
-     inkscape:cy="9.1308594"
-     inkscape:window-width="2226"
-     inkscape:window-height="1177"
+     inkscape:cx="3.4667969"
+     inkscape:cy="9.0820312"
+     inkscape:window-width="1920"
+     inkscape:window-height="1006"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -61,8 +61,9 @@
        cx="10.709942"
        cy="-201.82764"
        r="0.71957994"
-       transform="rotate(90)"
        inkscape:label="input0"
-       class="input0" />
+       data-secudiag-input="0"
+       class="input0"
+       transform="rotate(90)" />
   </g>
 </svg>
