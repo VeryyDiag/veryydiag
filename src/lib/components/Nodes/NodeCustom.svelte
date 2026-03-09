@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { getContextDiagram, getAvailableNodeWithName, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
+  import { getContextDiagram, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
   import type { NodeCustom } from "$lib/types/types";
   import { cmToUnit } from '$lib/utils';
   
-  let diagramConf = getContextDiagram()
+  let diagramConfClass = getContextDiagram()
   
   let {
     nodeKind,
@@ -16,7 +16,7 @@
   let [finalSvgString, errors] : [string | null, string[]] = $derived.by(() => {
     try {
       const val = svgString ||
-                  (svgName ? getAvailableNodeWithName(svgName, diagramConf).svgString : null) || null;
+                  (svgName ? diagramConfClass.getAvailableNodeWithName(svgName).svgString : null) || null;
       if (val === null) {
         return [null, [`Error: the component ${nodeKind} does not provide a svg string/name ${svgString}.`]]
       } else {

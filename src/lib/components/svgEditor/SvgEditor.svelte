@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { DiagramConf } from "$lib/types/types"
   import Node from "$lib/components/Nodes/Node.svelte"  
-  import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors } from "$lib/contexts/context.svelte";
+  import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm } from "$lib/utils"
   
@@ -11,15 +11,12 @@
     diagramConf: DiagramConf
   } = $props();
 
-  let diagramConfState : DiagramConf = $state({})
+  let diagramConfClass : DiagramConfClass = new DiagramConfClass();
   $effect(() => {
-    diagramConfState = diagramConf
+    diagramConfClass.setConfig(diagramConf)
   })
-  setContextDiagram(() => diagramConfState)
-  $effect(() => {
-    setContextDiagram(() => diagramConfState)
-  })
-
+  setContextDiagram(diagramConfClass)
+  
   let allErrors : ErrorsMap = $state({})
   setContextErrors(allErrors)
 
