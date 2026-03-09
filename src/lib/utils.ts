@@ -27,7 +27,7 @@ export function cm(cm: number) {
 }
 
 export function unitToCm(cm: number) {
-  return cm * 96 / 2.54
+  return cm * (2.54 / 96)
 }
 
 // crypto.randomUUID() only works on localhost or https.

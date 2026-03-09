@@ -12,12 +12,18 @@ export interface NodeDiscard {
 // - data-secudiag-input-multi="{no,sorted,unsorted}" tells if we can connect multiple wires to this input (no, default), and if so if multiple outputs must be sorted or if only connectivity matters (unsorted). In our framework, inputs will typically be unsorted (wait until all input arrive) while outputs will be sorted (we activate them based on their ordering).
 // - data-secudiag-input-type=
 // - data-secudiag-input-type=
+
+export type Point = {
+  x: number,
+  y: number,
+}
+
 export interface NodeCustom {
   nodeKind: "NodeCustom",
   // Specify either the svg string or svgName
   svgString: string | undefined,
   svgName: string | undefined,
-  pos: {x: number, y: number},
+  pos: Point
 }
 
 

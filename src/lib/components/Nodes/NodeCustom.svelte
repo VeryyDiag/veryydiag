@@ -4,6 +4,7 @@
   import type { NodeCustom } from "$lib/types/types";
   import { cmToUnit } from '$lib/utils';
   import { randomID } from "$lib/utils";
+  import { drag } from "$lib/components/svgEditor/navigateSVG.svelte"
   
   let diagramConfClass = getContextDiagram()
   
@@ -11,7 +12,7 @@
     nodeKind,
     svgString,
     svgName,
-    pos,
+    pos = $bindable(),
   } : NodeCustom = $props();
 
   let [finalSvgString, errors] : [string | null, string[]] = $derived.by(() => {
@@ -79,7 +80,6 @@
    *   svgElt.querySelector('[data-secudiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
    * }); */
 </script>
-<g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})">
-  <circle r="45" onclick={() => alert("clicked")} />
+<g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})" use:drag={({pos, diagramConfClass})}>
   {@html finalSvgString || ""}
 </g>

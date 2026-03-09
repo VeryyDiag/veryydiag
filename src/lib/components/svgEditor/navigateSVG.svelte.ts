@@ -1,5 +1,6 @@
-import type { Viewport } from "$lib/types/types"
+import type { Viewport, Point } from "$lib/types/types"
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
+import { unitToCm } from '$lib/utils';
 
 export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
   let dragging = false
@@ -29,7 +30,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
   }
 
   function pointerdown(e: PointerEvent) {
-    if (!e?.target?.matches("svg")) return;
+    if (!(e?.target as Element).matches("svg")) return;
     pointers.set(e.pointerId, e)
 
     node.setPointerCapture(e.pointerId)
@@ -156,3 +157,75 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
     }
   }
 }
+
+/**
+ * Drag a <g> element in SVG coordinates, compatible with pan/zoom
+ * pos: { x, y } reactive state
+ * diagramConfClass: DiagramConfClass (for current viewport)
+ */
+export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: DiagramConfClass }) {
+  let startPointer: { x: number; y: number } | null = null
+  let startPos: Point | null = null
+  let dragging = false
+  const dragThreshold = 3
+
+  function pointerdown(e: PointerEvent) {
+    startPointer = { x: e.clientX, y: e.clientY }
+    startPos = { ...params.pos }
+    dragging = false
+    // IMPORTANT: on ne capture pas le pointer ici
+  }
+
+  function pointermove(e: PointerEvent) {
+    if (!startPointer || !startPos) return
+
+    const dx = e.clientX - startPointer.x
+    const dy = e.clientY - startPointer.y
+    const dist = Math.hypot(dx, dy)
+
+    // on commence le drag seulement si distance dépasse threshold
+    if (!dragging && dist >= dragThreshold) {
+      dragging = true
+      node.setPointerCapture(e.pointerId) // capture maintenant
+    }
+
+    if (!dragging) return
+
+    const rect = node.ownerSVGElement!.getBoundingClientRect()
+    const vp = params.diagramConfClass.getConfig().viewport || {x: 0, y: 0, w: 20, h: 20}
+
+    const dxSVG = (dx / rect.width) * vp.w
+    const dySVG = (dy / rect.height) * vp.h
+
+    params.pos.x = startPos.x + dxSVG
+    params.pos.y = startPos.y + dySVG
+  }
+
+  function pointerup(e: PointerEvent) {
+    if (dragging) {
+      e.preventDefault() // empêcher click si on a vraiment draggué
+      e.stopPropagation()
+      node.releasePointerCapture(e.pointerId)
+    }
+
+    startPointer = null
+    startPos = null
+    dragging = false
+  }
+
+  node.addEventListener("pointerdown", pointerdown)
+  node.addEventListener("pointermove", pointermove)
+  node.addEventListener("pointerup", pointerup)
+  node.addEventListener("pointercancel", pointerup)
+  node.addEventListener("pointerleave", pointerup)
+
+  return {
+    destroy() {
+      node.removeEventListener("pointerdown", pointerdown)
+      node.removeEventListener("pointermove", pointermove)
+      node.removeEventListener("pointerup", pointerup)
+      node.removeEventListener("pointercancel", pointerup)
+      node.removeEventListener("pointerleave", pointerup)
+    }
+  }
+}7

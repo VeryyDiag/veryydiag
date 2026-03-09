@@ -6,7 +6,7 @@ diagramNodes:
       x: 0
       y: 0
   - id: mydiscard
-    nodeKind: NodeDiscardo
+    nodeKind: NodeDiscard
     pos:
       x: 2
       y: 0
