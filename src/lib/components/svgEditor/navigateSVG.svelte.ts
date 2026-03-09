@@ -29,6 +29,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
   }
 
   function pointerdown(e: PointerEvent) {
+    if (!e?.target?.matches("svg")) return;
     pointers.set(e.pointerId, e)
 
     node.setPointerCapture(e.pointerId)
@@ -93,6 +94,8 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
   }
 
   function pointerup(e: PointerEvent) {
+    if (pointers.size === 0) return;
+    //return;
     pointers.delete(e.pointerId)
 
     node.releasePointerCapture(e.pointerId)

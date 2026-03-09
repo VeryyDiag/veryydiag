@@ -80,6 +80,6 @@
    * }); */
 </script>
 <g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})">
-  <circle r="45" onclick={() => diagramConfClass.getConfig().viewport = {x: 0, y: 0, h: 5, w: 5}} />
+  <circle r="45" onclick={() => alert("clicked")} />
   {@html finalSvgString || ""}
 </g>
