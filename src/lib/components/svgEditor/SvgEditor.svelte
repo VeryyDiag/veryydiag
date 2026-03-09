@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { DiagramConf } from "$lib/types/types"
-  import type { Writable } from "svelte/store"
   import Node from "$lib/components/Nodes/Node.svelte"  
-  import { setContextDiagram, setContextErrors, type ErrorsMap } from "$lib/contexts/context"
-  import { writable } from "svelte/store"
-
+  import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors } from "$lib/contexts/context.svelte";
+  import { panzoom } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { cm } from "$lib/utils"
   
   let {
     diagramConf = {}
@@ -12,17 +11,21 @@
     diagramConf: DiagramConf
   } = $props();
 
-  let diagramConfStore : Writable<DiagramConf> = writable({})
-  setContextDiagram(diagramConfStore)
+  let diagramConfState : DiagramConf = $state({})
   $effect(() => {
-    diagramConfStore.set(diagramConf);
-  });
-  let errorsStore : Writable<ErrorsMap> = writable({})
-  setContextErrors(errorsStore)
-  
+    diagramConfState = diagramConf
+  })
+  setContextDiagram(() => diagramConfState)
+  $effect(() => {
+    setContextDiagram(() => diagramConfState)
+  })
+
+  let allErrors : ErrorsMap = $state({})
+  setContextErrors(allErrors)
+
 </script>
 
-{#each Object.entries($errorsStore) as [uid, errors]}
+{#each Object.entries(allErrors) as [uid, errors]}
   {#each errors as error}
     <p style="color: red;">
       Error: {error}
@@ -30,8 +33,10 @@
   {/each}
 {/each}
 
-<svg with="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-  {#each $diagramConfStore?.diagramNodes || [] as node}
-    <Node {...node}/>
-  {/each}
-</svg>
+<div class="">
+  <svg width="100%" height="100%" viewBox="{cm(diagramConf?.viewport?.x || 0)} {cm(diagramConf?.viewport?.y || 0)} {cm(diagramConf?.viewport?.w || 20)} {cm(diagramConf?.viewport?.h || 20)}" xmlns="http://www.w3.org/2000/svg" >
+    {#each diagramConf.diagramNodes || [] as node}
+      <Node {...node}/>
+    {/each}
+  </svg>
+</div>

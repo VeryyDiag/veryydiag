@@ -6,7 +6,7 @@ diagramNodes:
       x: 0
       y: 0
   - id: mydiscard
-    nodeKind: NodeDiscard
+    nodeKind: NodeDiscardo
     pos:
       x: 2
       y: 0
@@ -15,6 +15,11 @@ diagramNodes:
 diagramLinks:
   - from: myfirstnode
     to: mysecondnode
+viewport:
+  x: 0
+  y: 0
+  w: 20
+  h: 20
 availableNodes:
   - name: discard
     svgString: |

@@ -37,5 +37,6 @@ export type AvailableNode = {
 
 export type DiagramConf = {
   diagramNodes?: [Node],
-  availableNodes?: [AvailableNode]  
+  availableNodes?: [AvailableNode],
+  viewport?: {x: number, y: number, w: number, h: number}
 }

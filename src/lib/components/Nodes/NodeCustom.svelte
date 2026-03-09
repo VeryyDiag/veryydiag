@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getContextDiagram, getAvailableNodeWithName } from "$lib/contexts/context";
+  import { onMount, onDestroy } from 'svelte';
+  import { getContextDiagram, getAvailableNodeWithName, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
   import type { NodeCustom } from "$lib/types/types";
-  import { getContextErrors, registerErrors } from "$lib/contexts/context";
   import { cmToUnit } from '$lib/utils';
   
-  let diagramConfStore = getContextDiagram()
+  let diagramConf = getContextDiagram()
   
   let {
     nodeKind,
@@ -14,15 +13,32 @@
     pos,
   } : NodeCustom = $props();
 
-  let finalSvgString : string | null = $derived(
-    svgString ||
-    (svgName ? getAvailableNodeWithName(svgName, $diagramConfStore).svgString : null) || null
-  )
+  let [finalSvgString, errors] : [string | null, string[]] = $derived.by(() => {
+    try {
+      const val = svgString ||
+                  (svgName ? getAvailableNodeWithName(svgName, diagramConf).svgString : null) || null;
+      if (val === null) {
+        return [null, [`Error: the component ${nodeKind} does not provide a svg string/name ${svgString}.`]]
+      } else {
+        return [val, []]
+      }
+    } catch (err) {
+      let errMsg = ""
+      if (err instanceof Error) {
+        errMsg = err.message
+      } else {
+        errMsg = String(err)
+      }
+      return [null, [errMsg]]
+    }
+  })
+
+  let testErrors : string[] = $state([])
   
-  let errors = $derived(finalSvgString !== null ? [] :
-                        [`Error: the component ${nodeKind} does not provide a svg string/name ${svgString}.`]);
+  let allErrorsComponent = $derived([...errors, ...testErrors])
+  
   let uid: string = crypto.randomUUID(); // We use it to register errors per component, this uid is the ID of the current component
-  $effect(() => registerErrors(uid, errors))
+  registerErrors(uid, () => allErrorsComponent)
   
   let container;
   
@@ -61,8 +77,8 @@
    *   updateLine(document.getElementById("A"), svgElt.querySelector('[data-secudiag-input="0"]'));
    *   svgElt.querySelector('[data-secudiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
    * }); */
-
 </script>
 <g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})">
+  <circle cx="0" cy="0" r="20" onclick={() => {console.log("press"); testErrors.push("foo")}} />
   {@html finalSvgString || ""}
 </g>

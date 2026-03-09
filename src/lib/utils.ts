@@ -19,6 +19,12 @@ export function getTransformToElement(fromElement: SVGGraphicsElement, toElement
 export function cmToUnit(cm: number) {
   return cm * 96 / 2.54
 }
+
+// practical alias
+export function cm(cm: number) {
+  return cmToUnit(cm)
+}
+
 export function unitToCm(cm: number) {
   return cm * 96 / 2.54
 }
