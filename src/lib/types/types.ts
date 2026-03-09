@@ -35,8 +35,15 @@ export type AvailableNode = {
   svgString?: string
 }
 
+export type Viewport = {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export type DiagramConf = {
   diagramNodes?: [Node],
   availableNodes?: [AvailableNode],
-  viewport?: {x: number, y: number, w: number, h: number}
+  viewport?: Viewport
 }

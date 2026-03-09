@@ -3,6 +3,7 @@
   import { getContextDiagram, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
   import type { NodeCustom } from "$lib/types/types";
   import { cmToUnit } from '$lib/utils';
+  import { randomID } from "$lib/utils";
   
   let diagramConfClass = getContextDiagram()
   
@@ -37,7 +38,7 @@
   
   let allErrorsComponent = $derived([...errors, ...testErrors])
   
-  let uid: string = crypto.randomUUID(); // We use it to register errors per component, this uid is the ID of the current component
+  let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   registerErrors(uid, () => allErrorsComponent)
   
   let container;
@@ -79,6 +80,6 @@
    * }); */
 </script>
 <g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})">
-  <circle cx="0" cy="0" r="20" onclick={() => {console.log("press"); testErrors.push("foo")}} />
+  <circle r="45" onclick={() => diagramConfClass.getConfig().viewport = {x: 0, y: 0, h: 5, w: 5}} />
   {@html finalSvgString || ""}
 </g>

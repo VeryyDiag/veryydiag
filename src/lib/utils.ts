@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 // This file contains generic utils functions
 
 // getTransformToElement(fromElement, toElement) returns the matrix to apply to turn coordinate in the insideElement coordinate
@@ -29,3 +30,7 @@ export function unitToCm(cm: number) {
   return cm * 96 / 2.54
 }
 
+// crypto.randomUUID() only works on localhost or https.
+export function randomID() : string {
+  return uuidv4();
+}
