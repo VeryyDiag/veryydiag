@@ -25,6 +25,14 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
 
+## Testing
+
+To test the project, you can run:
+```sh
+npm run storybook
+```
+and click on the `Run tests` button on the bottom left area of the window.
+
 ## TODO
 
-- Implement selection and operations on selection (drag, delete…)
+- Implement selection and operations on selection (drag, delete…)a

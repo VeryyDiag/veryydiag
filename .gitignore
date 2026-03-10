@@ -24,5 +24,10 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 
-# Temporary files
+# My changes
 *#
+.direnv
+
+# Storybook
+*storybook.log
+storybook-static
