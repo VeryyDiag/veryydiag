@@ -1,9 +1,5 @@
 // File containing most of the types
 
-export interface NodeDiscard {
-  nodeKind: "NodeDiscard",
-}
-
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
 // exactly identical except that 'input' is replaced with 'output'. Similarly 'inoutput' is used for nodes that can be treated as both inputs or outputs (this is done ZX-calculus where processes can be represented as undirected graphs).
@@ -17,29 +13,16 @@ export type Point = {
   x: number,
   y: number,
 }
-
-export interface NodeCustom {
-  nodeKind: "NodeCustom",
-  // Specify either the svg string or svgName
-  svgString: string | undefined,
-  svgName: string | undefined,
-  pos: Point
-}
-
-
-export type NodeNames = "nodeDiscard"
-
-export type Pos = {
-  x: number,
-  y: number
-}
-
-export type Node = NodeCustom | NodeDiscard
                    
 export type AvailableNode = {
-  name: string,
-  svgString?: string
+  nodeKind: string,
+  svgString?: string, // You can either specify the SVG directly in the YML file…
+  svgName?: string, // … or specify a name of a SVG …
+  componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
+  // TODO: … or specify the URL of a SVG file
 }
+
+export type Node = AvailableNode & {pos: Point, id: string}
 
 export type Viewport = {
   x: number

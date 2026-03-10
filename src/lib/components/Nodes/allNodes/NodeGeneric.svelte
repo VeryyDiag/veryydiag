@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { getContextDiagram, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
-  import type { NodeCustom } from "$lib/types/types";
+  import type { Node } from "$lib/types/types";
   import { cmToUnit } from '$lib/utils';
   import { randomID } from "$lib/utils";
   import { drag } from "$lib/components/svgEditor/navigateSVG.svelte"
@@ -9,35 +9,13 @@
   let diagramConfClass = getContextDiagram()
   
   let {
+    id,
     nodeKind,
-    svgString,
-    svgName,
+    svgString, // Populated by nodeKindToAvailableNode
     pos = $bindable(),
-  } : NodeCustom = $props();
+  } : Node = $props();
 
-  let [finalSvgString, errors] : [string | null, string[]] = $derived.by(() => {
-    try {
-      const val = svgString ||
-                  (svgName ? diagramConfClass.getAvailableNodeWithName(svgName).svgString : null) || null;
-      if (val === null) {
-        return [null, [`Error: the component ${nodeKind} does not provide a svg string/name ${svgString}.`]]
-      } else {
-        return [val, []]
-      }
-    } catch (err) {
-      let errMsg = ""
-      if (err instanceof Error) {
-        errMsg = err.message
-      } else {
-        errMsg = String(err)
-      }
-      return [null, [errMsg]]
-    }
-  })
-
-  let testErrors : string[] = $state([])
-  
-  let allErrorsComponent = $derived([...errors, ...testErrors])
+  let allErrorsComponent = $derived(svgString === undefined ? [ `No svgString for node ${id} of kind ${nodeKind}` ] : [])
   
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   registerErrors(uid, () => allErrorsComponent)
@@ -81,5 +59,5 @@
    * }); */
 </script>
 <g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})" use:drag={({pos, diagramConfClass})}>
-  {@html finalSvgString || ""}
+  {@html svgString || ""}
 </g>

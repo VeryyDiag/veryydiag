@@ -25,9 +25,9 @@
      inkscape:document-units="mm"
      inkscape:zoom="10.24"
      inkscape:cx="3.4667969"
-     inkscape:cy="9.0820312"
-     inkscape:window-width="1920"
-     inkscape:window-height="1006"
+     inkscape:cy="9.1308594"
+     inkscape:window-width="2226"
+     inkscape:window-height="1177"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -64,5 +64,12 @@
        inkscape:label="input0"
        transform="rotate(-90)"
        data-secudiag-output="0" />
+    <rect
+       style="fill:none;stroke-width:0.165;stroke-linecap:round;stroke:none"
+       id="rect1"
+       width="6.1753335"
+       height="8.164876"
+       x="201.1339"
+       y="6.6325836" />
   </g>
 </svg>
