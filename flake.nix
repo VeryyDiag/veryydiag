@@ -3,6 +3,8 @@
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
+    # This version matches the npm-installed version (you can use 'npm install playwright@newversion' to make sure
+    # npm matches the version installed via nix).
     nixpkgs.url = "github:nixos/nixpkgs/c97c47f2bac4fa59e2cbdeba289686ae615f8ed4";
   };
   
@@ -16,11 +18,7 @@
 
         shellHook = ''
           export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
-          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true;
-          PLAYWRIGHT_NODEJS_PATH=${pkgs.nodejs_22}/bin/node
-          playwright_chromium_revision="$(${pkgs.jq}/bin/jq --raw-output '.browsers[] | select(.name == "chromium").revision' ${pkgs.playwright-driver}/browsers.json)"
-          export PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH=${pkgs.playwright-driver.browsers}/chromium-$playwright_chromium_revision/chrome-linux/chrome
-          echo "Using $PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH"
+          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
         '';
       };
     };
