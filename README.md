@@ -1,38 +1,17 @@
-# # SecuDiag
+# CryptoDiag
 
-Attempt to write a tool for formal security proof based on diagrammatic graph rewriting.
+CryptoDiag aims to be:
+- A generic web-based program allowing you to write diagrammatic proofs by applying some graph rewriting rules. You have lot's of freedom here: just define your basic nodes (mostly SVG) and rewriting rules, and you can prove that two graphs are equivalent based on these rewriting rules.
+- We also instantiate these rules to obtain a framework to write formal security proofs. These proofs aim to be:
+  - **Intuitive**: once you know the framework, it should be as simple as possible (at least compared to Rocq…) to transfer an intuition of security like "this part is secret" into a formal security proof.
+  - **Easy to read**: proofs written into existing frameworks (EasyCrypt…) are just impossible to read and check without the help of a computer. Reading the proof gives little intuition while we aim to
+  - **Short**
+  - **Quick to write**
+  - **Expressive**
+  - **Quantum compatible**: existing frameworks can't really deal with the specificities of quantum cryptography where it is, for instance, impossible to copy a quantum state.
 
-## Developing
+On the longer term, we also aim to translate proofs written in this tool into proof in other frameworks (Rocq, Easycrypt…).
 
-Once you've created a project and installed dependencies with `npm install` start a development server:
+## Contribute
 
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-## Testing
-
-To test the project, you can run:
-```sh
-npm run storybook
-```
-and click on the `Run tests` button on the bottom left area of the window.
-
-## TODO
-
-- Implement selection and operations on selection (drag, delete…)a
+If you want to contribute to this project, see [the file `README_DEV.md`](./README_DEV.md).

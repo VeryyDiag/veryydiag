@@ -10,7 +10,7 @@ export class DiagramConfClass {
   diagramConf : DiagramConf = $state({})
 
   constructor(conf: DiagramConf = {}) {
-    this.diagramConf = conf
+    this.setConfig(conf)
   }
 
   // We should use => to preserve the this in order to be able to do onclick={todo.reset}
@@ -19,6 +19,9 @@ export class DiagramConfClass {
   }
 
   setConfig = (conf: DiagramConf) => {
+    if (conf?.viewport === undefined) {
+      conf.viewport = {x: 0, y: 0, w: 20, h: 20}
+    }
     this.diagramConf = conf
   }
 

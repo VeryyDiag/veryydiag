@@ -31,7 +31,9 @@ export type Viewport = {
   h: number
 }
 
+/** Foo */
 export type DiagramConf = {
+  /** Bar */
   diagramNodes?: [Node],
   availableNodes?: [AvailableNode],
   viewport?: Viewport

@@ -1,0 +1,46 @@
+import { Title, Subtitle, Description, ArgTypes, Primary, Controls, Stories, Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
+ 
+import * as SvgEditorStories from './SvgEditor.stories.svelte';
+
+<Meta of={SvgEditorStories} />
+ 
+ Title:
+ 
+<Title />
+
+Subtitle:
+
+<Subtitle />
+
+Description:
+
+<Description />
+
+Here is the description written in the mdx itself
+
+Arg types
+
+<ArgTypes />
+
+Primary and controls don't work (https://github.com/storybookjs/storybook/issues/33829) without explicit "of=":
+
+<Primary/>
+
+Per-story code:
+
+Canvas (seems equivalent to Story):
+ 
+<Canvas of={SvgEditorStories.Primary} />
+
+Controls:
+
+<Controls of={SvgEditorStories.Primary}/>
+
+Story
+
+<Story of={SvgEditorStories.Primary}/>
+
+All stories
+
+<Stories />
+
