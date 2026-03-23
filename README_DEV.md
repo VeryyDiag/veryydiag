@@ -91,3 +91,4 @@ let {
 ## TODO
 
 - Implement selection and operations on selection (drag, delete…)
+- Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3

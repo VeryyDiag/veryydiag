@@ -2,20 +2,27 @@
 import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
+import { unitToCm } from '$lib/utils';
 
 // Configuration
 
 // https://svelte.dev/docs/svelte/$state
 export class DiagramConfClass {
   diagramConf : DiagramConf = $state({})
-
-  constructor(conf: DiagramConf = {}) {
+  svg: SVGGraphicsElement | undefined = undefined
+  
+  constructor(conf: DiagramConf = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
+    this.setSvg(svg)
   }
 
   // We should use => to preserve the this in order to be able to do onclick={todo.reset}
   getConfig = () => {
     return this.diagramConf
+  }
+
+  setSvg = (svg: SVGGraphicsElement | undefined) => {
+    this.svg = svg;
   }
 
   setConfig = (conf: DiagramConf) => {
@@ -61,7 +68,19 @@ export class DiagramConfClass {
     } else {
       throw new Error(`The configuration contains no availableNodes with kind ${kind}`);
     }
-  }  
+  }
+
+  /** Changes the size of the viewport and (optionally) the svg itself */
+  fitViewportToContent = (scale: number | undefined = undefined) => {
+    if (this.svg !== undefined) {
+      const bbox = this.svg.getBBox();
+      // Set the viewport with these bounds
+      this.diagramConf.viewport = {x: unitToCm(bbox.x), y: unitToCm(bbox.y), w: unitToCm(bbox.width), h: unitToCm(bbox.height)};
+      if (scale !== undefined) {
+        this.diagramConf.svgSize = {w: `${bbox.width * scale}pt`, h: `${bbox.height * scale}pt`}
+      }
+    }
+  }
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();

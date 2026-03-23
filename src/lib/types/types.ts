@@ -31,10 +31,16 @@ export type Viewport = {
   h: number
 }
 
+export type SvgSize = {
+  w: string
+  h: string
+}
+
 /** Foo */
 export type DiagramConf = {
   /** Bar */
-  diagramNodes?: [Node],
-  availableNodes?: [AvailableNode],
-  viewport?: Viewport
+  diagramNodes?: Node[],
+  availableNodes?: AvailableNode[],
+  viewport?: Viewport,
+  svgSize?: SvgSize,
 }
