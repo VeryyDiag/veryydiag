@@ -13,7 +13,7 @@
     nodeKind,
     svgString, // Populated by nodeKindToAvailableNode
     pos = $bindable(),
-  } : Node = $props();
+  } : Node & {id: string} = $props();
 
   let allErrorsComponent = $derived(svgString === undefined ? [ `No svgString for node ${id} of kind ${nodeKind}` ] : [])
   
@@ -58,6 +58,6 @@
    *   svgElt.querySelector('[data-secudiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
    * }); */
 </script>
-<g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})" use:drag={({pos, diagramConfClass})}>
+<g bind:this={container} transform="translate({cmToUnit(pos?.x || 0)},{cmToUnit(pos?.y || 0)})" use:drag={({pos, diagramConfClass})} data-secudiag-node={id}>
   {@html svgString || ""}
 </g>

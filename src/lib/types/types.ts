@@ -15,14 +15,13 @@ export type Point = {
 }
                    
 export type AvailableNode = {
-  nodeKind: string,
   svgString?: string, // You can either specify the SVG directly in the YML file…
   svgName?: string, // … or specify a name of a SVG …
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
   // TODO: … or specify the URL of a SVG file
 }
 
-export type Node = AvailableNode & {pos: Point, id: string}
+export type Node = AvailableNode & {nodeKind: string, pos: Point}
 
 export type Viewport = {
   x: number
@@ -36,11 +35,20 @@ export type SvgSize = {
   h: string
 }
 
+export type Link = {
+  from: string,
+  to: string,
+}
+
 /** Foo */
 export type DiagramConf = {
-  /** Bar */
-  diagramNodes?: Node[],
-  availableNodes?: AvailableNode[],
+  /** Dictionary containing all nodes in a graph (id: node) */
+  diagramNodes?: Record<string, Node>,
+  /**
+   * Dictionary containing all possible nodes that can be used in a graph (nodeKind: available node)
+   */
+  availableNodes?: Record<string, AvailableNode>,
   viewport?: Viewport,
   svgSize?: SvgSize,
+  links?: Link[],
 }

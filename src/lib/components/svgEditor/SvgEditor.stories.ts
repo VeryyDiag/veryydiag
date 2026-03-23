@@ -22,12 +22,12 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     diagramConf:{
-      diagramNodes: [
-        {id: "myfirstnode", nodeKind: "myDiscard", pos: {x: 0, y: 0}}
-      ],
-      availableNodes: [
-        {nodeKind: "myDiscard", svgName: "cryptodiagDiscard"}
-      ]
+      diagramNodes: {
+        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}},
+      },
+      availableNodes: {
+        myDiscard: {svgName: "cryptodiagDiscard"},
+      }
   }},
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
@@ -39,12 +39,11 @@ export const Primary: Story = {
 export const SvgIncluded: Story = {
   args: {
     diagramConf: {
-      diagramNodes: [
-        {id: "myfirstnode", nodeKind: "myDiscard", pos: {x: 0, y: 0}}
-      ],
-      availableNodes: [
-        {
-          nodeKind: "myDiscard",
+      diagramNodes: {
+        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}}
+      },
+      availableNodes: {
+        myDiscard: {
           svgString: `<?xml version="1.0" encoding="UTF-8"?>
                       <!-- Created with Inkscape (http://www.inkscape.org/) -->
                       <svg width="10mm" height="8.2064mm" version="1.1" viewBox="0 0 10 8.2064" xmlns="http://www.w3.org/2000/svg">
@@ -65,7 +64,7 @@ export const SvgIncluded: Story = {
                       </svg>
           `
         }
-      ]
+      }
     }
   },
   play: async ({ canvas, userEvent, canvasElement }) => {
@@ -79,12 +78,11 @@ export const OnlySvg: Story = {
   args: {
     onlySvg: 1,
     diagramConf: {
-      diagramNodes: [
-        {id: "myfirstnode", nodeKind: "myDiscard", pos: {x: 0, y: 0}}
-      ],
-      availableNodes: [
-        {
-          nodeKind: "myDiscard",
+      diagramNodes: {
+        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}}
+      },
+      availableNodes: {
+        myDiscard: {
           svgString: `<?xml version="1.0" encoding="UTF-8"?>
                       <!-- Created with Inkscape (http://www.inkscape.org/) -->
                       <svg width="10mm" height="8.2064mm" version="1.1" viewBox="0 0 10 8.2064" xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +103,7 @@ export const OnlySvg: Story = {
                       </svg>
           `
         }
-      ]
+      }
     }
   },
   play: async ({ canvas, userEvent, canvasElement }) => {
@@ -118,14 +116,14 @@ export const OnlySvg: Story = {
 export const TwoNodes: Story = {
   args: {
     diagramConf:{
-      diagramNodes: [
-        {id: "myfirstnode", nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
-        {id: "mysecondnode", nodeKind: "discard", pos: {x: 2, y: 0}}
-      ],
-      availableNodes: [
-        {nodeKind: "inputDiscard", svgName: "cryptodiagInputDiscard"},
-        {nodeKind: "discard", svgName: "cryptodiagDiscard"}
-      ]
+      diagramNodes: {
+        myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
+        mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}}
+      },
+      availableNodes: {
+        inputDiscard: {svgName: "cryptodiagInputDiscard"},
+        discard: {svgName: "cryptodiagDiscard"}
+      }
   }},
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
@@ -134,3 +132,31 @@ export const TwoNodes: Story = {
     await expect(canvasElement.querySelectorAll("[data-secudiag-output]").length).toBe(1);
   },
 };
+
+
+export const TwoNodesLinked: Story = {
+  args: {
+    diagramConf:{
+      diagramNodes: {
+        myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
+        mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}},
+      },
+      availableNodes: {
+        inputDiscard: {svgName: "cryptodiagInputDiscard"},
+        discard: {svgName: "cryptodiagDiscard"},
+      },
+      links: [
+        {
+          from: "myfirstnode.out0",
+          to: "mysecondnode.in0"
+        },
+      ],
+  }},
+  play: async ({ canvas, userEvent, canvasElement }) => {
+    const svg = canvasElement.querySelectorAll("svg");
+    await expect(svg).not.toBe(null);
+    await expect(canvasElement.querySelectorAll("[data-secudiag-input]").length).toBe(1);
+    await expect(canvasElement.querySelectorAll("[data-secudiag-output]").length).toBe(1);
+  },
+};
+

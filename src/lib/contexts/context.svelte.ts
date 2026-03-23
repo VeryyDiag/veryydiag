@@ -2,14 +2,16 @@
 import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { unitToCm } from '$lib/utils';
+import { unitToCm, getTransformToElement } from '$lib/utils';
 
 // Configuration
 
 // https://svelte.dev/docs/svelte/$state
 export class DiagramConfClass {
   diagramConf : DiagramConf = $state({})
-  svg: SVGGraphicsElement | undefined = undefined
+  
+  relativeAnchorPos : DiagramConf = $state({})
+  svg: SVGGraphicsElement | undefined = $state(undefined)
   
   constructor(conf: DiagramConf = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
@@ -32,39 +34,62 @@ export class DiagramConfClass {
     this.diagramConf = conf
   }
 
+  getXYOfAnchor = (nodeID: string, anchor: string) : [number, number] | string => {
+    const selector = `[data-secudiag-node="${nodeID}"] [data-secudiag-anchor="${anchor}"]`;
+    this.diagramConf?.diagramNodes?.[nodeID]?.pos.x; // force recompute when this changes, don't remove
+    this.diagramConf?.diagramNodes?.[nodeID]?.pos.y; // force recompute when this changes, don't remove
+    const elts = this.svg?.querySelectorAll<SVGGraphicsElement>(selector);
+    if (elts === undefined) {
+      return `No svg found when searching for coordinates of ${nodeID}.${anchor} (via selector ${selector})`
+    } else if (elts.length === 0) {
+      return `No element found when searching for ${nodeID}.${anchor} (via selector ${selector})`
+    } else if (elts.length > 1) {
+      return `Too many (${elts.length}) elements found when searching for ${nodeID}.${anchor} (via selector ${selector})`
+    } else {
+      const elt = elts[0];
+      const box = elt.getBBox();
+      if (this.svg === undefined) {
+        return "No SVG was defined"
+      } else {
+        const transform = getTransformToElement(elt, this.svg);
+        const pt = new DOMPoint(box.x + box.width / 2, box.y + box.height / 2);
+        const ptTr = pt.matrixTransform(transform)
+        return [ptTr.x, ptTr.y];
+      }
+    }
+  }
+  
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: string) : AvailableNode => {
     console.log("this.diagramConf?.availableNodes", $state.snapshot(this.diagramConf?.availableNodes))
-    let res = (this.diagramConf?.availableNodes || []).filter(x => x.nodeKind == kind)
-    console.log("res", $state.snapshot(res))
-    if (res.length === 1) {
-      if (res[0].svgString !== undefined)
-        return res[0]
+    let res = this.diagramConf?.availableNodes?.[kind]
+    // console.log("res", $state.snapshot(res))
+    if (res !== undefined) {
+      if (res.svgString !== undefined)
+        return res
       else {
-        if (res[0].svgName !== undefined) {
-          const str = officialSvgNameToSvgString(res[0].svgName)
+        if (res.svgName !== undefined) {
+          const str = officialSvgNameToSvgString(res.svgName)
           if (str !== undefined)
-            return {...res[0], svgString: str}
+            return {...res, svgString: str}
           else {
-            const c = res[0]?.componentName || "NodeGeneric"
+            const c = res?.componentName || "NodeGeneric"
             if (c == "NodeGeneric") {
-              throw new Error(`No svg found with name ${res[0].svgName} when considering the node kind "${kind}"`);
+              throw new Error(`No svg found with name ${res.svgName} when considering the node kind "${kind}"`);
             } else {
-              return res[0]
+              return res
             }
           }
         } else {
-          const c = res[0]?.componentName || "NodeGeneric"
+          const c = res?.componentName || "NodeGeneric"
           if (c == "NodeGeneric") {
             throw new Error(`The node with kind ${kind} has no svgName nor svgString`);
           } else {
             // Different component, they may accept arbitrary stuff
-            return res[0]
+            return res
           }
         }
       }
-    } else if (res.length > 1) {
-      throw new Error(`The configuration contains multiple availableNodes with kind ${kind}`);
     } else {
       throw new Error(`The configuration contains no availableNodes with kind ${kind}`);
     }

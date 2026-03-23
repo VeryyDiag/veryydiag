@@ -7,7 +7,7 @@
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   
   // This file is used to draw arbitrary nodes
-  let props : Node = $props();
+  let props : Node & {id: string} = $props();
 
   let diagramConfClass = getContextDiagram()
   // See which component we should mount etc
