@@ -23,6 +23,10 @@ export type AvailableNode = {
 
 export type Node = AvailableNode & {nodeKind: string, pos: Point}
 
+// Dots are forbiden in NodeID
+export type NodeID = string
+export type AnchorName = string
+
 export type Viewport = {
   x: number
   y: number
@@ -40,10 +44,14 @@ export type Link = {
   to: string,
 }
 
+export type Error = {
+  message: string,
+}
+
 /** Foo */
 export type DiagramConf = {
   /** Dictionary containing all nodes in a graph (id: node) */
-  diagramNodes?: Record<string, Node>,
+  diagramNodes?: Record<NodeID, Node>,
   /**
    * Dictionary containing all possible nodes that can be used in a graph (nodeKind: available node)
    */
