@@ -183,10 +183,10 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
     const dy = e.clientY - startPointer.y
     const dist = Math.hypot(dx, dy)
 
-    // on commence le drag seulement si distance dépasse threshold
+    // We drag only if we dragged during a long enough distance
     if (!dragging && dist >= dragThreshold) {
       dragging = true
-      node.setPointerCapture(e.pointerId) // capture maintenant
+      node.setPointerCapture(e.pointerId)
     }
 
     if (!dragging) return
@@ -203,7 +203,7 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
 
   function pointerup(e: PointerEvent) {
     if (dragging) {
-      e.preventDefault() // empêcher click si on a vraiment draggué
+      e.preventDefault() // prevent click if we actually dragged
       e.stopPropagation()
       node.releasePointerCapture(e.pointerId)
     }
