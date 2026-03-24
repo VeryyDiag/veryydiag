@@ -22,8 +22,8 @@
                          },
                          links: [
                            {
-                             from: "myfirstnode.out0",
-                             to: "mysecondnode.in0"
+                             from: "myfirstnode.out.0",
+                             to: "mysecondnode.in.0"
                            },
                          ],
                          }}

@@ -34,3 +34,8 @@ export function unitToCm(cm: number) {
 export function randomID() : string {
   return uuidv4();
 }
+
+export function fullAnchorToIDAndAnchor(fullAnchor : string) : [string, string] {
+  const [a, b, _] = fullAnchor.split(/\.(.*)/s)
+  return [a, b || ""]
+}
