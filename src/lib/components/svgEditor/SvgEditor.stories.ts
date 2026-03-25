@@ -157,7 +157,7 @@ export const TwoNodesLinked: Story = {
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-secudiag-anchor="in.0"]').length).toBe(1);
     await expect(canvasElement.querySelectorAll('[data-secudiag-anchor="out.0"]').length).toBe(1);
-    await expect(canvasElement.querySelectorAll('[data-secudiag-kind="link"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-secudiag-link]').length).toBe(1);
   },
 };
 

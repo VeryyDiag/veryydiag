@@ -58,7 +58,7 @@ export function IDAnchorToFullAnchor(node : NodeID, anchor: AnchorName) : IDAnch
 
 
 /** Computes the distance between two event points */
-export function distanceEvent(a: PointerEvent, b: PointerEvent) {
+export function distanceEvent(a: {clientX: number, clientY: number }, b: {clientX: number, clientY: number }) {
   return Math.hypot(
     a.clientX - b.clientX,
     a.clientY - b.clientY
@@ -71,4 +71,20 @@ export function centerEvent(a: PointerEvent, b: PointerEvent) {
       x: (a.clientX + b.clientX) / 2,
       y: (a.clientY + b.clientY) / 2
     }
+}
+
+/** Returns the SVG parent element that is a link */
+export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
+  const p = elt.closest("[data-secudiag-link]")
+  if (p instanceof SVGGraphicsElement) {
+    return p
+  }
+}
+
+/** Returns the SVG parent element that is a node */
+export function getParentNode(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
+  const p = elt.closest("[data-secudiag-node]")
+  if (p instanceof SVGGraphicsElement) {
+    return p
+  }
 }

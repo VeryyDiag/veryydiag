@@ -1,17 +1,20 @@
 <script lang="ts">
-  import {type Point } from "$lib/types/types"
-  import { randomID, fullAnchorToIDAndAnchor } from "$lib/utils";
+  import type { Point, Link } from "$lib/types/types"
+  import { randomID, fullAnchorToIDAndAnchor, cm } from "$lib/utils";
   import { getContextDiagram, registerErrors } from "$lib/contexts/context.svelte";
 
   let diagramConfClass = getContextDiagram()
 
   let {
     from,
-    to
-  } : {from: string, to: string | Point} = $props()
+    to,
+    id,
+  } : Omit<Link, "to"> & { to: Link["to"] | Point; } = $props() // We also allow to to contain directly a point, needed when drawing lines
 
   let [ fromNode, fromAnchor = "out.0"] = $derived(fullAnchorToIDAndAnchor(from))
 
+  let selected = $derived(id !== undefined ? diagramConfClass.isLinkSelected(id) : false)
+  
   let {x: fromX = undefined, y: fromY, message: errorsFrom} = $derived(({
     x : undefined,
     y : undefined,
@@ -31,6 +34,11 @@
   
 </script>
 {#if fromX !== undefined && fromY !== undefined && toX !== undefined && toY !== undefined}
-  <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="black" data-secudiag-kind="link" />
+  <g filter={selected ? "url(#selected)" : ""}>
+    <!-- Circle are only used to have correct bounding box for filter effects to work -->
+    <circle cx={fromX} cy={fromY} r={cm(0.05/2)} visibility="hidden" />
+    <circle cx={toX} cy={toY} r={cm(0.05/2)} visibility="hidden" />
+    <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="black" data-secudiag-link={id} stroke-width={cm(0.05)} stroke-linecap="round" />
+  </g>
 {/if}
 

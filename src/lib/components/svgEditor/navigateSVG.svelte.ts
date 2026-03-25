@@ -1,6 +1,6 @@
-import type { Viewport, Point } from "$lib/types/types"
+import type { Viewport, Point, NodeID } from "$lib/types/types"
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { centerEvent, distanceEvent, IDAnchorToFullAnchor, clientToSVGCoord } from '$lib/utils';
+import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, getParentLink, getParentNode } from '$lib/utils';
 
 export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
   let dragging = false
@@ -147,20 +147,39 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
  * pos: { x, y } reactive state
  * diagramConfClass: DiagramConfClass (for current viewport)
  */
-export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: DiagramConfClass }) {
+export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
+
   let startPointer: { x: number; y: number } | null = null
   let startPos: Point | null = null
   let dragging = false
   const dragThreshold = 3
-
+  let targetNodeID : NodeID | undefined = $state(undefined)
+  
   function pointerdown(e: PointerEvent) {
-    startPointer = { x: e.clientX, y: e.clientY }
-    startPos = { ...params.pos }
-    dragging = false
-    // IMPORTANT: on ne capture pas le pointer ici
+    if (e?.target instanceof SVGGraphicsElement) {
+      const nodeID = e.target.dataset?.secudiagNode
+      if (nodeID !== undefined) {
+        const pos = diagramConfClass.getPositionNode(nodeID)
+        if (!('message' in pos)) {
+          targetNodeID = nodeID
+          startPointer = { x: e.clientX, y: e.clientY }
+          startPos = { ...pos }
+          dragging = false
+          // IMPORTANT: we wait before capturing the pointer to check if we actually move
+        } else {
+          targetNodeID = undefined
+        }
+      } else {
+        targetNodeID = undefined
+      }
+    } else {
+      targetNodeID = undefined
+    }
   }
 
   function pointermove(e: PointerEvent) {
+    if (targetNodeID === undefined) return;
+    
     if (!startPointer || !startPos) return
 
     const dx = e.clientX - startPointer.x
@@ -176,16 +195,16 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
     if (!dragging) return
 
     const rect = node.ownerSVGElement!.getBoundingClientRect()
-    const vp = params.diagramConfClass.getViewport()
+    const vp = diagramConfClass.getViewport()
 
     const dxSVG = (dx / rect.width) * vp.w
     const dySVG = (dy / rect.height) * vp.h
 
-    params.pos.x = startPos.x + dxSVG
-    params.pos.y = startPos.y + dySVG
+    diagramConfClass.moveNode(targetNodeID, {x: startPos.x + dxSVG, y: startPos.y + dySVG})
   }
 
   function pointerup(e: PointerEvent) {
+    if (targetNodeID === undefined) return;
     if (dragging) {
       e.preventDefault() // prevent click if we actually dragged
       e.stopPropagation()
@@ -195,6 +214,7 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
     startPointer = null
     startPos = null
     dragging = false
+    targetNodeID = undefined
   }
 
   node.addEventListener("pointerdown", pointerdown)
@@ -214,11 +234,12 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
   }
 }
 
+
 export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+
   const pointers = new Map<number, PointerEvent>()
 
   function pointerdown(e: PointerEvent) {
-    console.log("Pointerdown in drawLink", e?.target)
     if (e?.target instanceof SVGGraphicsElement) {
       const anchor = e.target.dataset?.secudiagAnchor
       if (anchor === undefined) return;
@@ -229,7 +250,7 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
           console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
           return;
         }
-        console.log(`We clicked on anchor ${nodeName}.${anchor}`)
+
         pointers.set(e.pointerId, e)
 
         node.setPointerCapture(e.pointerId)
@@ -257,8 +278,9 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   }
 
   function pointerup(e: PointerEvent) {
-    console.log("In pointerup", e?.target, document.elementsFromPoint(e.clientX, e.clientY))
-    if (pointers.size === 0) return; 
+    if (pointers.size === 0) {
+      return
+    }
     pointers.delete(e.pointerId)
     node.releasePointerCapture(e.pointerId)
     if (diagramConfClass.currentlyCreatedLink === undefined) return
@@ -278,7 +300,6 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
           }
-          console.log(`We released on anchor ${nodeName}.${anchor}`)
 
           diagramConfClass.addLink({from, to: IDAnchorToFullAnchor(nodeName, anchor)});
           return
@@ -300,6 +321,52 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
       node.removeEventListener("pointerup", pointerup)
       node.removeEventListener("pointercancel", pointerup)
       node.removeEventListener("pointerleave", pointerup)
+    }
+  }
+}
+
+
+export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+  let initialPos = {clientX: 0, clientY: 0} // We don't want to mix drag & drop from clicking
+  let maxDistance = 0
+  
+  function pointerdown(e: PointerEvent) {
+    initialPos = {clientX: e.clientX, clientY: e.clientY }
+    maxDistance = 0
+  }
+
+  function pointermove(e: PointerEvent) {
+    maxDistance = Math.max(maxDistance, distanceEvent(initialPos, e))
+  }
+
+  function click(e: PointerEvent) {
+    console.log(e.target)
+    // We moved too much, can't be a click
+    if (maxDistance > 4) {
+      return
+    }
+    if (e?.target instanceof SVGGraphicsElement) {
+      const parentLinkID = getParentLink(e.target)?.dataset?.secudiagLink
+      const parentNodeID = getParentNode(e.target)?.dataset?.secudiagNode
+      if (parentLinkID) {
+        diagramConfClass.toogleLinkSelection(parentLinkID)
+      } else if (parentNodeID) {
+        diagramConfClass.toogleNodeSelection(parentNodeID)
+      } else if (e.target === node) {
+        diagramConfClass.clearSelection()
+      }
+    }
+  }
+  
+  node.addEventListener("pointerdown", pointerdown)
+  node.addEventListener("pointermove", pointermove)
+  node.addEventListener("click", click)
+
+  return {
+    destroy() {
+      node.removeEventListener("pointerdown", pointerdown)
+      node.removeEventListener("pointermove", pointermove)
+      node.removeEventListener("click", click)
     }
   }
 }

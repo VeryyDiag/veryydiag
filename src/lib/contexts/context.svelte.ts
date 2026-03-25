@@ -1,8 +1,8 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, IDAnchor, Point, Error, Viewport, AnchorName, NodeID } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 
 // Configuration
 
@@ -24,8 +24,12 @@ export class DiagramConfClass {
 
   /** When drawing links, we add them here before they are completed. Unde */
   currentlyCreatedLink : undefined | { from: IDAnchor, to: Point } = $state(undefined)
+
+  /** Selection */
+  linkSelection : Record<LinkID, boolean> = $state({})
+  nodeSelection : Record<NodeID, boolean> = $state({})
   
-  constructor(conf: DiagramConf = {}, svg: SVGGraphicsElement | undefined = undefined) {
+  constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
     this.setSvg(svg)
   }
@@ -39,11 +43,19 @@ export class DiagramConfClass {
     this.svg = svg;
   }
 
-  setConfig = (conf: DiagramConf) => {
+  setConfig = (conf: DiagramConfByUser) : Error | undefined => {
     if (conf?.viewport === undefined) {
       conf.viewport = {x: 0, y: 0, w: 20, h: 20}
     }
-    this.diagramConf = conf
+    // Check if IDs are unique
+    const ids = (conf?.links || []).map(v => v?.id).filter((id) => id !== undefined)
+    const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
+    if (duplicates.length > 0) {
+      return {message: `When importing the configuration we found multiple links with duplicated IDs: ${duplicates}`}
+    }
+      
+    this.diagramConf = {...conf, links: Object.fromEntries((conf?.links || []).map((link) => [link?.id || `:${randomID()}`, link]))}
+    return undefined
   }
 
   getViewport = () => this.diagramConf?.viewport || { x: 0, y: 0, w: 20, h: 20 }
@@ -53,6 +65,27 @@ export class DiagramConfClass {
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
 
+  getLinkSelection = () => {
+    return this.linkSelection
+  }
+
+  isLinkSelected = (linkID: LinkID) => this.linkSelection?.[linkID] === true
+
+  toogleLinkSelection = (linkID: LinkID) => this.linkSelection[linkID] = !this.linkSelection?.[linkID]
+
+  toogleNodeSelection = (nodeID: NodeID) => this.nodeSelection[nodeID] = !this.nodeSelection?.[nodeID]
+
+  clearSelection = () => {
+    this.linkSelection = {}
+    this.nodeSelection = {}
+  }
+  
+  getNodeSelection = () => {
+    return this.nodeSelection
+  }
+
+  isNodeSelected = (nodeID: NodeID) => this.nodeSelection?.[nodeID] === true
+  
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
     const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
     if (rel !== undefined) {
@@ -123,12 +156,36 @@ export class DiagramConfClass {
     }
   }
 
-  addLink = ({from, to} : {from: IDAnchor, to: IDAnchor}) => {
+  addLink = (link: Link) : {message?: string} => {
     if (this.diagramConf?.links === undefined) {
-      this.diagramConf.links = []
+      this.diagramConf.links = {}
     }
-    this.diagramConf.links.push({from, to})
+    if (link.id !== undefined) {
+      if (this.diagramConf.links?.[link.id]) {
+        return {message: `A link with ID ${link.id} already exists`}
+      } else {
+        this.diagramConf.links[link.id] = link
+      }
+    } else {
+      this.diagramConf.links[`:${randomID()}`] = link
+    }
+    return {}
   }
+
+  moveNode = (nodeID: NodeID, newPos: Point) : Error | undefined => {
+    if (this.diagramConf?.diagramNodes?.[nodeID] === undefined) {
+      return {message: `No node ${nodeID} to move`}
+    }
+    this.diagramConf.diagramNodes[nodeID].pos = newPos
+  }
+
+  getPositionNode = (nodeID: NodeID) : Point | Error => {
+    if (this.diagramConf?.diagramNodes?.[nodeID] === undefined) {
+      return {message: `No node ${nodeID} to get position from`}
+    }
+    return this.diagramConf.diagramNodes[nodeID].pos
+  }
+  
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();

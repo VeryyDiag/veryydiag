@@ -5,12 +5,14 @@
   import { registerErrors } from "$lib/contexts/context.svelte";
   import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils";
   import { getContextDiagram } from "$lib/contexts/context.svelte";
-  import { drag } from "$lib/components/svgEditor/navigateSVG.svelte"
   
   // This file is used to draw arbitrary nodes
   let props : Node & {id: string} = $props();
 
   let diagramConfClass = getContextDiagram()
+
+  let selected = $derived(props.id !== undefined ? diagramConfClass.isNodeSelected(props.id) : false)
+  
   // See which component we should mount etc
   let [availableNode, errorsA] : [AvailableNode | null, string[]] = $derived.by(() => {
     try {
@@ -79,7 +81,7 @@
   registerErrors(uid, () => errors)
 </script>
 {#if Component !== undefined}
-  <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" use:drag={({pos: props.pos, diagramConfClass})} data-secudiag-node={props.id}>
+  <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" data-secudiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
     <Component {...({...props, ...availableNode})}/>
   </g>
 {/if}

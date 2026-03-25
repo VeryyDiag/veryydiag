@@ -21,7 +21,7 @@ export type AvailableNode = {
   // TODO: … or specify the URL of a SVG file
 }
 
-export type Node = AvailableNode & {nodeKind: string, pos: Point}
+export type Node = AvailableNode & { nodeKind: string, pos: Point }
 
 // Dots are forbiden in NodeID
 export type NodeID = string
@@ -41,9 +41,14 @@ export type SvgSize = {
   h: string
 }
 
+export type LinkID = string
+
 export type Link = {
-  from: string,
-  to: string,
+  from: IDAnchor,
+  to: IDAnchor,
+  /** Optional ID selected by the user (temporarily ID selected by this software will starts with : and may not be saved
+   * as it is used only internally to remove/select/… links easily) */
+  id?: string
 }
 
 export type Error = {
@@ -60,5 +65,8 @@ export type DiagramConf = {
   availableNodes?: Record<string, AvailableNode>,
   viewport?: Viewport,
   svgSize?: SvgSize,
-  links?: Link[],
+  links?: Record<LinkID, Link>,
 }
+
+/** Configuration given by the user that is more permissive (e.g. links don't require ID) */
+export type DiagramConfByUser = Omit<DiagramConf, "links"> & { links?: Link[] }
