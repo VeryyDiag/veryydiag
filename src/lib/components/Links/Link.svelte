@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {type Link} from "$lib/types/types"
+  import {type Point } from "$lib/types/types"
   import { randomID, fullAnchorToIDAndAnchor } from "$lib/utils";
   import { getContextDiagram, registerErrors } from "$lib/contexts/context.svelte";
 
@@ -8,10 +8,9 @@
   let {
     from,
     to
-  } : Link = $props()
+  } : {from: string, to: string | Point} = $props()
 
   let [ fromNode, fromAnchor = "out.0"] = $derived(fullAnchorToIDAndAnchor(from))
-  let [ toNode, toAnchor = "in.0"] = $derived(fullAnchorToIDAndAnchor(to))
 
   let {x: fromX = undefined, y: fromY, message: errorsFrom} = $derived(({
     x : undefined,
@@ -24,7 +23,7 @@
     x : undefined,
     y : undefined,
     message : undefined,
-    ...diagramConfClass.getXYOfAnchor(toNode, toAnchor)
+    ... typeof to === 'string' ? diagramConfClass.getXYOfAnchor(...fullAnchorToIDAndAnchor(to, "in.0")) : to
   }));
 
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component

@@ -15,6 +15,7 @@
                          diagramNodes: {
                            myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
                            mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}},
+                           mythirdnode: {nodeKind: "discard", pos: {x: 2, y: 1}},
                          },
                          availableNodes: {
                            inputDiscard: {svgName: "cryptodiagInputDiscard"},

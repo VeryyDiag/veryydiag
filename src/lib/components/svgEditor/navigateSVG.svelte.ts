@@ -1,6 +1,6 @@
 import type { Viewport, Point } from "$lib/types/types"
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { unitToCm } from '$lib/utils';
+import { centerEvent, distanceEvent, IDAnchorToFullAnchor, clientToSVGCoord } from '$lib/utils';
 
 export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
   let dragging = false
@@ -11,44 +11,28 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
   let pinchStartDistance = 0
   let pinchStartViewport: Viewport | null = null
 
-  function viewport(): Viewport {
-    return diagramConfClass.getConfig()?.viewport || { x: 0, y: 0, w: 20, h: 20 }
-  }
-
-  function distance(a: PointerEvent, b: PointerEvent) {
-    return Math.hypot(
-      a.clientX - b.clientX,
-      a.clientY - b.clientY
-    )
-  }
-
-  function center(a: PointerEvent, b: PointerEvent) {
-    return {
-      x: (a.clientX + b.clientX) / 2,
-      y: (a.clientY + b.clientY) / 2
-    }
-  }
-
   function pointerdown(e: PointerEvent) {
-    if (!(e?.target as Element).matches("svg")) return;
-    pointers.set(e.pointerId, e)
+    if (e?.target instanceof SVGGraphicsElement) {
+      if (!(e.target.matches("svg"))) return;
+      pointers.set(e.pointerId, e)
 
-    node.setPointerCapture(e.pointerId)
+      node.setPointerCapture(e.pointerId)
 
-    if (pointers.size === 1) {
-      dragging = true
-      start = { x: e.clientX, y: e.clientY }
-      startViewport = { ...viewport() }
-    }
+      if (pointers.size === 1) {
+        dragging = true
+        start = { x: e.clientX, y: e.clientY }
+        startViewport = { ...diagramConfClass.getViewport() }
+      }
 
-    if (pointers.size === 2) {
-      const [a, b] = [...pointers.values()]
-      pinchStartDistance = distance(a, b)
-      pinchStartViewport = { ...viewport() }
-      dragging = false
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()]
+        pinchStartDistance = distanceEvent(a, b)
+        pinchStartViewport = { ...diagramConfClass.getViewport() }
+        dragging = false
+      }
     }
   }
-
+  
   function pointermove(e: PointerEvent) {
     if (!pointers.has(e.pointerId)) return
 
@@ -61,7 +45,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
       const dx = ((e.clientX - start.x) / rect.width) * startViewport.w
       const dy = ((e.clientY - start.y) / rect.height) * startViewport.h
 
-      const vp = viewport()
+      const vp = diagramConfClass.getViewport()
 
       vp.x = startViewport.x - dx
       vp.y = startViewport.y - dy
@@ -71,15 +55,15 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
     if (pointers.size === 2 && pinchStartViewport) {
       const [a, b] = [...pointers.values()]
 
-      const dist = distance(a, b)
+      const dist = distanceEvent(a, b)
       const scale = pinchStartDistance / dist
 
-      const c = center(a, b)
+      const c = centerEvent(a, b)
 
       const mx = (c.x - rect.left) / rect.width
       const my = (c.y - rect.top) / rect.height
 
-      const vp = viewport()
+      const vp = diagramConfClass.getViewport()
 
       const worldX = pinchStartViewport.x + pinchStartViewport.w * mx
       const worldY = pinchStartViewport.y + pinchStartViewport.h * my
@@ -110,7 +94,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
     e.preventDefault()
 
     const rect = node.getBoundingClientRect()
-    const vp = viewport()
+    const vp = diagramConfClass.getViewport()
 
     let delta = e.deltaY
 
@@ -192,7 +176,7 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
     if (!dragging) return
 
     const rect = node.ownerSVGElement!.getBoundingClientRect()
-    const vp = params.diagramConfClass.getConfig().viewport || {x: 0, y: 0, w: 20, h: 20}
+    const vp = params.diagramConfClass.getViewport()
 
     const dxSVG = (dx / rect.width) * vp.w
     const dySVG = (dy / rect.height) * vp.h
@@ -228,4 +212,94 @@ export function drag(node: SVGGElement, params: { pos: Point; diagramConfClass: 
       node.removeEventListener("pointerleave", pointerup)
     }
   }
-}7
+}
+
+export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+  const pointers = new Map<number, PointerEvent>()
+
+  function pointerdown(e: PointerEvent) {
+    console.log("Pointerdown in drawLink", e?.target)
+    if (e?.target instanceof SVGGraphicsElement) {
+      const anchor = e.target.dataset?.secudiagAnchor
+      if (anchor === undefined) return;
+      const parent = e.target.closest("[data-secudiag-node]")
+      if (parent instanceof SVGGraphicsElement) {
+        const nodeName = parent.dataset?.secudiagNode
+        if (nodeName === undefined) {
+          console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
+          return;
+        }
+        console.log(`We clicked on anchor ${nodeName}.${anchor}`)
+        pointers.set(e.pointerId, e)
+
+        node.setPointerCapture(e.pointerId)
+
+        if (pointers.size === 1) {
+          const {x, y} = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
+          diagramConfClass.currentlyCreatedLink = { from: IDAnchorToFullAnchor(nodeName, anchor), to: {x, y}}
+        }
+      }
+    }
+  }
+
+  function pointermove(e: PointerEvent) {
+    if (!pointers.has(e.pointerId)) return
+
+    pointers.set(e.pointerId, e)
+
+    const rect = node.getBoundingClientRect()
+
+    // PAN (1 doigt)
+    if (pointers.size === 1 && diagramConfClass.currentlyCreatedLink) {
+      const {x, y} = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
+      diagramConfClass.currentlyCreatedLink.to = {x, y}
+    }
+  }
+
+  function pointerup(e: PointerEvent) {
+    console.log("In pointerup", e?.target, document.elementsFromPoint(e.clientX, e.clientY))
+    if (pointers.size === 0) return; 
+    pointers.delete(e.pointerId)
+    node.releasePointerCapture(e.pointerId)
+    if (diagramConfClass.currentlyCreatedLink === undefined) return
+    const from = diagramConfClass.currentlyCreatedLink.from
+    diagramConfClass.currentlyCreatedLink = undefined
+
+
+    for (const elt of document.elementsFromPoint(e.clientX, e.clientY)) {
+      if (elt instanceof SVGGraphicsElement) {
+        if (elt === node) return; // We don't want to go outside of the current SVG
+        const anchor = elt.dataset?.secudiagAnchor
+        if (anchor === undefined) continue; // We released outside of any anchor
+        const parent = elt.closest("[data-secudiag-node]")
+        if (parent instanceof SVGGraphicsElement) {
+          const nodeName = parent.dataset?.secudiagNode
+          if (nodeName === undefined) {
+            console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
+            continue;
+          }
+          console.log(`We released on anchor ${nodeName}.${anchor}`)
+
+          diagramConfClass.addLink({from, to: IDAnchorToFullAnchor(nodeName, anchor)});
+          return
+        }
+      }
+    }
+  }
+
+  node.addEventListener("pointerdown", pointerdown)
+  node.addEventListener("pointermove", pointermove)
+  node.addEventListener("pointerup", pointerup)
+  node.addEventListener("pointercancel", pointerup)
+  node.addEventListener("pointerleave", pointerup)
+
+  return {
+    destroy() {
+      node.removeEventListener("pointerdown", pointerdown)
+      node.removeEventListener("pointermove", pointermove)
+      node.removeEventListener("pointerup", pointerup)
+      node.removeEventListener("pointercancel", pointerup)
+      node.removeEventListener("pointerleave", pointerup)
+    }
+  }
+}

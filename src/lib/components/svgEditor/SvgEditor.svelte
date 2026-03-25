@@ -3,7 +3,7 @@
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { panzoom, drawLink } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm } from "$lib/utils"
 
   /**
@@ -73,10 +73,13 @@
   </div>
 {/if}
 
-<svg bind:this={svgRef} width={diagramConfClass.getConfig()?.svgSize?.w || "100%"} height={diagramConfClass.getConfig()?.svgSize?.h || "100%"} viewBox="{cm(diagramConfClass.getConfig()?.viewport?.x || 0)} {cm(diagramConfClass.getConfig()?.viewport?.y || 0)} {cm(diagramConfClass.getConfig()?.viewport?.w || 20)} {cm(diagramConfClass.getConfig()?.viewport?.h || 20)}" xmlns="http://www.w3.org/2000/svg" use:panzoom={diagramConfClass} style="touch-action: none;">
+<svg bind:this={svgRef} width={diagramConfClass.getConfig()?.svgSize?.w || "100%"} height={diagramConfClass.getConfig()?.svgSize?.h || "100%"} viewBox="{cm(diagramConfClass.getConfig()?.viewport?.x || 0)} {cm(diagramConfClass.getConfig()?.viewport?.y || 0)} {cm(diagramConfClass.getConfig()?.viewport?.w || 20)} {cm(diagramConfClass.getConfig()?.viewport?.h || 20)}" xmlns="http://www.w3.org/2000/svg" use:panzoom={diagramConfClass} use:drawLink={diagramConfClass} style="touch-action: none;">
   {#each diagramConfClass.getConfig()?.links || [] as link}
     <Link {...link} />
   {/each}
+  {#if diagramConfClass?.currentlyCreatedLink !== undefined}
+    <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
+  {/if}
   {#each Object.entries(diagramConfClass.getConfig().diagramNodes || {}) as [id, node]}
     <Node id={id} {...node} />
   {/each}

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { AnchorName, IDAnchor, NodeID, Point } from './types/types';
 // This file contains generic utils functions
 
 // getTransformToElement(fromElement, toElement) returns the matrix to apply to turn coordinate in the insideElement coordinate
@@ -13,6 +14,17 @@ export function getTransformToElement(fromElement: SVGGraphicsElement, toElement
     return undefined
   else
     return toElement.getScreenCTM()?.inverse()?.multiply(m)
+}
+
+export function clientToSVGCoord(svg: SVGSVGElement, clientX: number, clientY: number) : Point | undefined {
+  const point = svg.createSVGPoint();
+  point.x = clientX;
+  point.y = clientY;
+
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return undefined;
+
+  return point.matrixTransform(ctm.inverse());
 }
 
 // SVG uses CSS px as the base units, and 1cm = 96px / 2.54. We prefer to assume that each small node fits inside a 1cm x 1cm box
@@ -35,7 +47,28 @@ export function randomID() : string {
   return uuidv4();
 }
 
-export function fullAnchorToIDAndAnchor(fullAnchor : string) : [string, string] {
+export function fullAnchorToIDAndAnchor(fullAnchor : string, defaultAnchor = "") : [string, string] {
   const [a, b, _] = fullAnchor.split(/\.(.*)/s)
-  return [a, b || ""]
+  return [a, b || defaultAnchor]
+}
+
+export function IDAnchorToFullAnchor(node : NodeID, anchor: AnchorName) : IDAnchor {
+  return `${node}.${anchor}`
+}
+
+
+/** Computes the distance between two event points */
+export function distanceEvent(a: PointerEvent, b: PointerEvent) {
+  return Math.hypot(
+    a.clientX - b.clientX,
+    a.clientY - b.clientY
+  )
+}
+
+/** Computes the center between two event points */
+export function centerEvent(a: PointerEvent, b: PointerEvent) {
+  return {
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2
+    }
 }

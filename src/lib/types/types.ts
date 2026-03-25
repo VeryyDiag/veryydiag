@@ -26,6 +26,8 @@ export type Node = AvailableNode & {nodeKind: string, pos: Point}
 // Dots are forbiden in NodeID
 export type NodeID = string
 export type AnchorName = string
+/** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
+export type IDAnchor = string
 
 export type Viewport = {
   x: number

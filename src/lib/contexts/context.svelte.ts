@@ -1,13 +1,14 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, NodeID, AnchorName, Point, Error } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, IDAnchor, Point, Error, Viewport, AnchorName, NodeID } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor } from '$lib/utils';
 
 // Configuration
 
 // https://svelte.dev/docs/svelte/$state
 export class DiagramConfClass {
+  /** Contains the configuration of the current diagram that will be saved to files */
   diagramConf : DiagramConf = $state({})
 
   /**
@@ -17,7 +18,12 @@ export class DiagramConfClass {
    * This map maps `${nodeID}.${anchorName}` to this relative coordinate.
    */
   relativeAnchorPos : Record<string, Point> = $state({})
+
+  /** Pointer to the main SVG element */
   svg: SVGGraphicsElement | undefined = $state(undefined)
+
+  /** When drawing links, we add them here before they are completed. Unde */
+  currentlyCreatedLink : undefined | { from: IDAnchor, to: Point } = $state(undefined)
   
   constructor(conf: DiagramConf = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
@@ -40,13 +46,15 @@ export class DiagramConfClass {
     this.diagramConf = conf
   }
 
+  getViewport = () => this.diagramConf?.viewport || { x: 0, y: 0, w: 20, h: 20 }
+  
   setAnchor = (nodeID: NodeID, anchor: AnchorName, relativePosition: Point) => {
     console.log("Setting anchor", nodeID, anchor, relativePosition)
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
-  
+
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
-    const rel = this.relativeAnchorPos?.[`${nodeID}.${anchor}`];
+    const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
     if (rel !== undefined) {
       const pos = this.diagramConf?.diagramNodes?.[nodeID].pos
       if (pos !== undefined) {
@@ -59,51 +67,13 @@ export class DiagramConfClass {
       }
     } else {
       return {message: `Can't find anchor ${nodeID}.${anchor}`}
-      // We try to manually compute it the first time we need to draw it
-      // const selector = `[data-secudiag-node="${nodeID}"] [data-secudiag-anchor="${anchor}"]`;
-      // const selectorParent = `[data-secudiag-node="${nodeID}"]`;
-      // this.diagramConf?.diagramNodes?.[nodeID]?.pos.x; // force recompute when this changes, don't remove
-      // this.diagramConf?.diagramNodes?.[nodeID]?.pos.y; // force recompute when this changes, don't remove
-      // if (this.svg === undefined) {
-      //   return {message: "No SVG was defined"}
-      // }
-      // const elts = this.svg?.querySelectorAll<SVGGraphicsElement>(selector);
-      // if (elts === undefined) {
-      //   return { message: `No svg found when searching for coordinates of ${nodeID}.${anchor} (via selector ${selector})`}
-      // } else if (elts.length === 0) {
-      //   return { message: `No element found when searching for ${nodeID}.${anchor} (via selector ${selector})`}
-      // } else if (elts.length > 1) {
-      //   return {message: `Too many (${elts.length}) elements found when searching for ${nodeID}.${anchor} (via selector ${selector})`}
-      // } else {
-      //   const eltsParent = this.svg?.querySelectorAll<SVGGraphicsElement>(selectorParent);
-      //   if (eltsParent === undefined) {
-      //     return { message: `No parent found when searching for coordinates of ${nodeID} (via selector ${selectorParent})`}
-      //   } else if (eltsParent.length === 0) {
-      //     return { message: `No element found when searching for ${nodeID} (via selector ${selectorParent})`}
-      //   } else if (eltsParent.length > 1) {
-      //     return {message: `Too many (${eltsParent.length}) elements found when searching for ${nodeID} (via selector ${selectorParent})`}
-      //   } else {
-      //     const elt = elts[0];
-      //     const parent = eltsParent[0];
-      //     const box = elt.getBBox();
-      //     const boxParent = parent.getBBox();
-      //     
-      //     const transform = getTransformToElement(elt, this.svg);
-      //     const transformParent = getTransformToElement(parent, this.svg);
-      //     const pt = new DOMPoint(box.x + box.width / 2, box.y + box.height / 2);
-      //     const ptTr = pt.matrixTransform(transform)
-      //     const ptParent = new DOMPoint(boxParent.x, boxParent.y);
-      //     const ptParentTr = ptParent.matrixTransform(transformParent)
-      //     this.relativeAnchorPos[`${nodeID}.${anchor}`] = {
-      //       x: ptTr.x - ptParentTr.x,
-      //       y: ptTr.y - ptParentTr.y,
-      //     };
-      //     return {x: ptTr.x, y: ptTr.y}
-      //   }
-      // }
     }
   }
 
+  getXYOfFullAnchor = (fullAnchor: IDAnchor) : Point | Error => {
+    return this.getXYOfAnchor(...fullAnchorToIDAndAnchor(fullAnchor))
+  }
+  
   
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: string) : AvailableNode => {
@@ -151,6 +121,13 @@ export class DiagramConfClass {
         this.diagramConf.svgSize = {w: `${bbox.width * scale}pt`, h: `${bbox.height * scale}pt`}
       }
     }
+  }
+
+  addLink = ({from, to} : {from: IDAnchor, to: IDAnchor}) => {
+    if (this.diagramConf?.links === undefined) {
+      this.diagramConf.links = []
+    }
+    this.diagramConf.links.push({from, to})
   }
 }
 
