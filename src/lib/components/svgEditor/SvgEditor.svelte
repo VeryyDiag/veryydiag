@@ -3,7 +3,7 @@
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { panzoom, drawLink, selectElement, drag, removeSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
 
   /**
@@ -77,7 +77,7 @@
   </div>
 {/if}
 
-<svg bind:this={svgRef} width={diagramConfClass.getConfig()?.svgSize?.w || "100%"} height={diagramConfClass.getConfig()?.svgSize?.h || "100%"} viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}" xmlns="http://www.w3.org/2000/svg" use:panzoom={diagramConfClass} use:drawLink={diagramConfClass} use:selectElement={diagramConfClass} use:drag={diagramConfClass} style="touch-action: none;">
+<svg bind:this={svgRef} width={diagramConfClass.getConfig()?.svgSize?.w || "100%"} height={diagramConfClass.getConfig()?.svgSize?.h || "100%"} viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}" xmlns="http://www.w3.org/2000/svg" use:panzoom={diagramConfClass} use:drawLink={diagramConfClass} use:selectElement={diagramConfClass} use:drag={diagramConfClass} use:removeSelection={diagramConfClass} style="touch-action: none;"  role="toolbar" tabindex="0" >
   <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
   <filter id="selected" x="-450%" y="-450%" width="1000%" height="1000%">
     <feGaussianBlur stdDeviation="4" result="blur"/>

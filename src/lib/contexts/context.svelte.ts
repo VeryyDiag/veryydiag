@@ -3,6 +3,7 @@ import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
+import { SvelteSet } from 'svelte/reactivity';
 
 // Configuration
 
@@ -26,8 +27,8 @@ export class DiagramConfClass {
   currentlyCreatedLink : undefined | { from: IDAnchor, to: Point } = $state(undefined)
 
   /** Selection */
-  linkSelection : Record<LinkID, boolean> = $state({})
-  nodeSelection : Record<NodeID, boolean> = $state({})
+  linkSelection = new SvelteSet<LinkID>()
+  nodeSelection = new SvelteSet<NodeID>()
   
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
@@ -65,26 +66,36 @@ export class DiagramConfClass {
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
 
-  getLinkSelection = () => {
-    return this.linkSelection
+  isLinkSelected = (linkID: LinkID) => this.linkSelection.has(linkID)
+
+  toogleLinkSelection = (linkID: LinkID) => {
+    if (this.linkSelection.has(linkID)) {
+      this.linkSelection.delete(linkID)
+    } else {
+      this.linkSelection.add(linkID)
+    }
   }
 
-  isLinkSelected = (linkID: LinkID) => this.linkSelection?.[linkID] === true
-
-  toogleLinkSelection = (linkID: LinkID) => this.linkSelection[linkID] = !this.linkSelection?.[linkID]
-
-  toogleNodeSelection = (nodeID: NodeID) => this.nodeSelection[nodeID] = !this.nodeSelection?.[nodeID]
+  toogleNodeSelection = (nodeID: NodeID) => {
+    if (this.nodeSelection.has(nodeID)) {
+      this.nodeSelection.delete(nodeID)
+    } else {
+      this.nodeSelection.add(nodeID)
+    }
+  }
 
   clearSelection = () => {
-    this.linkSelection = {}
-    this.nodeSelection = {}
-  }
-  
-  getNodeSelection = () => {
-    return this.nodeSelection
+    this.linkSelection.clear()
+    this.nodeSelection.clear()
   }
 
-  isNodeSelected = (nodeID: NodeID) => this.nodeSelection?.[nodeID] === true
+  removeSelection = () => {
+    this.linkSelection.forEach((linkID) => delete this.diagramConf?.links?.[linkID])
+    this.nodeSelection.forEach((nodeID) => delete this.diagramConf?.diagramNodes?.[nodeID])
+    this.clearSelection()
+  }
+
+  isNodeSelected = (nodeID: NodeID) => this.nodeSelection.has(nodeID)
   
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
     const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];

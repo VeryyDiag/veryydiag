@@ -157,7 +157,7 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
   
   function pointerdown(e: PointerEvent) {
     if (e?.target instanceof SVGGraphicsElement) {
-      const nodeID = e.target.dataset?.secudiagNode
+      const nodeID = e.target.dataset?.cryptodiagNode
       if (nodeID !== undefined) {
         const pos = diagramConfClass.getPositionNode(nodeID)
         if (!('message' in pos)) {
@@ -241,11 +241,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
 
   function pointerdown(e: PointerEvent) {
     if (e?.target instanceof SVGGraphicsElement) {
-      const anchor = e.target.dataset?.secudiagAnchor
+      const anchor = e.target.dataset?.cryptodiagAnchor
       if (anchor === undefined) return;
-      const parent = e.target.closest("[data-secudiag-node]")
+      const parent = e.target.closest("[data-cryptodiag-node]")
       if (parent instanceof SVGGraphicsElement) {
-        const nodeName = parent.dataset?.secudiagNode
+        const nodeName = parent.dataset?.cryptodiagNode
         if (nodeName === undefined) {
           console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
           return;
@@ -291,11 +291,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
     for (const elt of document.elementsFromPoint(e.clientX, e.clientY)) {
       if (elt instanceof SVGGraphicsElement) {
         if (elt === node) return; // We don't want to go outside of the current SVG
-        const anchor = elt.dataset?.secudiagAnchor
+        const anchor = elt.dataset?.cryptodiagAnchor
         if (anchor === undefined) continue; // We released outside of any anchor
-        const parent = elt.closest("[data-secudiag-node]")
+        const parent = elt.closest("[data-cryptodiag-node]")
         if (parent instanceof SVGGraphicsElement) {
-          const nodeName = parent.dataset?.secudiagNode
+          const nodeName = parent.dataset?.cryptodiagNode
           if (nodeName === undefined) {
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
@@ -340,14 +340,13 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
   }
 
   function click(e: PointerEvent) {
-    console.log(e.target)
     // We moved too much, can't be a click
     if (maxDistance > 4) {
       return
     }
     if (e?.target instanceof SVGGraphicsElement) {
-      const parentLinkID = getParentLink(e.target)?.dataset?.secudiagLink
-      const parentNodeID = getParentNode(e.target)?.dataset?.secudiagNode
+      const parentLinkID = getParentLink(e.target)?.dataset?.cryptodiagLink
+      const parentNodeID = getParentNode(e.target)?.dataset?.cryptodiagNode
       if (parentLinkID) {
         diagramConfClass.toogleLinkSelection(parentLinkID)
       } else if (parentNodeID) {
@@ -369,4 +368,22 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       node.removeEventListener("click", click)
     }
   }
+}
+
+export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+
+  function keydown(e: KeyboardEvent) {
+    if (["Delete", "Backspace"].includes(e.key)) {
+      diagramConfClass.removeSelection()
+    }
+  }
+
+  node.addEventListener('keydown', keydown)
+
+  return {
+    destroy() {
+      node.removeEventListener("keydown", keydown)
+    }
+  }
+
 }
