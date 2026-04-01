@@ -2,6 +2,10 @@ import type { Viewport, Point, NodeID } from "$lib/types/types"
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
 import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, getParentLink, getParentNode } from '$lib/utils';
 
+function isPartOfAnchor(node: SVGGradientElement) {
+  return node.closest("[data-cryptodiag-anchor]") !== null
+}
+
 export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
   let dragging = false
   let start: { x: number; y: number } | null = null
@@ -156,15 +160,24 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
   let targetNodeID : NodeID | undefined = $state(undefined)
   
   function pointerdown(e: PointerEvent) {
+    console.log("drag: Pointerdown");
     if (e?.target instanceof SVGGraphicsElement) {
-      const nodeID = e.target.dataset?.cryptodiagNode
+      if (isPartOfAnchor(e.target)) {
+        // If it is part of an anchor we want to create a link, not drag it
+        targetNodeID = undefined
+        return
+      }
+      const nodeID = e.target.closest("[data-cryptodiag-node]")?.dataset?.cryptodiagNode
+      console.log("drag: step 0.01", $state.snapshot(nodeID))
       if (nodeID !== undefined) {
         const pos = diagramConfClass.getPositionNode(nodeID)
+        console.log("drag: step 0.1", pos)
         if (!('message' in pos)) {
           targetNodeID = nodeID
           startPointer = { x: e.clientX, y: e.clientY }
           startPos = { ...pos }
           dragging = false
+          console.log("drag: step 1")
           // IMPORTANT: we wait before capturing the pointer to check if we actually move
         } else {
           targetNodeID = undefined
@@ -194,7 +207,7 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
 
     if (!dragging) return
 
-    const rect = node.ownerSVGElement!.getBoundingClientRect()
+    const rect = node.getBoundingClientRect()
     const vp = diagramConfClass.getViewport()
 
     const dxSVG = (dx / rect.width) * vp.w
