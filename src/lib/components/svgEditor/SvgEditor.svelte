@@ -5,7 +5,9 @@
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom, drawLink, selectElement, drag, removeSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
-
+  import AvailableNode from "./AvailableNode.svelte";
+  import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
+  
   /**
    * Interactive SVG editor component
    */
@@ -39,7 +41,7 @@
     errorsImport = diagramConfClass.setConfig(diagramConf)
   })
 
-  const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: true})
+  const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
   $effect(() => {diagramConf; resetViewport()})
   
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
@@ -100,11 +102,31 @@
     <!-- Toolbar -->
     <div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200">
 
-      <!-- Reframe button -->
       <button id="reframeBtn"
               class="p-2 rounded-lg transition active:scale-95">
         <b>Crypto</b>Diag
       </button>
+      
+      <!-- Creation mode -->
+      <button
+        class={[styleButton, styleButtonDisabled]} title="Diagram creation mode" >
+        
+        <Icon icon="fluent-mdl2:edit-create" color="black" width="25" height="25" />
+      </button>
+
+      <!-- Proof mode -->
+      <button
+        class={[styleButton, styleButtonDisabled]} title="Proof mode" >
+        
+        <Icon icon="streamline:triangle-arrow-roadmap-remix" color="black" width="25" height="25" />
+      </button>
+
+
+      <!-- Divider -->
+      <div class="w-px h-10 bg-gray-300 mx-1"></div>
+      <!-- <div class="h-10 border-l border-dashed border-gray-300 mx-1"></div> -->
+      <!-- <div class="w-px h-5 bg-gradient-to-b from-transparent via-gray-500 to-transparent mx-1"></div> -->
+
       
       <!-- Reframe button -->
       <button id="reframeBtn"
@@ -120,16 +142,7 @@
         </svg>
       </button>
 
-      <!-- Select tool -->
-      <button
-        class={[styleButton, styleButtonDisabled]} title="Diagram creation mode" >
-        
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-             fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 3l7 14 2-6 6-2L3 3z" />
-        </svg>
-      </button>
-
+      
       <!-- Add tool -->
       <button
         class={[
@@ -147,6 +160,7 @@
         </svg>
       </button>
 
+      
     </div>
 
 
@@ -160,6 +174,11 @@
         <p class="text-sm mb-3 text-gray-600">
           Drag and drop a node to add it to your diagram.
         </p>
+        <ul class="list-disc">
+          {#each Object.entries(diagramConfClass.getConfig()?.availableNodes || {}) as [nodeKind, node]}
+            <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
+          {/each}
+        </ul>
       </div>
     </div>
 

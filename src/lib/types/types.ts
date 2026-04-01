@@ -25,6 +25,7 @@ export type Node = AvailableNode & { nodeKind: string, pos: Point }
 
 // Dots are forbiden in NodeID
 export type NodeID = string
+export type NodeKind = string
 export type AnchorName = string
 /** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
 export type IDAnchor = string
@@ -62,7 +63,7 @@ export type DiagramConf = {
   /**
    * Dictionary containing all possible nodes that can be used in a graph (nodeKind: available node)
    */
-  availableNodes?: Record<string, AvailableNode>,
+  availableNodes?: Record<NodeKind, AvailableNode>,
   viewport?: Viewport,
   svgSize?: SvgSize,
   links?: Record<LinkID, Link>,

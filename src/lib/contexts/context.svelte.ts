@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 import { SvelteSet } from 'svelte/reactivity';
@@ -40,6 +40,10 @@ export class DiagramConfClass {
     return this.diagramConf
   }
 
+  getAvailableNode = (nodeKind: NodeKind) => {
+    return this.diagramConf?.availableNodes?.[nodeKind]
+  }
+  
   setSvg = (svg: SVGGraphicsElement | undefined) => {
     this.svg = svg;
   }
@@ -119,7 +123,7 @@ export class DiagramConfClass {
   
   
   // This turns a "kind" name into a component to mount
-  nodeKindToAvailableNode = (kind: string) : AvailableNode => {
+  nodeKindToAvailableNode = (kind: NodeKind) : AvailableNode => {
     let res = this.diagramConf?.availableNodes?.[kind]
     // console.log("res", $state.snapshot(res))
     if (res !== undefined) {
