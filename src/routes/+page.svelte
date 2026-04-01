@@ -7,8 +7,6 @@
   
   const diagram : DiagramConfByUser = parse(demoYml)
 </script>
-
-<h1>CryptoDiag</h1>
 <div>
   <!-- <SvgEditor diagramConf={diagram} /> -->
   <SvgEditor diagramConf={{

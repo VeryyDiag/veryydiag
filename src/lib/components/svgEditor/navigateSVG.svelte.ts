@@ -1,8 +1,8 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, getParentLink, getParentNode } from '$lib/utils';
+import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
 
-function isPartOfAnchor(node: SVGGradientElement) {
+function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-cryptodiag-anchor]") !== null
 }
 
@@ -42,21 +42,26 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
 
     pointers.set(e.pointerId, e)
 
-    const rect = node.getBoundingClientRect()
-
     // PAN (1 doigt)
     if (pointers.size === 1 && dragging && start && startViewport) {
-      const dx = ((e.clientX - start.x) / rect.width) * startViewport.w
-      const dy = ((e.clientY - start.y) / rect.height) * startViewport.h
+      const from = clientToSVGCoordInCm(node, e.clientX, e.clientY)
+      const to = clientToSVGCoordInCm(node, start.x, start.y)
+      if (from === undefined || to === undefined) {
+        console.log(`Weird, delta should never be undefined, please report a bug.`)
+        return
+      }
 
       const vp = diagramConfClass.getViewport()
 
-      vp.x = startViewport.x - dx
-      vp.y = startViewport.y - dy
+      vp.x = startViewport.x - from.x + to.x
+      vp.y = startViewport.y - from.y + to.y
     }
 
     // PINCH ZOOM (2 doigts)
+    // TODO: I expect this to be broken, fix using clientToSVGCoordInCm
     if (pointers.size === 2 && pinchStartViewport) {
+      const rect = node.getBoundingClientRect()
+
       const [a, b] = [...pointers.values()]
 
       const dist = distanceEvent(a, b)
@@ -97,9 +102,6 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
   function wheel(e: WheelEvent) {
     e.preventDefault()
 
-    const rect = node.getBoundingClientRect()
-    const vp = diagramConfClass.getViewport()
-
     let delta = e.deltaY
 
     const multfactor = 3
@@ -111,19 +113,17 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
 
     const zoom = Math.exp(delta * 0.002)
 
-    const mx = (e.clientX - rect.left) / rect.width
-    const my = (e.clientY - rect.top) / rect.height
+    const zoomCenter = clientToSVGCoordInCm(node, e.clientX, e.clientY)
+    if (zoomCenter === undefined) {
+      console.log("Weird, the zoomCenter is undefined?? Please report the bug.")
+      return
+    }
+    const vp = diagramConfClass.getViewport()
 
-    const worldX = vp.x + vp.w * mx
-    const worldY = vp.y + vp.h * my
-
-    const newW = vp.w * zoom
-    const newH = vp.h * zoom
-
-    vp.x = worldX - newW * mx
-    vp.y = worldY - newH * my
-    vp.w = newW
-    vp.h = newH
+    vp.x = zoomCenter.x + (vp.x - zoomCenter.x)*zoom
+    vp.y = zoomCenter.y + (vp.y - zoomCenter.y)*zoom
+    vp.w = vp.w * zoom
+    vp.h = vp.h * zoom
   }
 
   node.addEventListener("pointerdown", pointerdown)
@@ -151,7 +151,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
  * pos: { x, y } reactive state
  * diagramConfClass: DiagramConfClass (for current viewport)
  */
-export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
+export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
 
   let startPointer: { x: number; y: number } | null = null
   let startPos: Point | null = null
@@ -166,7 +166,7 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
         targetNodeID = undefined
         return
       }
-      const nodeID = e.target.closest("[data-cryptodiag-node]")?.dataset?.cryptodiagNode
+      const nodeID = (e.target.closest("[data-cryptodiag-node]") as SVGGraphicsElement)?.dataset?.cryptodiagNode
       if (nodeID !== undefined) {
         const pos = diagramConfClass.getPositionNode(nodeID)
         if (!('message' in pos)) {
@@ -203,13 +203,18 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
 
     if (!dragging) return
 
-    const rect = node.getBoundingClientRect()
-    const vp = diagramConfClass.getViewport()
+    const from = clientToSVGCoordInCm(node, e.clientX, e.clientY)
+    const to = clientToSVGCoordInCm(node, startPointer.x, startPointer.y)
+    if (from === undefined) {
+      console.log("Weird, 'from' is undefined?? Please report the bug.")
+      return
+    }
+    if (to === undefined) {
+      console.log("Weird, 'to' is undefined?? Please report the bug.")
+      return
+    }
 
-    const dxSVG = (dx / rect.width) * vp.w
-    const dySVG = (dy / rect.height) * vp.h
-
-    diagramConfClass.moveNode(targetNodeID, {x: startPos.x + dxSVG, y: startPos.y + dySVG})
+    diagramConfClass.moveNode(targetNodeID, {x: startPos.x + from.x - to.x, y: startPos.y + from.y - to.y})
   }
 
   function pointerup(e: PointerEvent) {
@@ -276,8 +281,6 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
     if (!pointers.has(e.pointerId)) return
 
     pointers.set(e.pointerId, e)
-
-    const rect = node.getBoundingClientRect()
 
     // PAN (1 doigt)
     if (pointers.size === 1 && diagramConfClass.currentlyCreatedLink) {

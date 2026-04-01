@@ -27,6 +27,14 @@ export function clientToSVGCoord(svg: SVGSVGElement, clientX: number, clientY: n
   return point.matrixTransform(ctm.inverse());
 }
 
+export function clientToSVGCoordInCm(svg: SVGSVGElement, clientX: number, clientY: number) : Point | undefined {
+  const pts = clientToSVGCoord(svg, clientX, clientY)
+  if (pts === undefined) {
+    return undefined
+  }
+  return {x: unitToCm(pts.x), y: unitToCm(pts.y)}
+}
+
 // SVG uses CSS px as the base units, and 1cm = 96px / 2.54. We prefer to assume that each small node fits inside a 1cm x 1cm box
 // so we use cm as units here
 export function cmToUnit(cm: number) {

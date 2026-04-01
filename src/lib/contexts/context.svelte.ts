@@ -153,17 +153,40 @@ export class DiagramConfClass {
     }
   }
 
-  /** Changes the size of the viewport and (optionally) the svg itself */
-  fitViewportToContent = (scale: number | undefined = undefined) => {
-    if (this.svg !== undefined) {
-      const bbox = this.svg.getBBox();
-      // Set the viewport with these bounds
-      this.diagramConf.viewport = {x: unitToCm(bbox.x), y: unitToCm(bbox.y), w: unitToCm(bbox.width), h: unitToCm(bbox.height)};
-      if (scale !== undefined) {
-        this.diagramConf.svgSize = {w: `${bbox.width * scale}pt`, h: `${bbox.height * scale}pt`}
+  /** Changes the size of the viewport and (optionally) the svg itself. */
+  fitViewportToContent = (
+    {scale, minimumWidth, minimumHeight, paddingXPc, paddingYPc, breathe} 
+    : {
+      /** Set scales to a value (e.g 1) if you also want to resize the width of the svg itself to scale * its actual width. */
+      scale?: number,
+      minimumWidth?: number,
+      minimumHeight?: number,
+      /** Padding on the X axis in percent (100 = the final figure is twice as big) */
+      paddingXPc?: number,
+      /** Padding on the Y axis in percent (100 = the final figure is twice as big) */
+      paddingYPc?: number,
+      /** Set to true to provide a set of meaningful settings, like padding{X/Y}Pc = 10, minimum{Width/Height}=10*/
+      breathe?: boolean
+    } = {}) => {
+      if (this.svg !== undefined) {
+        if (breathe) {
+          paddingXPc = paddingXPc || 10
+          paddingYPc = paddingYPc || 10
+          minimumHeight = minimumHeight || 5
+          minimumWidth = minimumWidth || 7
+        }
+        const bbox = this.svg.getBBox();
+        // Set the viewport with these bounds
+        const origW = unitToCm(bbox.width)
+        const origH = unitToCm(bbox.height)
+        const newW = Math.max(origW * (1 + (paddingXPc || 0)/100), minimumWidth || 0)
+        const newH = Math.max(origH * (1 + (paddingYPc || 0)/100), minimumHeight || 0)
+        this.diagramConf.viewport = {x: unitToCm(bbox.x) - (newW-origW)/2, y: unitToCm(bbox.y)-(newH-origH)/2, w: newW, h: newH};
+        if (scale !== undefined) {
+          this.diagramConf.svgSize = {w: `${cmToUnit(newW) * scale}pt`, h: `${cmToUnit(newH) * scale}pt`}
+        }
       }
     }
-  }
 
   addLink = (link: Link) : {message?: string} => {
     if (this.diagramConf?.links === undefined) {
