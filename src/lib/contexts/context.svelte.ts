@@ -62,7 +62,6 @@ export class DiagramConfClass {
   getViewport = () => this.diagramConf?.viewport || { x: 0, y: 0, w: 20, h: 20 }
   
   setAnchor = (nodeID: NodeID, anchor: AnchorName, relativePosition: Point) => {
-    console.log("Setting anchor", nodeID, anchor, relativePosition)
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
 
@@ -121,7 +120,6 @@ export class DiagramConfClass {
   
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: string) : AvailableNode => {
-    console.log("this.diagramConf?.availableNodes", $state.snapshot(this.diagramConf?.availableNodes))
     let res = this.diagramConf?.availableNodes?.[kind]
     // console.log("res", $state.snapshot(res))
     if (res !== undefined) {

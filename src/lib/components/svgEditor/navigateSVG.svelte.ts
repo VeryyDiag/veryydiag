@@ -160,7 +160,6 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
   let targetNodeID : NodeID | undefined = $state(undefined)
   
   function pointerdown(e: PointerEvent) {
-    console.log("drag: Pointerdown");
     if (e?.target instanceof SVGGraphicsElement) {
       if (isPartOfAnchor(e.target)) {
         // If it is part of an anchor we want to create a link, not drag it
@@ -168,16 +167,13 @@ export function drag(node: SVGGElement, diagramConfClass: DiagramConfClass) {
         return
       }
       const nodeID = e.target.closest("[data-cryptodiag-node]")?.dataset?.cryptodiagNode
-      console.log("drag: step 0.01", $state.snapshot(nodeID))
       if (nodeID !== undefined) {
         const pos = diagramConfClass.getPositionNode(nodeID)
-        console.log("drag: step 0.1", pos)
         if (!('message' in pos)) {
           targetNodeID = nodeID
           startPointer = { x: e.clientX, y: e.clientY }
           startPos = { ...pos }
           dragging = false
-          console.log("drag: step 1")
           // IMPORTANT: we wait before capturing the pointer to check if we actually move
         } else {
           targetNodeID = undefined
