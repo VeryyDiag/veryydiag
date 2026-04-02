@@ -3,7 +3,7 @@
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
   import AvailableNode from "./AvailableNode.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
@@ -69,7 +69,20 @@
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
-  <svg bind:this={svgRef} width={width} height={height} viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}" xmlns="http://www.w3.org/2000/svg" use:panzoom={diagramConfClass} use:drawLink={diagramConfClass} use:selectElement={diagramConfClass} use:drag={diagramConfClass} use:removeSelection={diagramConfClass} style="touch-action: none;"  role="toolbar" tabindex="0" >
+  <svg bind:this={svgRef}
+       width={width}
+       height={height}
+       viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
+       xmlns="http://www.w3.org/2000/svg"
+       use:panzoom={onlySvg ? undefined : diagramConfClass}
+       use:drawLink={diagramConfClass}
+       use:selectElement={onlySvg ? undefined : diagramConfClass}
+       use:drag={onlySvg ? undefined : diagramConfClass}
+       use:removeSelection={onlySvg ? undefined : diagramConfClass}
+       style="touch-action: none;"
+       data-cryptodiag-main-svg={onlySvg ? undefined : "true"}
+       role="toolbar"
+       tabindex="0" >
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
     <filter id="selected" x="-450%" y="-450%" width="1000%" height="1000%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -96,7 +109,7 @@
   {@render svg(diagramConfClass.getConfig()?.svgSize?.w || "100%", diagramConfClass.getConfig()?.svgSize?.h || "100%")}
 {:else}
 
-  <div class="relative w-screen h-screen overflow-clip">
+  <div class="relative w-screen h-screen overflow-clip" use:addNodeToDiagram={diagramConfClass}>
     {@render svg("100%", "100%")}
     
     <!-- Toolbar -->

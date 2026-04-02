@@ -221,6 +221,14 @@ export class DiagramConfClass {
     }
     return this.diagramConf.diagramNodes[nodeID].pos
   }
+
+
+  addNode = (nodeKind: NodeKind, pos: Point, id: NodeID | undefined) => {
+    if (id === undefined) {
+      id = `:${randomID()}`
+    }
+    this.diagramConf.diagramNodes[id] = {nodeKind, pos}
+  }
   
 }
 

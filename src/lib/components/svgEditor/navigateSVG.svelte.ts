@@ -6,7 +6,9 @@ function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-cryptodiag-anchor]") !== null
 }
 
-export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+
+export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
   let dragging = false
   let start: { x: number; y: number } | null = null
   let startViewport: Viewport | null = null
@@ -151,7 +153,8 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass)
  * pos: { x, y } reactive state
  * diagramConfClass: DiagramConfClass (for current viewport)
  */
-export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
 
   let startPointer: { x: number; y: number } | null = null
   let startPos: Point | null = null
@@ -249,7 +252,8 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
 }
 
 
-export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
 
   const pointers = new Map<number, PointerEvent>()
 
@@ -338,7 +342,9 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
 }
 
 
-export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+
   let initialPos = {clientX: 0, clientY: 0} // We don't want to mix drag & drop from clicking
   let maxDistance = 0
   
@@ -382,7 +388,8 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
   }
 }
 
-export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass) {
+export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
 
   function keydown(e: KeyboardEvent) {
     if (["Delete", "Backspace"].includes(e.key)) {
@@ -398,4 +405,39 @@ export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramCo
     }
   }
 
+}
+
+export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+
+  function dragstart(e: event) {
+    if (e.target?.dataset?.cryptodiagAvailableNode !== undefined) {
+      e.dataTransfer.setData("cryptodiag/available-node-kind", e.target.dataset.cryptodiagAvailableNode);
+    }
+  }
+
+  // Cancel dragover so that drop can fire
+  function dragover(ev: event) {
+    ev.preventDefault();
+  }
+
+  function drop(e: event) {
+    // Check if dropped on the SVG
+    const svg = e.target.closest("[data-cryptodiag-main-svg]")
+    if (svg && e.dataTransfer.getData("cryptodiag/available-node-kind")) {
+      diagramConfClass.addNode(e.dataTransfer.getData("cryptodiag/available-node-kind"), clientToSVGCoordInCm(svg, e.clientX, e.clientY))
+    }
+  }
+
+  node.addEventListener('dragstart', dragstart)
+  node.addEventListener('drop', drop)
+  node.addEventListener('dragover', dragover)
+
+  return {
+    destroy() {
+      node.removeEventListener("dragstart", dragstart)
+      node.removeEventListener("drop", drop)
+      node.removeEventListener("dragover", dragover)
+    }
+  }
 }
