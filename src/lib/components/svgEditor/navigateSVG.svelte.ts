@@ -18,6 +18,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
   let pinchStartViewport: Viewport | null = null
 
   function pointerdown(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (e?.target instanceof SVGGraphicsElement) {
       if (!(e.target.matches("svg"))) return;
       pointers.set(e.pointerId, e)
@@ -40,6 +41,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
   }
   
   function pointermove(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (!pointers.has(e.pointerId)) return
 
     pointers.set(e.pointerId, e)
@@ -90,6 +92,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
   }
 
   function pointerup(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (pointers.size === 0) return;
     //return;
     pointers.delete(e.pointerId)
@@ -102,6 +105,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
   }
 
   function wheel(e: WheelEvent) {
+    if (diagramConfClass === undefined) {return}
     e.preventDefault()
 
     let delta = e.deltaY
@@ -163,6 +167,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   let targetNodeID : NodeID | undefined = $state(undefined)
   
   function pointerdown(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (e?.target instanceof SVGGraphicsElement) {
       if (isPartOfAnchor(e.target)) {
         // If it is part of an anchor we want to create a link, not drag it
@@ -190,6 +195,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   }
 
   function pointermove(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (targetNodeID === undefined) return;
     
     if (!startPointer || !startPos) return
@@ -221,6 +227,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   }
 
   function pointerup(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (targetNodeID === undefined) return;
     if (dragging) {
       e.preventDefault() // prevent click if we actually dragged
@@ -258,6 +265,7 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   const pointers = new Map<number, PointerEvent>()
 
   function pointerdown(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (e?.target instanceof SVGGraphicsElement) {
       const anchor = e.target.dataset?.cryptodiagAnchor
       if (anchor === undefined) return;
@@ -282,6 +290,7 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   }
 
   function pointermove(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (!pointers.has(e.pointerId)) return
 
     pointers.set(e.pointerId, e)
@@ -294,6 +303,7 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   }
 
   function pointerup(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     if (pointers.size === 0) {
       return
     }
@@ -349,15 +359,18 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
   let maxDistance = 0
   
   function pointerdown(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     initialPos = {clientX: e.clientX, clientY: e.clientY }
     maxDistance = 0
   }
 
   function pointermove(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     maxDistance = Math.max(maxDistance, distanceEvent(initialPos, e))
   }
 
   function click(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
     // We moved too much, can't be a click
     if (maxDistance > 4) {
       return
@@ -392,6 +405,7 @@ export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramCo
   if (diagramConfClass === undefined) {return}
 
   function keydown(e: KeyboardEvent) {
+    if (diagramConfClass === undefined) {return}
     if (["Delete", "Backspace"].includes(e.key)) {
       diagramConfClass.removeSelection()
     }
@@ -410,22 +424,30 @@ export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramCo
 export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
 
-  function dragstart(e: event) {
-    if (e.target?.dataset?.cryptodiagAvailableNode !== undefined) {
+  function dragstart(e: DragEvent) {
+    if (e.dataTransfer && e.target instanceof HTMLElement && e.target?.dataset?.cryptodiagAvailableNode !== undefined) {
       e.dataTransfer.setData("cryptodiag/available-node-kind", e.target.dataset.cryptodiagAvailableNode);
     }
   }
 
   // Cancel dragover so that drop can fire
-  function dragover(ev: event) {
+  function dragover(ev: DragEvent) {
     ev.preventDefault();
   }
 
-  function drop(e: event) {
+  function drop(e: DragEvent) {
+    if (diagramConfClass === undefined || !e.dataTransfer ) {return}
     // Check if dropped on the SVG
-    const svg = e.target.closest("[data-cryptodiag-main-svg]")
-    if (svg && e.dataTransfer.getData("cryptodiag/available-node-kind")) {
-      diagramConfClass.addNode(e.dataTransfer.getData("cryptodiag/available-node-kind"), clientToSVGCoordInCm(svg, e.clientX, e.clientY))
+    if (e.target instanceof Element) {
+      const svg = e.target.closest("[data-cryptodiag-main-svg]")
+      if (svg instanceof SVGSVGElement) {
+        if (svg && e.dataTransfer.getData("cryptodiag/available-node-kind")) {
+          const pos = clientToSVGCoordInCm(svg, e.clientX, e.clientY)
+          if (pos !== undefined) {
+            diagramConfClass.addNode(e.dataTransfer.getData("cryptodiag/available-node-kind"), pos)
+          }
+        }
+      }
     }
   }
 

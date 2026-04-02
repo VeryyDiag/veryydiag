@@ -65,7 +65,7 @@
   const styleButton = "p-2 rounded-lg transition active:scale-95 transition"
   const styleButtonEnabled = "bg-blue-50 hover:bg-blue-100 text-blue-600"
   const styleButtonDisabled = "bg-gray-50 hover:bg-gray-100 text-gray-700"
-  
+  const dividerStyle = "w-px h-10 bg-gray-300 mx-1"
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
@@ -122,9 +122,9 @@
       
       <!-- Creation mode -->
       <button
-        class={[styleButton, styleButtonDisabled]} title="Diagram creation mode" >
+        class={[styleButton, styleButtonEnabled]} title="Diagram creation mode" >
         
-        <Icon icon="fluent-mdl2:edit-create" color="black" width="25" height="25" />
+        <Icon icon="fluent-mdl2:edit-create" width="25" height="25" />
       </button>
 
       <!-- Proof mode -->
@@ -135,8 +135,8 @@
       </button>
 
 
-      <!-- Divider -->
-      <div class="w-px h-10 bg-gray-300 mx-1"></div>
+      <!-- ========== Divider for generic tools ========== -->
+      <div class={dividerStyle}></div>
       <!-- <div class="h-10 border-l border-dashed border-gray-300 mx-1"></div> -->
       <!-- <div class="w-px h-5 bg-gradient-to-b from-transparent via-gray-500 to-transparent mx-1"></div> -->
 
@@ -155,6 +155,8 @@
         </svg>
       </button>
 
+      <!-- ========== Divider for mode-specific tools ========== -->
+      <div class={dividerStyle}></div>
       
       <!-- Add tool -->
       <button
@@ -171,6 +173,17 @@
           <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 d="M12 2v20M2 12h20" />
         </svg>
+      </button>
+
+      <!-- Remove tool -->
+      <button
+        class={[
+              styleButton, styleButtonDisabled
+              ]}
+        onclick={() => {diagramConfClass.removeSelection()}}
+        title="Delete selection (click to select)"
+        >
+        <Icon icon="mdi:trash-outline" width="25" height="25" />
       </button>
 
       

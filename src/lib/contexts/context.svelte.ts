@@ -92,9 +92,26 @@ export class DiagramConfClass {
     this.nodeSelection.clear()
   }
 
+  removeLink = (linkID: LinkID) => {
+    delete this.diagramConf?.links?.[linkID]
+  }
+
+  removeNode = (nodeID: NodeID) => {
+    if (this.diagramConf?.links !== undefined) {
+      Object.entries(this.diagramConf.links).forEach(([linkID, link]) => {
+        if (fullAnchorToIDAndAnchor(link.from)[0] === nodeID || fullAnchorToIDAndAnchor(link.to)[0] === nodeID) {
+          if (this.diagramConf?.links) {
+            delete this.diagramConf.links[linkID]
+          }
+        }
+      })
+    }
+    delete this.diagramConf?.diagramNodes?.[nodeID]
+  }
+      
   removeSelection = () => {
-    this.linkSelection.forEach((linkID) => delete this.diagramConf?.links?.[linkID])
-    this.nodeSelection.forEach((nodeID) => delete this.diagramConf?.diagramNodes?.[nodeID])
+    this.linkSelection.forEach(this.removeLink)
+    this.nodeSelection.forEach(this.removeNode)
     this.clearSelection()
   }
 
@@ -223,9 +240,12 @@ export class DiagramConfClass {
   }
 
 
-  addNode = (nodeKind: NodeKind, pos: Point, id: NodeID | undefined) => {
+  addNode = (nodeKind: NodeKind, pos: Point, id: NodeID | undefined = undefined) => {
     if (id === undefined) {
       id = `:${randomID()}`
+    }
+    if (this.diagramConf.diagramNodes === undefined) {
+      this.diagramConf.diagramNodes = {}
     }
     this.diagramConf.diagramNodes[id] = {nodeKind, pos}
   }
