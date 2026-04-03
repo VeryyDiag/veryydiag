@@ -9,6 +9,7 @@
 </script>
 <div>
   <!-- <SvgEditor diagramConf={diagram} /> -->
+  <!-- <div id="foo" style="visibility: hidden"></div>-->
   <SvgEditor diagramConf={{
                          diagramNodes: {
                            myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},

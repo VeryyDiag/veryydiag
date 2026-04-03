@@ -1,6 +1,7 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind,  } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 import { SvelteSet } from 'svelte/reactivity';
@@ -64,6 +65,10 @@ export class DiagramConfClass {
   }
 
   getViewport = () => this.diagramConf?.viewport || { x: 0, y: 0, w: 20, h: 20 }
+
+  getDiagramConfUser = () => {
+    return diagramConfToDiagramConfByUser($state.snapshot(this.diagramConf))
+  }
   
   setAnchor = (nodeID: NodeID, anchor: AnchorName, relativePosition: Point) => {
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
@@ -249,7 +254,7 @@ export class DiagramConfClass {
     }
     this.diagramConf.diagramNodes[id] = {nodeKind, pos}
   }
-  
+
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();

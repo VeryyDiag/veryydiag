@@ -15,3 +15,7 @@ On the longer term, we also aim to translate proofs written in this tool into pr
 ## Contribute
 
 If you want to contribute to this project, see [the file `README_DEV.md`](./README_DEV.md).
+
+## To know
+
+- Gwenview [does not support nested SVG](https://bugs.kde.org/show_bug.cgi?id=518490), so don't be surprised if you open the diagram there and all nodes are gone. Open them with a browser, inkscape, another image viewer, emacs…

@@ -1,13 +1,16 @@
 <script lang="ts">
   import type { DiagramConfByUser, Error } from "$lib/types/types"
+  import {flushSync} from "svelte"
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID } from "$lib/utils"
+  import { cm, randomID, downloadStringAsFile } from "$lib/utils"
   import AvailableNode from "./AvailableNode.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
-  
+  import { stringify } from 'yaml'
+  import Toogle from '$lib/components/reusable/Toogle.svelte'
+  import Button from '$lib/components/reusable/Button.svelte'
   /**
    * Interactive SVG editor component
    */
@@ -62,16 +65,82 @@
   
   let addPanelCollapsed = $state(false);
 
+  let downloadPanel = $state(false)
+
+  const stylePanel = " bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300"
   const styleButton = "p-2 rounded-lg transition active:scale-95 transition"
   const styleButtonEnabled = "bg-blue-50 hover:bg-blue-100 text-blue-600"
   const styleButtonDisabled = "bg-gray-50 hover:bg-gray-100 text-gray-700"
   const dividerStyle = "w-px h-10 bg-gray-300 mx-1"
+
+  let copy = $state(false)
+  let useYaml = $state(false)
+  
+  // Great, we can recursively import ourself!
+  import SvgEditor from "./SvgEditor.svelte"
+  import { mount } from 'svelte';
+  async function downloadSVG({asInView, copy} : {asInView: boolean, copy:boolean}) {
+    let str = ""
+    if (asInView) {
+      if (svgRef === undefined) {
+        alert("Error: no SVG found. This should never occur, please report a bug.")
+      } else {
+        str = svgRef.outerHTML
+      }
+    } else {
+      const container = document.createElement('div')
+      // We must mount the container or it will not work,
+      // container.hidden = true won't work,
+      // visibility: hidden seems to work, but anyway too fast to see anything
+      container.style = "visibility: hidden"
+      // Needed or some variables would not update, not sure why
+      document.body.appendChild(container);
+      const foo = mount(SvgEditor, {
+        target: container,
+        props: {
+          onlySvg: 1,
+          diagramConf: diagramConfClass.getDiagramConfUser()
+      }})
+      flushSync(); // Make sure that effects are ran, not sure if it makes a difference when mounted in the dom?
+      // Wait for the javascript code that creates the svg file to mount
+      await new Promise(r => setTimeout(r, 0));
+      str = container.innerHTML
+      container.remove()
+    }
+    if (copy) {
+      navigator.clipboard.writeText(str)
+    }
+    else {
+      downloadStringAsFile(str, "image/svg+xml", "diagram.svg")
+    }
+  }
+
+  function downloadDiagram({json, copy}: {json: boolean, copy: boolean}) {
+    if (json) {
+      const str = JSON.stringify(diagramConfClass.getDiagramConfUser())
+      if (copy) {
+        navigator.clipboard.writeText(str)
+      }
+      else {
+        downloadStringAsFile(str, "application/json", "diagram.json.cryptodiag")
+      }
+    } else {
+      const str = stringify(diagramConfClass.getDiagramConfUser())
+      if (copy) {
+        navigator.clipboard.writeText(str)
+      }
+      else {        
+        downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.cryptodiag")
+      }
+    }
+  }
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
   <svg bind:this={svgRef}
        width={width}
        height={height}
+       overflow="hidden"
        viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
        xmlns="http://www.w3.org/2000/svg"
        use:panzoom={onlySvg ? undefined : diagramConfClass}
@@ -113,7 +182,7 @@
     {@render svg("100%", "100%")}
     
     <!-- Toolbar -->
-    <div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200">
+    <div class={["absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2", stylePanel]}>
 
       <button id="reframeBtn"
               class="p-2 rounded-lg transition active:scale-95">
@@ -145,7 +214,7 @@
       <button id="reframeBtn"
               class={[styleButton, styleButtonDisabled]}
               onclick={resetViewport}
-        title="Reset view"
+              title="Reset view"
         >
         <!-- Icon: fit / reset view -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
@@ -155,6 +224,16 @@
         </svg>
       </button>
 
+      <!-- Reframe button -->
+      <button id="reframeBtn"
+              class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
+              onclick={() => downloadPanel = !downloadPanel}
+              title="Download diagram/proof or download SVG"
+        >
+        <!-- Icon: fit / reset view -->
+        <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
+      </button>
+      
       <!-- ========== Divider for mode-specific tools ========== -->
       <div class={dividerStyle}></div>
       
@@ -192,7 +271,8 @@
 
     <!-- Add panel -->
     <div class={[
-               "absolute left-4 top-1/2 -translate-y-1/2 w-xs h-9/10 flex flex-col flex-nowrap gap-2 p-2 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300 overflow-y-auto",
+               "absolute left-4 top-1/2 -translate-y-1/2 w-xs h-9/10 flex flex-col flex-nowrap gap-2 p-2 bg-white/80  overflow-x-auto overflow-y-auto",
+               stylePanel,
                addPanelCollapsed && "opacity-0 invisible",
                ]}>
       <div class="">
@@ -225,6 +305,27 @@
         </div>    
       </div>
     {/if}    
+
+    <!-- Download panel -->
+    {#if downloadPanel }
+      <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4/10 h-7/10 flex flex-col items-center gap-2 p-5 overflow-x-auto overflow-y-auto", stylePanel]}>
+        <!-- Floating close icon -->
+        <button
+          class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
+          aria-label="Close download panel"
+          onclick={() => downloadPanel = false}
+        >
+          <Icon icon="material-symbols:close-rounded" width="20" height="20" />          
+        </button>
+        <h1 class="text-center text-lg font-normal text-body">Download</h1>
+        <p class="text-center">Copy instead of download: <Toogle bind:enabled={copy} /> Use yaml: <Toogle bind:enabled={useYaml} /></p>
+        <Button onclick={() => downloadSVG({asInView: true, copy: copy})}>{copy ? "Copy" : "Download"} SVG like in view</Button>
+        <Button onclick={() => downloadSVG({asInView: false, copy: copy})}>{copy ? "Copy" : "Download"} whole SVG</Button>
+        <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended if plan to manually edit" : "json variant, recommended if no plan to manually edit"})</Button>
+      </div>
+    {/if}    
+
+
   </div>
 {/if}
 

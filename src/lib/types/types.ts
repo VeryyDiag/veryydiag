@@ -56,7 +56,7 @@ export type Error = {
   message: string,
 }
 
-/** Foo */
+/** Configuration stored internally */
 export type DiagramConf = {
   /** Dictionary containing all nodes in a graph (id: node) */
   diagramNodes?: Record<NodeID, Node>,
@@ -69,5 +69,20 @@ export type DiagramConf = {
   links?: Record<LinkID, Link>,
 }
 
-/** Configuration given by the user that is more permissive (e.g. links don't require ID) */
+/** Configuration given by the user that is more permissive (e.g. links don't require ID). See diagramConfToDiagramConfByUser */
 export type DiagramConfByUser = Omit<DiagramConf, "links"> & { links?: Link[] }
+
+
+// ========== Conversion between types ==========
+
+export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : DiagramConfByUser {
+  const {links, ...diagramConfNoLinks} = diagramConf
+  return {
+    ...diagramConfNoLinks,
+    ...((diagramConf?.links !== undefined) && {links: Object.entries(diagramConf.links).map(([linkID, link]) => ({
+      ...link,
+      // ID starting with : are considered to be internal, no need to re-export them
+      ...(linkID.length > 0 && linkID[0] !== ":" && {id: linkID})
+    }))})
+  }
+}
