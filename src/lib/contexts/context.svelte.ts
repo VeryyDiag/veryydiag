@@ -1,7 +1,7 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification } from "$lib/types/types";
-import { diagramConfToDiagramConfByUser } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 import { SvelteSet } from 'svelte/reactivity';
@@ -11,7 +11,7 @@ import { SvelteSet } from 'svelte/reactivity';
 // https://svelte.dev/docs/svelte/$state
 export class DiagramConfClass {
   /** Contains the configuration of the current diagram that will be saved to files */
-  diagramConf : DiagramConf = $state({})
+  diagramConf = $state<DiagramConf>(diagramConfByUserToDiagramConf({}))
 
   /**
    * While it is possible to get coordinates of anchors via DOM access,
@@ -19,20 +19,21 @@ export class DiagramConfClass {
    * hence we maintain here the relative position of the anchor compared to its position.
    * This map maps `${nodeID}.${anchorName}` to this relative coordinate.
    */
-  relativeAnchorPos : Record<string, Point> = $state({})
+  relativeAnchorPos = $state<Record<string, Point>>({})
 
   /** Pointer to the main SVG element */
-  svg: SVGGraphicsElement | undefined = $state(undefined)
+  // Put the type inside $state!! https://github.com/sveltejs/svelte/issues/14435
+  svg = $state<SVGGraphicsElement | undefined>(undefined)
 
   /** When drawing links, we add them here before they are completed. Unde */
-  currentlyCreatedLink : undefined | { from: IDAnchor, to: Point } = $state(undefined)
+  currentlyCreatedLink = $state<undefined | { from: IDAnchor, to: Point }>(undefined)
 
   /** Selection */
   linkSelection = new SvelteSet<LinkID>()
   nodeSelection = new SvelteSet<NodeID>()
 
   /** Notifications (information, temporary errors…) */
-  notifications: Notification[] = $state([])
+  notifications = $state<Notification[]>([])
   
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
@@ -44,8 +45,21 @@ export class DiagramConfClass {
     return this.diagramConf
   }
 
+  getCurrentDiagram = () : Diagram => {
+    return this.diagramConf.diagrams[this.diagramConf.currentDiagramTab]
+  }
+
+  getCurrentTheoryName = () : string => {
+    return this.getCurrentDiagram()?.theory || "main"
+  }
+
+  getCurrentTheory = () : Theory => {
+    return this.diagramConf.theories?.[this.getCurrentTheoryName()]
+  }
+
+  
   getAvailableNode = (nodeKind: NodeKind) => {
-    return this.diagramConf?.availableNodes?.[nodeKind]
+    return this.getCurrentTheory()?.availableNodes?.[nodeKind]
   }
   
   setSvg = (svg: SVGGraphicsElement | undefined) => {
@@ -53,21 +67,15 @@ export class DiagramConfClass {
   }
 
   setConfig = (conf: DiagramConfByUser) : Error | undefined => {
-    if (conf?.viewport === undefined) {
-      conf.viewport = {x: 0, y: 0, w: 20, h: 20}
+    try {
+      this.diagramConf = diagramConfByUserToDiagramConf(conf)
+      return undefined
+    } catch (error) {
+      return {message: `Error while setting the configuration: ${error}`}
     }
-    // Check if IDs are unique
-    const ids = (conf?.links || []).map(v => v?.id).filter((id) => id !== undefined)
-    const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
-    if (duplicates.length > 0) {
-      return {message: `When importing the configuration we found multiple links with duplicated IDs: ${duplicates}`}
-    }
-      
-    this.diagramConf = {...conf, links: Object.fromEntries((conf?.links || []).map((link) => [link?.id || `:${randomID()}`, link]))}
-    return undefined
   }
 
-  getViewport = () => this.diagramConf?.viewport || { x: 0, y: 0, w: 20, h: 20 }
+  getViewport = () => this.getCurrentDiagram()?.viewport || { x: 0, y: 0, w: 20, h: 20 }
 
   getDiagramConfUser = () => {
     return diagramConfToDiagramConfByUser($state.snapshot(this.diagramConf))
@@ -101,20 +109,21 @@ export class DiagramConfClass {
   }
 
   removeLink = (linkID: LinkID) => {
-    delete this.diagramConf?.links?.[linkID]
+    delete this.getCurrentDiagram()?.linksWithID?.[linkID]
   }
 
   removeNode = (nodeID: NodeID) => {
-    if (this.diagramConf?.links !== undefined) {
-      Object.entries(this.diagramConf.links).forEach(([linkID, link]) => {
+    const diag = this.getCurrentDiagram()
+    if (diag?.linksWithID !== undefined) {
+      Object.entries(diag?.linksWithID || {}).forEach(([linkID, link]) => {
         if (fullAnchorToIDAndAnchor(link.from)[0] === nodeID || fullAnchorToIDAndAnchor(link.to)[0] === nodeID) {
-          if (this.diagramConf?.links) {
-            delete this.diagramConf.links[linkID]
+          if (diag?.linksWithID) {
+            delete diag.linksWithID[linkID]
           }
         }
       })
     }
-    delete this.diagramConf?.diagramNodes?.[nodeID]
+    delete diag.nodes?.[nodeID]
   }
       
   removeSelection = () => {
@@ -128,7 +137,7 @@ export class DiagramConfClass {
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
     const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
     if (rel !== undefined) {
-      const pos = this.diagramConf?.diagramNodes?.[nodeID].pos
+      const pos = this.getCurrentDiagram()?.nodes?.[nodeID].pos
       if (pos !== undefined) {
         return {
           x: cmToUnit(pos.x + rel.x),
@@ -149,7 +158,7 @@ export class DiagramConfClass {
   
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: NodeKind) : AvailableNode => {
-    let res = this.diagramConf?.availableNodes?.[kind]
+    let res = this.getCurrentTheory()?.availableNodes?.[kind]
     // console.log("res", $state.snapshot(res))
     if (res !== undefined) {
       if (res.svgString !== undefined)
@@ -197,6 +206,7 @@ export class DiagramConfClass {
       /** Set to true to provide a set of meaningful settings, like padding{X/Y}Pc = 10, minimum{Width/Height}=10*/
       breathe?: boolean
     } = {}) => {
+      const diag = this.getCurrentDiagram()
       if (this.svg !== undefined) {
         if (breathe) {
           paddingXPc = paddingXPc || 10
@@ -210,41 +220,53 @@ export class DiagramConfClass {
         const origH = unitToCm(bbox.height)
         const newW = Math.max(origW * (1 + (paddingXPc || 0)/100), minimumWidth || 0)
         const newH = Math.max(origH * (1 + (paddingYPc || 0)/100), minimumHeight || 0)
-        this.diagramConf.viewport = {x: unitToCm(bbox.x) - (newW-origW)/2, y: unitToCm(bbox.y)-(newH-origH)/2, w: newW, h: newH};
+        diag.viewport = {x: unitToCm(bbox.x) - (newW-origW)/2, y: unitToCm(bbox.y)-(newH-origH)/2, w: newW, h: newH};
         if (scale !== undefined) {
-          this.diagramConf.svgSize = {w: `${cmToUnit(newW) * scale}pt`, h: `${cmToUnit(newH) * scale}pt`}
+          diag.svgSize = {w: `${cmToUnit(newW) * scale}pt`, h: `${cmToUnit(newH) * scale}pt`}
         }
       }
     }
 
   addLink = (link: Link) : {message?: string} => {
-    if (this.diagramConf?.links === undefined) {
-      this.diagramConf.links = {}
+    const diag = this.getCurrentDiagram()
+    if (diag?.linksWithID === undefined) {
+      diag.linksWithID = {}
     }
     if (link.id !== undefined) {
-      if (this.diagramConf.links?.[link.id]) {
+      if (diag.linksWithID?.[link.id]) {
         return {message: `A link with ID ${link.id} already exists`}
       } else {
-        this.diagramConf.links[link.id] = link
+        diag.linksWithID[link.id] = link
       }
     } else {
-      this.diagramConf.links[`:${randomID()}`] = link
+      diag.linksWithID[`:${randomID()}`] = link
     }
     return {}
   }
 
+  getLinks = () => {
+    return this.getCurrentDiagram()?.linksWithID || {}
+  }
+
+  getNodes = () => {
+    return this.getCurrentDiagram()?.nodes || {}
+  }
+
+  
   moveNode = (nodeID: NodeID, newPos: Point) : Error | undefined => {
-    if (this.diagramConf?.diagramNodes?.[nodeID] === undefined) {
+    const diag = this.getCurrentDiagram()
+    if (diag?.nodes?.[nodeID] === undefined) {
       return {message: `No node ${nodeID} to move`}
     }
-    this.diagramConf.diagramNodes[nodeID].pos = newPos
+    diag.nodes[nodeID].pos = newPos
   }
 
   getPositionNode = (nodeID: NodeID) : Point | Error => {
-    if (this.diagramConf?.diagramNodes?.[nodeID] === undefined) {
+    const diag = this.getCurrentDiagram()
+    if (diag?.nodes?.[nodeID] === undefined) {
       return {message: `No node ${nodeID} to get position from`}
     }
-    return this.diagramConf.diagramNodes[nodeID].pos
+    return diag.nodes[nodeID].pos
   }
 
 
@@ -252,10 +274,11 @@ export class DiagramConfClass {
     if (id === undefined) {
       id = `:${randomID()}`
     }
-    if (this.diagramConf.diagramNodes === undefined) {
-      this.diagramConf.diagramNodes = {}
+    const diag = this.getCurrentDiagram()
+    if (diag.nodes === undefined) {
+      diag.nodes = {}
     }
-    this.diagramConf.diagramNodes[id] = {nodeKind, pos}
+    diag.nodes[id] = {nodeKind, pos}
   }
 
   sendNotification = (kind: NotificationKind, message: string) => {

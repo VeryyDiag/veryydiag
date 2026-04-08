@@ -165,7 +165,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   let startPos: Point | null = null
   let dragging = false
   const dragThreshold = 3
-  let targetNodeID : NodeID | undefined = $state(undefined)
+  let targetNodeID = $state<NodeID | undefined>(undefined)
   
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}

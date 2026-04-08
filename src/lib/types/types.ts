@@ -1,4 +1,7 @@
-// File containing most of the types
+// File containing most of the types and some helper to translate from one type to another
+
+import { randomID } from '$lib/utils';
+
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
@@ -29,6 +32,7 @@ export type NodeKind = string
 export type AnchorName = string
 /** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
 export type IDAnchor = string
+export type TheoryID = string
 
 export type Viewport = {
   x: number
@@ -56,21 +60,67 @@ export type Error = {
   message: string,
 }
 
-/** Configuration stored internally */
-export type DiagramConf = {
-  /** Dictionary containing all nodes in a graph (id: node) */
-  diagramNodes?: Record<NodeID, Node>,
-  /**
-   * Dictionary containing all possible nodes that can be used in a graph (nodeKind: available node)
-   */
+export type Theory = {
+  theoryID?: TheoryID,
   availableNodes?: Record<NodeKind, AvailableNode>,
-  viewport?: Viewport,
-  svgSize?: SvgSize,
-  links?: Record<LinkID, Link>,
 }
 
+/** Structure representing a diagram tab */
+export type DiagramID = string
+export type Diagram = {
+  diagramName?: string,
+  nodes: Record<NodeID, Node>,
+  /** Links (we turn links (easier to write) into linksWithID when loading the file for efficiency reasons) */
+  linksWithID?: Record<LinkID, Link>,
+  /** Links (we don't require IDs for these links as it is easier to write, but less efficient so we turn them into linksWithID when loading them) */
+  links?: Link[],
+  viewport?: Viewport,
+  /** Size of the svg when exported as standalone image. */
+  svgSize?: SvgSize,
+  /** List of nodes/rewritting rules to use. If not specified, defaults to "main" */
+  theory?: TheoryID,
+}
+
+/** Configuration stored internally */
+export type DiagramConf = {
+  /** Stores all diagrams contained in the current file. */
+  diagrams: Record<DiagramID, Diagram>,
+  /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons */
+  diagramTabs: DiagramID[],
+  /** Diagram currently under edit */
+  currentDiagramTab: DiagramID,
+  /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
+  theories: Record<TheoryID, Theory>,
+}
+
+
 /** Configuration given by the user that is more permissive (e.g. links don't require ID). See diagramConfToDiagramConfByUser */
-export type DiagramConfByUser = Omit<DiagramConf, "links"> & { links?: Link[] }
+export type DiagramConfByUser = {
+  /** Stores all diagrams contained in the current file. */
+  diagrams?: Record<DiagramID, Diagram>,
+  /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons.
+   * If unspecified, this is equivalent to ["main"]
+   */
+  diagramTabs?: DiagramID[],
+  /** Diagram currently under edit. If unspecified, equals to "main" */
+  currentDiagramTab?: DiagramID,
+  /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
+  theories?: Record<TheoryID, Theory>,
+  /** These are shortcuts to quickly specify the "main" diagram without creating a new tab etc
+   * (also helps with backward compatibility)
+   */
+  diagramNodes?: Record<NodeID, Node>,
+  /** These are shortcuts for the "main" theory, when we are too lazy to define tabs… */
+  availableNodes?: Record<NodeID, AvailableNode>,
+  /** These are shortcuts for the "main" links, when we are too lazy to define tabs… */
+  links?: Link[],
+  /** These are shortcuts for the "main" linksWithID, when we are too lazy to define tabs… */
+  linksWithID?: Record<LinkID, Link>,
+  /** Shortcuts for the "main" Viewport, when we are too lazy to define tabs… */
+  viewport?: Viewport,
+  /** Shortcuts for the "main" Viewport, when we are too lazy to define tabs… */
+  svgSize?: SvgSize,
+}
 
 
 export type NotificationKind = "error" | "info" | "warning"
@@ -81,14 +131,103 @@ export type Notification = {
 
 // ========== Conversion between types ==========
 
+// TODO: make sure that this preserves better the text typed by users (e.g. remove links when not needed etc)
 export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : DiagramConfByUser {
-  const {links, ...diagramConfNoLinks} = diagramConf
-  return {
-    ...diagramConfNoLinks,
-    ...((diagramConf?.links !== undefined) && {links: Object.entries(diagramConf.links).map(([linkID, link]) => ({
-      ...link,
-      // ID starting with : are considered to be internal, no need to re-export them
-      ...(linkID.length > 0 && linkID[0] !== ":" && {id: linkID})
-    }))})
+  return diagramConf
+}
+
+export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
+  if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
+    throw new Error("The diagram has two main nodes (diagramNodes and via diagrams.main)")
   }
+  if (diagramConfByUser?.links && diagramConfByUser?.diagrams?.main) {
+    throw new Error("The diagram has two main nodes (links and via diagrams.main)")
+  }
+  if (diagramConfByUser?.viewport && diagramConfByUser?.diagrams?.main) {
+    throw new Error("The diagram has two main nodes (viewport and via diagrams.main)")
+  }
+  if (diagramConfByUser?.svgSize && diagramConfByUser?.diagrams?.main) {
+    throw new Error("The diagram has two main nodes (svgSize and via diagrams.main)")
+  }
+  if (diagramConfByUser?.linksWithID && diagramConfByUser?.diagrams?.main) {
+    throw new Error("The diagram has two main nodes (linksWithID and via diagrams.main)")
+  }
+  if (diagramConfByUser?.availableNodes && diagramConfByUser?.theories?.main) {
+    throw new Error("The diagram has two main theories (availableNodes and via theories.main)")
+  }
+
+  const {
+    diagrams = {},
+    diagramTabs = [ "main" ],
+    currentDiagramTab = "main",
+    theories = {},
+    diagramNodes,
+    availableNodes,
+    links,
+    linksWithID,
+    viewport,
+    svgSize,
+  } = diagramConfByUser
+  const diagramsPreCleared : Record<DiagramID, Diagram> = (diagramNodes === undefined && links === undefined && viewport === undefined && svgSize === undefined) ? diagrams : {...diagrams, main: {
+    diagramName: "Main",
+    nodes: diagramNodes || {},
+    links: links || [],
+    linksWithID: linksWithID || {},
+    viewport: viewport || {x: 0, y: 0, w: 20, h: 20},
+    svgSize: svgSize,
+  }}
+  const clearDiagram = (diagID: DiagramID, {links, linksWithID, viewport, ...rest}: Diagram) : Diagram => {
+    // Check if IDs are unique
+    const ids = (links || []).map(v => v?.id).filter((id) => id !== undefined)
+    const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
+    if (duplicates.length > 0) {
+      throw new Error(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
+    }
+    return {
+      ...rest,
+      linksWithID: {
+        ...(linksWithID || {}),
+        ...(Object.fromEntries((links || []).map((link) => [link?.id || `:${randomID()}`, link])))
+      },
+      viewport: viewport || {x: 0, y: 0, w: 20, h: 20}
+    }
+  }
+  const diagCleared = Object.fromEntries(Object.entries(diagramsPreCleared).map(([k,diag]) => ([k, clearDiagram(k, diag)])))
+
+  const cleanedConfig = {
+    // We must have at least one diagram or the interface would crash
+    diagrams: (Object.keys(diagCleared).length > 0) ? diagCleared : {
+      main: {
+        diagramName: "Main",
+        nodes: {},
+        linksWithID: {},
+        theory: "main"
+      },
+    },
+    diagramTabs: diagramTabs || [ "main" ],
+    currentDiagramTab: currentDiagramTab || "main",
+    theories: (availableNodes !== undefined || Object.keys(theories).length === 0) ? {...theories, main: {
+      availableNodes: availableNodes,
+    }} : theories,
+  }
+
+  // Check if all tabs are well defined
+  if (cleanedConfig.diagrams?.[cleanedConfig.currentDiagramTab] === undefined) {
+    throw new Error(`The diagram '${cleanedConfig.currentDiagramTab}' set as current tab does not exist (${Object.keys(cleanedConfig.diagrams).length > 1 ? Object.keys(cleanedConfig.diagrams) : "no diagram available"}).`)
+  }
+
+  cleanedConfig.diagramTabs.forEach((tab) => {
+    if (cleanedConfig.diagrams?.[tab] === undefined) {
+      throw new Error(`The diagram ${cleanedConfig.currentDiagramTab} set in the list of tabs does not exist.`)
+    }
+  })
+
+  Object.entries(cleanedConfig.diagrams).forEach(([diagID, diag]) => {
+    if (cleanedConfig.theories?.[diag?.theory || "main"] === undefined) {
+      throw new Error(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
+    }
+  })
+
+  // Check if all nodes have available theories
+  return cleanedConfig
 }

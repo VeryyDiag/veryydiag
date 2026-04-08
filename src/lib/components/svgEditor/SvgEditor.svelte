@@ -37,19 +37,23 @@
   let diagramConfClass : DiagramConfClass = new DiagramConfClass();
   setContextDiagram(diagramConfClass)
   
-  let allErrors : ErrorsMap = $state({})
+  let allErrors = $state<ErrorsMap>({})
   setContextErrors(allErrors)
 
-  let errorsImport : Error | undefined = $state(undefined)
+  let errorsImport = $state<Error | undefined>(undefined)
   $effect(() => {
-    errorsImport = diagramConfClass.setConfig(diagramConf)
+    try {
+      errorsImport = diagramConfClass.setConfig(diagramConf)
+    } catch (err) {
+      errorsImport = {message: `Error while importing the configuration (${err})`}
+    }
   })
 
   const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
   $effect(() => {diagramConf; resetViewport()})
   
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
-  let errors = $derived(errorsImport ? [errorsImport] : [])
+  let errors = $derived(errorsImport ? [errorsImport.message] : [])
   registerErrors(uid, () => errors)
 
   let svgRef : SVGGraphicsElement | undefined = undefined
@@ -176,20 +180,20 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    {#each Object.entries(diagramConfClass.getConfig()?.links || {}) as [linkID, link]}
+    {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link]}
       <Link {...link} id={linkID}  />
     {/each}
     {#if diagramConfClass?.currentlyCreatedLink !== undefined}
       <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
     {/if}
-    {#each Object.entries(diagramConfClass.getConfig().diagramNodes || {}) as [id, node]}
+    {#each Object.entries(diagramConfClass.getNodes()) as [id, node]}
       <Node id={id} {...node} />
     {/each}
   </svg>
 {/snippet}
 
 {#if onlySvg }
-  {@render svg(diagramConfClass.getConfig()?.svgSize?.w || "100%", diagramConfClass.getConfig()?.svgSize?.h || "100%")}
+  {@render svg(diagramConfClass.getCurrentDiagram()?.svgSize?.w || "100%", diagramConfClass.getCurrentDiagram()?.svgSize?.h || "100%")}
 {:else}
 
   <div class="relative w-screen h-screen overflow-clip" use:addNodeToDiagram={diagramConfClass} use:pasteFile={diagramConfClass}>
@@ -305,30 +309,12 @@
           Drag and drop a node to add it to your diagram.
         </p>
         <ul class="list-disc">
-          {#each Object.entries(diagramConfClass.getConfig()?.availableNodes || {}) as [nodeKind, node]}
+          {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node]}
             <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
           {/each}
         </ul>
       </div>
     </div>
-
-    <!-- Error panel -->
-    {#if Object.entries(allErrors).length > 0}
-      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-6/10 flex flex-col gap-2 p-5 backdrop-blur-md rounded-xl shadow-lg border border-red-200 text-red bg-red-100">
-        <h1 class="text-center text-lg font-normal text-body">Errors</h1>
-        <div>
-          <ul class="list-disc px-5">
-            {#each Object.entries(allErrors) as [uid, errors]}
-              {#each errors as error}
-                <li>
-                  Error: {error}
-                </li>
-              {/each}
-            {/each}
-          </ul>
-        </div>    
-      </div>
-    {/if}
 
     <!-- Error panel -->
     {#if Object.entries(allErrors).length > 0}

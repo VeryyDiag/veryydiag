@@ -34,7 +34,7 @@
 
   // Deals with positioning and finding anchors
   
-  let container : SVGGraphicsElement | undefined = $state(undefined);
+  let container = $state<SVGGraphicsElement | undefined>(undefined);
 
   let errorsAnchors : string[] = []
 
