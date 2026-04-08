@@ -61,7 +61,7 @@ export type Error = {
 }
 
 export type Theory = {
-  theoryID?: TheoryID,
+  theoryName?: string,
   availableNodes?: Record<NodeKind, AvailableNode>,
 }
 
@@ -169,7 +169,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     svgSize,
   } = diagramConfByUser
   const diagramsPreCleared : Record<DiagramID, Diagram> = (diagramNodes === undefined && links === undefined && viewport === undefined && svgSize === undefined) ? diagrams : {...diagrams, main: {
-    diagramName: "Main",
+    diagramName: "Main diagram",
     nodes: diagramNodes || {},
     links: links || [],
     linksWithID: linksWithID || {},
@@ -198,7 +198,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     // We must have at least one diagram or the interface would crash
     diagrams: (Object.keys(diagCleared).length > 0) ? diagCleared : {
       main: {
-        diagramName: "Main",
+        diagramName: "Main diagram",
         nodes: {},
         linksWithID: {},
         theory: "main"
@@ -207,6 +207,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     diagramTabs: diagramTabs || [ "main" ],
     currentDiagramTab: currentDiagramTab || "main",
     theories: (availableNodes !== undefined || Object.keys(theories).length === 0) ? {...theories, main: {
+      theoryName: "Main theory",
       availableNodes: availableNodes,
     }} : theories,
   }

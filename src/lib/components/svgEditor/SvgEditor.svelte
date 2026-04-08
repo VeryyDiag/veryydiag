@@ -203,7 +203,7 @@
     <!-- Toolbar -->
     <div class={["absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center"]}>
 
-      <!-- Tabs -->
+      <!-- Tabs for diagrams -->
       <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
         <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => diagramConfClass.removeDiagram()}>
           <Icon icon="mdi:minus" width="20" height="20"/>
@@ -217,7 +217,7 @@
                       ]}
                 title={currentTab ? "Click to edit the name of the current diagram" : "Click to change the current diagram"}
                 onclick={(e) => {if (!currentTab) {diagramConfClass.changeDiagramTab(diagramID); (e.target as HTMLElement).blur()}}}
-                onblur={(e) => {if (currentTab) {console.log("blur");diagramConfClass.getConfig().diagrams[diagramID].diagramName = (e.target as HTMLElement).innerText}}}
+                onblur={(e) => {if (currentTab) {diagramConfClass.getConfig().diagrams[diagramID].diagramName = (e.target as HTMLElement).innerText}}}
                 onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
             >
             {diagramConfClass.getConfig()?.diagrams[diagramID]?.diagramName || "No name"}
@@ -323,11 +323,38 @@
 
     <!-- Add panel -->
     <div class={[
-               "absolute left-4 top-1/2 -translate-y-1/2 w-xs h-9/10 flex flex-col flex-nowrap gap-2 p-2 bg-white/80  overflow-x-auto overflow-y-auto",
-               stylePanel,
-               addPanelCollapsed && "opacity-0 invisible",
-               ]}>
-      <div class="">
+            "absolute left-4 top-1/2 -translate-y-1/2 w-xs h-9/10 flex flex-col items-center",
+            addPanelCollapsed && "opacity-0 invisible",
+            ]}>
+      <!-- Tabs for theories -->
+      <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
+        <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => diagramConfClass.removeTheory()}>
+          <Icon icon="mdi:minus" width="20" height="20"/>
+        </button>
+        {#each Object.entries(diagramConfClass.getConfig()?.theories) as [theoryID, theory] (theoryID)}
+          {@const currentTheory = theoryID === diagramConfClass.getCurrentDiagram().theory}
+          <span contenteditable={currentTheory} role="button" tabindex="0"
+                class={[
+                      "hover:bg-gray-100/30 px-2 py-1 border-r border-gray-100 hover:bg-blue-100/10",
+                      currentTheory && "bg-blue-100/70"
+                      ]}
+                title={currentTheory ? "Click to edit the name of the current theory" : "Click to modify the theory of the current diagram"}
+                onclick={(e) => {if (!currentTheory) {diagramConfClass.changeTheory(theoryID); (e.target as HTMLElement).blur()}}}
+                onblur={(e) => {if (currentTheory) {diagramConfClass.getConfig().theories[theoryID].theoryName = (e.target as HTMLElement).innerText}}}
+                onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
+            >
+            {diagramConfClass.getConfig()?.theories[theoryID]?.theoryName || "No name"}
+          </span>
+        {/each}
+        <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => diagramConfClass.addTheory()}>
+          <Icon icon="mdi:plus" width="20" height="20"/>
+        </button>
+      </div>
+
+      <div class={[
+                 "flex flex-col flex-nowrap gap-2 p-2 bg-white/80  overflow-x-auto overflow-y-auto",
+                 stylePanel,
+                 ]}>
         <h1 class="text-center mb-3 text-lg font-normal text-body">Available nodes</h1>
         <p class="text-sm mb-3 text-gray-600">
           Drag and drop a node to add it to your diagram.

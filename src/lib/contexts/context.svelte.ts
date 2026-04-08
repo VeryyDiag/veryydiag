@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
@@ -313,10 +313,38 @@ export class DiagramConfClass {
     this.diagramConf.diagramTabs = this.diagramConf.diagramTabs.filter(x => x !== id)
     delete this.diagramConf.diagrams[id];
     if (this.diagramConf.diagramTabs.length === 0) {
-      this.addDiagram("main", {diagramName: "Main"})
+      this.addDiagram("main", {diagramName: "Main diagram"})
     }
     if (this.diagramConf.currentDiagramTab === id) {
       this.diagramConf.currentDiagramTab = this.diagramConf.diagramTabs[0]
+    }
+  }
+
+
+  addTheory = (theoryID: TheoryID | undefined = undefined, theory : Theory = {}) => {
+    const id : TheoryID = theoryID || randomID()
+    this.diagramConf.theories[id] = {
+      ...(this.getCurrentTheory()),
+      ...({
+        theoryName: "Click to edit",
+      }),
+      ...theory
+    }
+    this.getCurrentDiagram().theory = id
+  }
+
+  changeTheory = (theoryID: TheoryID) => {
+    this.getCurrentDiagram().theory = theoryID
+  }
+
+  removeTheory = (theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    delete this.diagramConf.theories[id]
+    if (Object.keys(this.diagramConf.theories).length === 0) {
+      this.addTheory("main", {theoryName: "Main theory"})
+    }
+    if (this.getCurrentTheoryName() === id) {
+      this.getCurrentDiagram().theory = Object.keys(this.diagramConf.theories)[0]
     }
   }
 }
