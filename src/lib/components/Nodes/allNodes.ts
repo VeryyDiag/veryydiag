@@ -13,6 +13,8 @@ const allImages = import.meta.glob<{ default: string }>('./allNodes/Node*.svg', 
 // SVG images that can be used via svgName and that have lower priority than user-defined images (possible to change styles etc)
 const officialNodeImagesList : {[x: string]: string} = Object.fromEntries(Object.entries(allImages).map(([k, v]) => [k.replace(/^.\/allNodes\/Node/i, "diagproof").replace(/\.svg/, ""), v.default]));
 
+export const allDefaultSvgNames = Object.keys(officialNodeImagesList)
+
 export function officialSvgNameToSvgString(svgName: string) : string | undefined {
   return officialNodeImagesList[svgName]
 }

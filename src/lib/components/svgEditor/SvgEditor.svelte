@@ -2,6 +2,7 @@
   import { flip } from 'svelte/animate';
   import type { DiagramConfByUser, Error } from "$lib/types/types"
   import {flushSync} from "svelte"
+  import { allDefaultSvgNames } from "$lib/components/Nodes/allNodes"
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
@@ -340,9 +341,9 @@
     </div>
 
 
-    <!-- Add panel -->
+    <!-- Theory panel -->
     <div class={[
-            "absolute left-4 top-1/2 -translate-y-1/2 w-xs h-9/10 flex flex-col items-center",
+            "absolute left-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center",
             addPanelCollapsed && "opacity-0 invisible",
             ]}>
       <!-- Tabs for theories -->
@@ -359,8 +360,8 @@
                       ]}
                 title={currentTheory ? "Click to edit the name of the current theory" : "Click to modify the theory of the current diagram"}
                 onclick={(e) => {if (!currentTheory) {diagramConfClass.changeTheory(theoryID); (e.target as HTMLElement).blur()}}}
-                onblur={(e) => {if (currentTheory) {diagramConfClass.getConfig().theories[theoryID].theoryName = (e.target as HTMLElement).innerText}}}
-                onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
+            onblur={(e) => {if (currentTheory) {diagramConfClass.getConfig().theories[theoryID].theoryName = (e.target as HTMLElement).innerText}}}
+            onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
             >
             {diagramConfClass.getConfig()?.theories[theoryID]?.theoryName || "No name"}
           </span>
@@ -371,7 +372,7 @@
       </div>
 
       <div class={[
-                 "flex flex-col flex-nowrap gap-2 p-2 bg-white/80  overflow-x-auto overflow-y-auto",
+                 "flex flex-col flex-nowrap gap-2 p-2 bg-white/80 h-full overflow-auto mix-h-0 min-w-0 w-full",
                  stylePanel,
                  ]}>
         <h1 class="text-center mb-3 text-lg font-normal text-body">Available nodes</h1>
@@ -384,6 +385,26 @@
           {/each}
         </ul>
         <h1 class="text-center mb-3 text-lg font-normal text-body">Create node</h1>
+        <div class="text-sm mb-3 text-gray-600 min-w-0">
+          <p class="mb-2">Either create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
+          <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
+            <div class="flex flex-nowrap w-max gap-2">
+              {#each allDefaultSvgNames as svgName}
+                <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}>
+                  <SvgEditor onlySvg={1.3} diagramConf={{
+                                                       diagramNodes: {
+                                                         myfirstnode: {nodeKind: svgName, pos: {x: 0, y: 0}},
+                                                       },
+                                                       availableNodes: {
+                                                         [svgName]: {
+                                                           svgName: svgName
+                                                         },
+                                                       }}}/>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
         <div class={`text-sm mb-3 text-gray-600 w-full h-30 ${isDraggingSVG ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border flex flex-col`}
              role="region"
              data-diagproof-dropzone="true"
@@ -404,7 +425,7 @@
                     }}}
           >
           <p class="mb-2">
-            Load, paste, or drag and drop a SVG file to add a new node to your theory.<br>
+            … or load, paste, or drag and drop your own SVG file to add a new node to your theory.<br>
             (cf documentation for annotation details).
           </p>
           <p>
@@ -420,10 +441,8 @@
               />
             </Button>
           </p>
-        </div>
-        <p class="text-sm mb-3 text-gray-600">
-          Or create nodes from a pre-existing list of SVG:
-        </p>
+                </div>
+
       </div>
     </div>
 

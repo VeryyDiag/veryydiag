@@ -175,6 +175,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     linksWithID: linksWithID || {},
     viewport: viewport || {x: 0, y: 0, w: 20, h: 20},
     svgSize: svgSize,
+    theory: "main"
   }}
   const clearDiagram = (diagID: DiagramID, {links, linksWithID, viewport, ...rest}: Diagram) : Diagram => {
     // Check if IDs are unique
