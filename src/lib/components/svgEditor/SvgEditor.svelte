@@ -73,6 +73,11 @@
   let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
 
+  function closePanels() {
+    loadFilePanel = false
+    downloadPanel = false
+  }
+  
   const stylePanel = " bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300"
   const styleButton = "p-2 rounded-lg transition active:scale-95 transition"
   const styleButtonEnabled = "bg-blue-50 hover:bg-blue-100 text-blue-600"
@@ -85,7 +90,7 @@
   // Great, we can recursively import ourself!
   import SvgEditor from "./SvgEditor.svelte"
   import { mount } from 'svelte';
-	import { getConfig } from 'storybook/test';
+  import { getConfig } from 'storybook/test';
   async function downloadSVG({asInView, copy} : {asInView: boolean, copy:boolean}) {
     let str = ""
     if (asInView) {
@@ -141,7 +146,7 @@
            }
     }
   }
- 
+  
   let isDragging = $state(false)
   async function handleFile(file: File) {
     try {
@@ -153,6 +158,20 @@
       diagramConfClass.sendNotification("error", `Error while loading the file (${error}).`);
     }
   }
+
+  let isDraggingSVG = $state(false)
+  async function handleSVGFiles(files: FileList) {
+    Array.from(files).forEach(async (file) => {
+      try {
+        const name = file.name.replace(/.svg$/, "")
+        const content = await file.text();
+        diagramConfClass.addSVGNodeToTheory(name, {svgString: parse(content)});
+      } catch (error) {
+        diagramConfClass.sendNotification("error", `Error while loading the file ${file?.name} (${error}).`);
+      }
+    })
+  }
+
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
@@ -210,7 +229,7 @@
         </button>
         {#each diagramConfClass.getConfig()?.diagramTabs as diagramID}
           {@const currentTab = diagramID === diagramConfClass.getConfig().currentDiagramTab}
-          <span contenteditable={currentTab} role="button" tabindex="0"
+          <span contenteditable={currentTab} spellcheck="false" role="button" tabindex="0"
                 class={[
                       "hover:bg-gray-100/30 px-2 py-1 border-r border-gray-100 hover:bg-blue-100/10",
                       currentTab && "bg-blue-100/70"
@@ -273,8 +292,8 @@
         <!-- Load button -->
         <button id="reframeBtn"
                 title="Load diagram proof"
-                class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
-                onclick={() => loadFilePanel = !loadFilePanel}
+                class={[styleButton, loadFilePanel ? styleButtonEnabled : styleButtonDisabled]}
+                onclick={() => {closePanels(); loadFilePanel = !loadFilePanel}}
           >
           <Icon icon="material-symbols:file-open-outline" width="25" height="25"/>
         </button>
@@ -284,7 +303,7 @@
         <button id="reframeBtn"
                 title="Download diagram/proof or download SVG"
                 class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
-                onclick={() => downloadPanel = !downloadPanel}
+                onclick={() => {closePanels(); downloadPanel = !downloadPanel}}
           >
           <!-- Icon: fit / reset view -->
           <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
@@ -357,13 +376,54 @@
                  ]}>
         <h1 class="text-center mb-3 text-lg font-normal text-body">Available nodes</h1>
         <p class="text-sm mb-3 text-gray-600">
-          Drag and drop a node to add it to your diagram.
+          Drag and drop a node to add it to your diagram (click to edits its name).
         </p>
         <ul class="list-disc">
           {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node]}
             <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
           {/each}
         </ul>
+        <h1 class="text-center mb-3 text-lg font-normal text-body">Create node</h1>
+        <div class={`text-sm mb-3 text-gray-600 w-full h-30 ${isDraggingSVG ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border flex flex-col`}
+             role="region"
+             data-diagproof-dropzone="true"
+             aria-label="File upload dropzone"
+             ondragenter={() => isDraggingSVG = true}
+          ondragover={(e) => e.preventDefault()}
+          ondragleave={(e) => {
+                      if (!(e?.target as HTMLElement)?.dataset?.diagproofDropzone && !(e?.target as HTMLElement)?.closest("data-diagproof-dropzone")) {
+                        isDraggingSVG = false;
+                      }}}
+             ondrop={async (e) => {
+                    e.preventDefault();
+                    isDraggingSVG = false;
+
+                    const files = e.dataTransfer?.files;
+                    if (files?.length) {
+                      handleSVGFiles(files);
+                    }}}
+          >
+          <p class="mb-2">
+            Load, paste, or drag and drop a SVG file to add a new node to your theory.<br>
+            (cf documentation for annotation details).
+          </p>
+          <p>
+            <Button>
+              <input
+                type="file"
+                accept=".svg"
+                onchange={async (e) => {
+                         const files = (e.target as HTMLInputElement).files;
+                         if (files?.length) {
+                           handleSVGFiles(files);
+                         }}}
+              />
+            </Button>
+          </p>
+        </div>
+        <p class="text-sm mb-3 text-gray-600">
+          Or create nodes from a pre-existing list of SVG:
+        </p>
       </div>
     </div>
 

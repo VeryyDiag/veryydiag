@@ -347,6 +347,49 @@ export class DiagramConfClass {
       this.getCurrentDiagram().theory = Object.keys(this.diagramConf.theories)[0]
     }
   }
+
+  addSVGNodeToTheory = (name: NodeID,
+                        availableNode : AvailableNode,
+                        nodeKind: NodeKind | undefined = undefined,
+                        theoryID: TheoryID | undefined = undefined,
+  ) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    let newNodeKind = name || "nodekind (click to edit)"
+    let nb = 0
+    if (this.diagramConf.theories[id]?.availableNodes === undefined) {
+      this.diagramConf.theories[id].availableNodes = {}
+    }
+    // Try to find an available node kind
+    while (this.diagramConf?.theories[id]?.availableNodes?.[`${newNodeKind}${nb == 0 ? "" : nb}`] !== undefined) {
+      nb++
+    }
+    this.diagramConf.theories[id].availableNodes[`${newNodeKind}${nb == 0 ? "" : nb}`] = availableNode
+  }
+
+  renameNodeKind = (oldNodeKind: NodeKind, newNodeKind: NodeKind, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    if (oldNodeKind === newNodeKind) {
+      return true
+    }
+    if (this.diagramConf.theories[id]?.availableNodes === undefined) {
+      this.diagramConf.theories[id].availableNodes = {}
+    }
+    if (this.diagramConf?.theories[id]?.availableNodes?.[newNodeKind] !== undefined) {
+      this.sendNotification("error", `In theory ${this.diagramConf?.theories[id].theoryName} the node kind ${newNodeKind} already exists.`)
+      return false
+    }
+    this.diagramConf.theories[id].availableNodes[newNodeKind] = this.diagramConf.theories[id].availableNodes[oldNodeKind]
+    delete this.diagramConf.theories[id].availableNodes[oldNodeKind];
+    // We also rename all references to this in all diagrams refering to this theory
+    Object.entries(this.diagramConf?.diagrams || {}).forEach(([diagramID, diag]) => {
+      Object.entries((diag?.nodes || {})).forEach(([nodeID, node]) => {
+        if (node.nodeKind === oldNodeKind) {
+          node.nodeKind = newNodeKind
+        }
+      })
+    })
+    return true
+  }
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();
