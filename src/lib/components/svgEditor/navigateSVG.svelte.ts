@@ -1,4 +1,5 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
+import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
 import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
 
@@ -436,6 +437,7 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
   }
 
   function drop(e: DragEvent) {
+    console.log("drop", e)
     if (diagramConfClass === undefined || !e.dataTransfer ) {return}
     // Check if dropped on the SVG
     if (e.target instanceof Element) {
@@ -462,4 +464,58 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
       node.removeEventListener("dragover", dragover)
     }
   }
+}
+
+// This allows us to paste content to import them instead of going through files
+export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass) {
+  async function handleFile(file: File) {
+    try {
+      const content = await file.text();
+      diagramConfClass.setConfig(parse(content));
+      diagramConfClass.sendNotification("info", "The file was loaded with success.");
+    } catch (error) {
+      diagramConfClass.sendNotification("error", `Error while loading the file (${error}).`);
+    }
+  }
+
+  async function handleText(text: string) {
+    try {
+      diagramConfClass.setConfig(parse(text));
+      diagramConfClass.sendNotification("info", "Content pasted successfully.");
+    } catch (error) {
+      diagramConfClass.sendNotification("error", `Error while parsing pasted content (${error}).`);
+    }
+  }
+
+  function onPaste(e: ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) {
+          handleFile(file);
+          return;
+        }
+      }
+
+      if (item.kind === "string") {
+        item.getAsString((text) => {
+          if (text.trim()) {
+            handleText(text);
+          }
+        });
+        return;
+      }
+    }
+  }
+
+  node.addEventListener("paste", onPaste);
+
+  return {
+    destroy() {
+      node.removeEventListener("paste", onPaste);
+    }
+  };
 }

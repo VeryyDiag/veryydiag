@@ -73,6 +73,12 @@ export type DiagramConf = {
 export type DiagramConfByUser = Omit<DiagramConf, "links"> & { links?: Link[] }
 
 
+export type NotificationKind = "error" | "info" | "warning"
+export type Notification = {
+  kind: NotificationKind,
+  message: string
+}
+
 // ========== Conversion between types ==========
 
 export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : DiagramConfByUser {

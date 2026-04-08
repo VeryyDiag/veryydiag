@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind,  } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
@@ -30,6 +30,9 @@ export class DiagramConfClass {
   /** Selection */
   linkSelection = new SvelteSet<LinkID>()
   nodeSelection = new SvelteSet<NodeID>()
+
+  /** Notifications (information, temporary errors…) */
+  notifications: Notification[] = $state([])
   
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
@@ -253,6 +256,14 @@ export class DiagramConfClass {
       this.diagramConf.diagramNodes = {}
     }
     this.diagramConf.diagramNodes[id] = {nodeKind, pos}
+  }
+
+  sendNotification = (kind: NotificationKind, message: string) => {
+    this.notifications.push({kind, message})
+  }
+
+  removeNotification = (notif: Notification) => {
+    this.notifications = this.notifications.filter(x => x !== notif)
   }
 
 }

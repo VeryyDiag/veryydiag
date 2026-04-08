@@ -1,5 +1,5 @@
 <script>
-  let { onclick, children } = $props();
+  let { onclick = null, children } = $props();
 
 </script>
 

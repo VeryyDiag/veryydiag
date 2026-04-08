@@ -1,14 +1,15 @@
 <script lang="ts">
+  import { flip } from 'svelte/animate';
   import type { DiagramConfByUser, Error } from "$lib/types/types"
   import {flushSync} from "svelte"
   import Node from "$lib/components/Nodes/Node.svelte"  
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID, downloadStringAsFile } from "$lib/utils"
+  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { cm, randomID, downloadStringAsFile, capitalizeFirstLetter } from "$lib/utils"
   import AvailableNode from "./AvailableNode.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
-  import { stringify } from 'yaml'
+  import { parse, stringify } from 'yaml'
   import Toogle from '$lib/components/reusable/Toogle.svelte'
   import Button from '$lib/components/reusable/Button.svelte'
   /**
@@ -65,6 +66,7 @@
   
   let addPanelCollapsed = $state(false);
 
+  let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
 
   const stylePanel = " bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300"
@@ -130,8 +132,20 @@
         navigator.clipboard.writeText(str)
       }
       else {        
-        downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.cryptodiag")
-      }
+    downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.cryptodiag")
+           }
+    }
+  }
+ 
+  let isDragging = $state(false)
+  async function handleFile(file: File) {
+    try {
+      const content = await file.text();
+      diagramConfClass.setConfig(parse(content));
+      diagramConfClass.sendNotification("info", "The file was loaded with success.");
+      loadFilePanel = false;
+    } catch (error) {
+      diagramConfClass.sendNotification("error", `Error while loading the file (${error}).`);
     }
   }
 </script>
@@ -178,7 +192,7 @@
   {@render svg(diagramConfClass.getConfig()?.svgSize?.w || "100%", diagramConfClass.getConfig()?.svgSize?.h || "100%")}
 {:else}
 
-  <div class="relative w-screen h-screen overflow-clip" use:addNodeToDiagram={diagramConfClass}>
+  <div class="relative w-screen h-screen overflow-clip" use:addNodeToDiagram={diagramConfClass} use:pasteFile={diagramConfClass}>
     {@render svg("100%", "100%")}
     
     <!-- Toolbar -->
@@ -224,11 +238,21 @@
         </svg>
       </button>
 
-      <!-- Reframe button -->
+      <!-- Load button -->
       <button id="reframeBtn"
+              title="Load diagram proof"
+              class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
+              onclick={() => loadFilePanel = !loadFilePanel}
+        >
+        <Icon icon="material-symbols:file-open-outline" width="25" height="25"/>
+      </button>
+
+      
+      <!-- Download button -->
+      <button id="reframeBtn"
+              title="Download diagram/proof or download SVG"
               class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
               onclick={() => downloadPanel = !downloadPanel}
-              title="Download diagram/proof or download SVG"
         >
         <!-- Icon: fit / reset view -->
         <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
@@ -304,6 +328,102 @@
           </ul>
         </div>    
       </div>
+    {/if}
+
+    <!-- Error panel -->
+    {#if Object.entries(allErrors).length > 0}
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-6/10 flex flex-col gap-2 p-5 backdrop-blur-md rounded-xl shadow-lg border border-red-200 text-red bg-red-100">
+        <h1 class="text-center text-lg font-normal text-body">Errors</h1>
+        <div>
+          <ul class="list-disc px-5">
+            {#each Object.entries(allErrors) as [uid, errors]}
+              {#each errors as error}
+                <li>
+                  Error: {error}
+                </li>
+              {/each}
+            {/each}
+          </ul>
+        </div>    
+      </div>
+    {/if}
+
+    <!-- Notifications -->
+    {#if diagramConfClass.notifications.length > 0}
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-6/10 flex flex-col gap-2 p-5">
+        {#each diagramConfClass.notifications as notif (notif)}
+          <div animate:flip={{ duration: 300 }} class={[
+                                                      stylePanel,
+                                                      "p-4 m-1",
+                                                      (notif.kind == "error") && "!border-red-200 !text-red !bg-red-100",
+                                                      (notif.kind == "info") && "!border-green-200 !text-green !bg-green-100",
+                                                      (notif.kind == "warning") && "!border-orange-200 !text-orange !bg-orange-100",
+                                                      ]}>
+            <!-- Floating close icon -->
+            <button
+              class={["absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
+              aria-label="Close download panel"
+              onclick={() => diagramConfClass.removeNotification(notif)}
+              >
+              <Icon icon="material-symbols:close-rounded" width="20" height="20" />          
+            </button>
+
+            {capitalizeFirstLetter(notif.kind)}: {notif.message}
+          </div>
+        {/each}
+      </div>
+    {/if} 
+
+    <!-- Load file panel -->
+    {#if loadFilePanel }
+      <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4/10 h-7/10 flex flex-col items-center gap-2 p-7 overflow-x-auto overflow-y-auto", stylePanel]}>
+        <!-- Floating close icon -->
+        <button
+          class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
+          aria-label="Close load file panel"
+          onclick={() => loadFilePanel = false}
+        >
+          <Icon icon="material-symbols:close-rounded" width="20" height="20" />          
+        </button>
+        <h1 class="text-center text-lg font-normal text-body">Download</h1>
+        <div class={`w-full h-70 ${isDragging ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border`}
+             role="region"
+             aria-label="File upload dropzone"
+             ondragenter={() => isDragging = true}
+             ondragover={(e) => e.preventDefault()}
+             ondragleave={(e) => {
+                         if (e.currentTarget === e.target) {
+                           isDragging = false;
+                         }}}
+             ondrop={async (e) => {
+                    e.preventDefault();
+                    isDragging = false;
+
+                    const files = e.dataTransfer?.files;
+                    if (files?.length) {
+                      handleFile(files[0]);
+                    }}}
+          >
+          <div>
+            <p class="mb-2">
+              Drag and drop your file here, paste them anywhere at any time, or browse to find it!
+            </p>
+            <p>
+              <Button>
+                <input
+                  type="file"
+                  accept=".cryptodiag,.yml,.yaml,.json"
+                  onchange={async (e) => {
+                           const files = (e.target as HTMLInputElement).files;
+                           if (files?.length) {
+                             handleFile(files[0]);
+                           }}}
+                />
+              </Button>
+            </p>
+          </div>
+        </div>
+      </div>
     {/if}    
 
     <!-- Download panel -->
@@ -324,7 +444,6 @@
         <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended if plan to manually edit" : "json variant, recommended if no plan to manually edit"})</Button>
       </div>
     {/if}    
-
 
   </div>
 {/if}

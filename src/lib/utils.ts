@@ -107,3 +107,9 @@ export function downloadStringAsFile(content: string, mimeType: string, filename
   a.setAttribute('download', filename) // Set download filename
   a.click() // Start downloading
 }
+
+
+/** Capitalize the first letter of a string, https://stackoverflow.com/a/1026087/4987648 */
+export function capitalizeFirstLetter(val: string) {
+  return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
