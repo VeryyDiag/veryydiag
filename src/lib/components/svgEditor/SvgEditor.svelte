@@ -215,7 +215,8 @@
                       "hover:bg-gray-100/30 px-2 py-1 border-r border-gray-100 hover:bg-blue-100/10",
                       currentTab && "bg-blue-100/70"
                       ]}
-                onclick={() => {if (!currentTab) {diagramConfClass.changeDiagramTab(diagramID)}}}
+                title={currentTab ? "Click to edit the name of the current diagram" : "Click to change the current diagram"}
+                onclick={(e) => {if (!currentTab) {diagramConfClass.changeDiagramTab(diagramID); (e.target as HTMLElement).blur()}}}
                 onblur={(e) => {if (currentTab) {console.log("blur");diagramConfClass.getConfig().diagrams[diagramID].diagramName = (e.target as HTMLElement).innerText}}}
                 onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
             >
