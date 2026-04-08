@@ -83,7 +83,7 @@ export function centerEvent(a: PointerEvent, b: PointerEvent) {
 
 /** Returns the SVG parent element that is a link */
 export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-cryptodiag-link]")
+  const p = elt.closest("[data-diagproof-link]")
   if (p instanceof SVGGraphicsElement) {
     return p
   }
@@ -91,7 +91,7 @@ export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | un
 
 /** Returns the SVG parent element that is a node */
 export function getParentNode(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-cryptodiag-node]")
+  const p = elt.closest("[data-diagproof-node]")
   if (p instanceof SVGGraphicsElement) {
     return p
   }

@@ -4,7 +4,7 @@ import type { DiagramConfClass } from "$lib/contexts/context.svelte"
 import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
-  return node.closest("[data-cryptodiag-anchor]") !== null
+  return node.closest("[data-diagproof-anchor]") !== null
 }
 
 
@@ -175,7 +175,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
         targetNodeID = undefined
         return
       }
-      const nodeID = (e.target.closest("[data-cryptodiag-node]") as SVGGraphicsElement)?.dataset?.cryptodiagNode
+      const nodeID = (e.target.closest("[data-diagproof-node]") as SVGGraphicsElement)?.dataset?.diagproofNode
       if (nodeID !== undefined) {
         const pos = diagramConfClass.getPositionNode(nodeID)
         if (!('message' in pos)) {
@@ -268,11 +268,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (e?.target instanceof SVGGraphicsElement) {
-      const anchor = e.target.dataset?.cryptodiagAnchor
+      const anchor = e.target.dataset?.diagproofAnchor
       if (anchor === undefined) return;
-      const parent = e.target.closest("[data-cryptodiag-node]")
+      const parent = e.target.closest("[data-diagproof-node]")
       if (parent instanceof SVGGraphicsElement) {
-        const nodeName = parent.dataset?.cryptodiagNode
+        const nodeName = parent.dataset?.diagproofNode
         if (nodeName === undefined) {
           console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
           return;
@@ -318,11 +318,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
     for (const elt of document.elementsFromPoint(e.clientX, e.clientY)) {
       if (elt instanceof SVGGraphicsElement) {
         if (elt === node) return; // We don't want to go outside of the current SVG
-        const anchor = elt.dataset?.cryptodiagAnchor
+        const anchor = elt.dataset?.diagproofAnchor
         if (anchor === undefined) continue; // We released outside of any anchor
-        const parent = elt.closest("[data-cryptodiag-node]")
+        const parent = elt.closest("[data-diagproof-node]")
         if (parent instanceof SVGGraphicsElement) {
-          const nodeName = parent.dataset?.cryptodiagNode
+          const nodeName = parent.dataset?.diagproofNode
           if (nodeName === undefined) {
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
@@ -377,8 +377,8 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       return
     }
     if (e?.target instanceof SVGGraphicsElement) {
-      const parentLinkID = getParentLink(e.target)?.dataset?.cryptodiagLink
-      const parentNodeID = getParentNode(e.target)?.dataset?.cryptodiagNode
+      const parentLinkID = getParentLink(e.target)?.dataset?.diagproofLink
+      const parentNodeID = getParentNode(e.target)?.dataset?.diagproofNode
       if (parentLinkID) {
         diagramConfClass.toogleLinkSelection(parentLinkID)
       } else if (parentNodeID) {
@@ -426,8 +426,8 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
   if (diagramConfClass === undefined) {return}
 
   function dragstart(e: DragEvent) {
-    if (e.dataTransfer && e.target instanceof HTMLElement && e.target?.dataset?.cryptodiagAvailableNode !== undefined) {
-      e.dataTransfer.setData("cryptodiag/available-node-kind", e.target.dataset.cryptodiagAvailableNode);
+    if (e.dataTransfer && e.target instanceof HTMLElement && e.target?.dataset?.diagproofAvailableNode !== undefined) {
+      e.dataTransfer.setData("diagproof/available-node-kind", e.target.dataset.diagproofAvailableNode);
     }
   }
 
@@ -441,12 +441,12 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
     if (diagramConfClass === undefined || !e.dataTransfer ) {return}
     // Check if dropped on the SVG
     if (e.target instanceof Element) {
-      const svg = e.target.closest("[data-cryptodiag-main-svg]")
+      const svg = e.target.closest("[data-diagproof-main-svg]")
       if (svg instanceof SVGSVGElement) {
-        if (svg && e.dataTransfer.getData("cryptodiag/available-node-kind")) {
+        if (svg && e.dataTransfer.getData("diagproof/available-node-kind")) {
           const pos = clientToSVGCoordInCm(svg, e.clientX, e.clientY)
           if (pos !== undefined) {
-            diagramConfClass.addNode(e.dataTransfer.getData("cryptodiag/available-node-kind"), pos)
+            diagramConfClass.addNode(e.dataTransfer.getData("diagproof/available-node-kind"), pos)
           }
         }
       }

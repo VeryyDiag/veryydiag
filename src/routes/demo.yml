@@ -21,7 +21,7 @@ viewport:
   h: 20
 availableNodes:
   - nodeKind: myDiscard
-    svgName: cryptodiagDiscard
+    svgName: diagproofDiscard
   - nodeKind: myInputDiscard
-    svgName: cryptodiagInputDiscard
+    svgName: diagproofInputDiscard
             

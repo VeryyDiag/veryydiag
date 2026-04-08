@@ -23,7 +23,7 @@
 
 <div class="text-sm mb-3 text-gray-600">
   <p><Icon icon="ph:arrow-bend-down-right-bold" width="15" height="15" class="inline align-baseline mr-1"/> Node {nodeKind}</p>
-  <div class="m-2" data-cryptodiag-available-node={nodeKind} draggable="true">
+  <div class="m-2" data-diagproof-available-node={nodeKind} draggable="true">
     <SvgEditor onlySvg={1.3} diagramConf={subDiagramConf}/>
   </div>
 </div>

@@ -124,7 +124,7 @@
         navigator.clipboard.writeText(str)
       }
       else {
-        downloadStringAsFile(str, "application/json", "diagram.json.cryptodiag")
+        downloadStringAsFile(str, "application/json", "diagram.json.diagproof")
       }
     } else {
       const str = stringify(diagramConfClass.getDiagramConfUser())
@@ -132,7 +132,7 @@
         navigator.clipboard.writeText(str)
       }
       else {        
-    downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.cryptodiag")
+    downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.diagproof")
            }
     }
   }
@@ -163,7 +163,7 @@
        use:drag={onlySvg ? undefined : diagramConfClass}
        use:removeSelection={onlySvg ? undefined : diagramConfClass}
        style="touch-action: none;"
-       data-cryptodiag-main-svg={onlySvg ? undefined : "true"}
+       data-diagproof-main-svg={onlySvg ? undefined : "true"}
        role="toolbar"
        tabindex="0" >
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
@@ -200,7 +200,7 @@
 
       <button id="reframeBtn"
               class="p-2 rounded-lg transition active:scale-95">
-        <b>Crypto</b>Diag
+        <b>Diag</b>Proof
       </button>
       
       <!-- Creation mode -->
@@ -412,7 +412,7 @@
               <Button>
                 <input
                   type="file"
-                  accept=".cryptodiag,.yml,.yaml,.json"
+                  accept=".diagproof,.yml,.yaml,.json"
                   onchange={async (e) => {
                            const files = (e.target as HTMLInputElement).files;
                            if (files?.length) {

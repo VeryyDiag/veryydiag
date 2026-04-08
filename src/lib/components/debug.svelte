@@ -33,8 +33,8 @@
     let svgElt = container?.querySelector("svg");
     console.log(svgElt)
     svgElt.setAttribute('x', 100);
-    updateLine(document.getElementById("A"), svgElt.querySelector('[data-cryptodiag-input="0"]'));
-    svgElt.querySelector('[data-cryptodiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
+    updateLine(document.getElementById("A"), svgElt.querySelector('[data-diagproof-input="0"]'));
+    svgElt.querySelector('[data-diagproof-input="0"]').addEventListener('click', function(){alert("clicked!")})
   });
 </script>
 

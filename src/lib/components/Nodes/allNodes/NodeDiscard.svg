@@ -64,7 +64,7 @@
        inkscape:label="input0"
        class="input0"
        transform="rotate(90)"
-       data-cryptodiag-anchor="in.0" />
+       data-diagproof-anchor="in.0" />
     <rect
        style="fill:#ff0000;fill-opacity:0;stroke:none;stroke-width:0.156961;stroke-linecap:round"
        id="rect1"

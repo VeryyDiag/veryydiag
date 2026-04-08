@@ -44,12 +44,12 @@
     if (container === undefined) {
       return
     } else {
-      const anchorsEltsSelectors = `[data-cryptodiag-anchor]`;
+      const anchorsEltsSelectors = `[data-diagproof-anchor]`;
       const anchors = container.querySelectorAll<SVGGraphicsElement>(anchorsEltsSelectors);
       errorsAnchors = []
       const seenAnchors : Record<string, boolean> = {}
       anchors.forEach(anchorElt => {
-        const anchor = anchorElt.dataset?.cryptodiagAnchor
+        const anchor = anchorElt.dataset?.diagproofAnchor
         if (anchor == undefined) {
           errorsAnchors.push(`Weird, we should never get here (in ${props.id}), please report a bug.`);
           return
@@ -81,7 +81,7 @@
   registerErrors(uid, () => errors)
 </script>
 {#if Component !== undefined}
-  <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" data-cryptodiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
+  <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" data-diagproof-node={props.id} filter={selected ? "url(#selected)" : ""}>
     <Component {...({...props, ...availableNode})}/>
   </g>
 {/if}
