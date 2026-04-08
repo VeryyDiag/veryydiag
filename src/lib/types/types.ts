@@ -69,7 +69,7 @@ export type Theory = {
 export type DiagramID = string
 export type Diagram = {
   diagramName?: string,
-  nodes: Record<NodeID, Node>,
+  nodes?: Record<NodeID, Node>,
   /** Links (we turn links (easier to write) into linksWithID when loading the file for efficiency reasons) */
   linksWithID?: Record<LinkID, Link>,
   /** Links (we don't require IDs for these links as it is easier to write, but less efficient so we turn them into linksWithID when loading them) */

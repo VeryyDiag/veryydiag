@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
@@ -289,6 +289,36 @@ export class DiagramConfClass {
     this.notifications = this.notifications.filter(x => x !== notif)
   }
 
+  addDiagram = (diagID: DiagramID | undefined = undefined, diag : Diagram = {}) => {
+    const id : DiagramID = diagID || randomID()
+    this.diagramConf.diagrams[id] = {
+      ...({
+        diagramName: "Click to edit",
+        nodes: {},
+        linksWithID: {},
+        theory: this.getCurrentTheoryName(),
+      }),
+      ...diag
+    }
+    this.diagramConf.diagramTabs.push(id)
+    this.diagramConf.currentDiagramTab = id
+  }
+
+  changeDiagramTab = (diagID: DiagramID) => {
+    this.diagramConf.currentDiagramTab = diagID
+  }
+
+  removeDiagram = (diagID: DiagramID | undefined = undefined) => {
+    const id = diagID || this.diagramConf.currentDiagramTab
+    this.diagramConf.diagramTabs = this.diagramConf.diagramTabs.filter(x => x !== id)
+    delete this.diagramConf.diagrams[id];
+    if (this.diagramConf.diagramTabs.length === 0) {
+      this.addDiagram("main", {diagramName: "Main"})
+    }
+    if (this.diagramConf.currentDiagramTab === id) {
+      this.diagramConf.currentDiagramTab = this.diagramConf.diagramTabs[0]
+    }
+  }
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();

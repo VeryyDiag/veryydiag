@@ -437,7 +437,6 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
   }
 
   function drop(e: DragEvent) {
-    console.log("drop", e)
     if (diagramConfClass === undefined || !e.dataTransfer ) {return}
     // Check if dropped on the SVG
     if (e.target instanceof Element) {
