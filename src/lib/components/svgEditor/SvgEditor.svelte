@@ -74,17 +74,20 @@
   let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
 
+  let isEditingRules = $state(false)
+  
   function closePanels() {
     loadFilePanel = false
     downloadPanel = false
   }
   
-  const stylePanel = " bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300"
+  const stylePanel = "bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 transition-all duration-300"
   const styleButton = "p-2 rounded-lg transition active:scale-95 transition"
   const styleButtonEnabled = "bg-blue-50 hover:bg-blue-100 text-blue-600"
   const styleButtonDisabled = "bg-gray-50 hover:bg-gray-100 text-gray-700"
   const dividerStyle = "w-px h-10 bg-gray-300 mx-1"
-
+  const styleSelected = (selected: boolean) => (selected ? "bg-blue-100/50 hover:bg-blue-100" : "bg-white hover:bg-gray-100")
+  
   let copy = $state(false)
   let useYaml = $state(false)
   
@@ -232,9 +235,9 @@
           {@const currentTab = diagramID === diagramConfClass.getConfig().currentDiagramTab}
           <span contenteditable={currentTab} spellcheck="false" role="button" tabindex="0"
                 class={[
-                      "hover:bg-gray-100/30 px-2 py-1 border-r border-gray-100 hover:bg-blue-100/10",
-                      currentTab && "bg-blue-100/70"
-                      ]}
+                  "px-2 py-1 border-r border-gray-100 text-sm",
+                  styleSelected(currentTab)
+                ]}
                 title={currentTab ? "Click to edit the name of the current diagram" : "Click to change the current diagram"}
                 onclick={(e) => {if (!currentTab) {diagramConfClass.changeDiagramTab(diagramID); (e.target as HTMLElement).blur()}}}
                 onblur={(e) => {if (currentTab) {diagramConfClass.getConfig().diagrams[diagramID].diagramName = (e.target as HTMLElement).innerText}}}
@@ -343,7 +346,7 @@
 
     <!-- Theory panel -->
     <div class={[
-            "absolute left-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center",
+            "absolute left-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center transition-all duration-300",
             addPanelCollapsed && "opacity-0 invisible",
             ]}>
       <!-- Tabs for theories -->
@@ -355,8 +358,8 @@
           {@const currentTheory = theoryID === diagramConfClass.getCurrentDiagram().theory}
           <span contenteditable={currentTheory} role="button" tabindex="0"
                 class={[
-                      "hover:bg-gray-100/30 px-2 py-1 border-r border-gray-100 hover:bg-blue-100/10",
-                      currentTheory && "bg-blue-100/70"
+                      "px-2 py-1 border-r border-gray-100 text-sm",
+                      styleSelected(currentTheory)
                       ]}
                 title={currentTheory ? "Click to edit the name of the current theory" : "Click to modify the theory of the current diagram"}
                 onclick={(e) => {if (!currentTheory) {diagramConfClass.changeTheory(theoryID); (e.target as HTMLElement).blur()}}}
@@ -372,77 +375,93 @@
       </div>
 
       <div class={[
-                 "flex flex-col flex-nowrap gap-2 p-2 bg-white/80 h-full overflow-auto mix-h-0 min-w-0 w-full",
+                 "flex flex-col flex-nowrap gap-2 bg-white/80 h-full overflow-auto mix-h-0 min-w-0 w-full",
                  stylePanel,
                  ]}>
-        <h1 class="text-center mb-3 text-lg font-normal text-body">Available nodes</h1>
-        <p class="text-sm mb-3 text-gray-600">
-          Drag and drop a node to add it to your diagram (click to edits its name).
-        </p>
-        <ul class="list-disc">
-          {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node]}
-            <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
-          {/each}
-        </ul>
-        <h1 class="text-center mb-3 text-lg font-normal text-body">Create node</h1>
-        <div class="text-sm mb-3 text-gray-600 min-w-0">
-          <p class="mb-2">Either create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
-          <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
-            <div class="flex flex-nowrap w-max gap-2">
-              {#each allDefaultSvgNames as svgName}
-                <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}>
-                  <SvgEditor onlySvg={1.3} diagramConf={{
-                                                       diagramNodes: {
-                                                         myfirstnode: {nodeKind: svgName, pos: {x: 0, y: 0}},
-                                                       },
-                                                       availableNodes: {
-                                                         [svgName]: {
-                                                           svgName: svgName
+        <div class="flex w-full overflow-hidden border-b border-gray-200 shrink-0 mb-0">
+          <button class={["w-1/2 py-2 text-sm font-medium border-r border-gray-200",
+                        styleSelected(!isEditingRules)
+                        ]}
+                  onclick={() => isEditingRules = false}>
+            Nodes
+          </button>
+          <button class={["w-1/2 py-2 text-sm font-medium",
+                        styleSelected(isEditingRules)
+                        ]}
+                  onclick={() => isEditingRules = true}
+            >
+            Rules
+          </button>
+        </div>
+        <div class="p-2 m-0 h-full overflow-auto mix-h-0 min-w-0 w-full">
+          <h1 class="text-center mb-3 text-lg font-normal text-body">Available nodes</h1>
+          <p class="text-sm mb-3 text-gray-600">
+            Drag and drop a node to add it to your diagram (click to edits its name).
+          </p>
+          <ul class="list-disc">
+            {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node]}
+              <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
+            {/each}
+          </ul>
+          <h1 class="text-center mb-3 text-lg font-normal text-body">Create node</h1>
+          <div class="text-sm mb-3 text-gray-600 min-w-0">
+            <p class="mb-2">Either create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
+            <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
+              <div class="flex flex-nowrap w-max gap-2">
+                {#each allDefaultSvgNames as svgName}
+                  <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}>
+                    <SvgEditor onlySvg={1.3} diagramConf={{
+                                                         diagramNodes: {
+                                                           myfirstnode: {nodeKind: svgName, pos: {x: 0, y: 0}},
                                                          },
-                                                       }}}/>
-                </div>
-              {/each}
+                                                         availableNodes: {
+                                                           [svgName]: {
+                                                             svgName: svgName
+                                                           },
+                                                         }}}/>
+                  </div>
+                {/each}
+              </div>
             </div>
           </div>
+          <div class={`text-sm mb-3 text-gray-600 w-full min-h-30 ${isDraggingSVG ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border flex flex-col`}
+               role="region"
+               data-diagproof-dropzone="true"
+               aria-label="File upload dropzone"
+               ondragenter={() => isDraggingSVG = true}
+            ondragover={(e) => e.preventDefault()}
+            ondragleave={(e) => {
+                        if (!(e?.target as HTMLElement)?.dataset?.diagproofDropzone && !(e?.target as HTMLElement)?.closest("data-diagproof-dropzone")) {
+                          isDraggingSVG = false;
+                        }}}
+            ondrop={async (e) => {
+                   e.preventDefault();
+                   isDraggingSVG = false;
+
+                   const files = e.dataTransfer?.files;
+                   if (files?.length) {
+                     handleSVGFiles(files);
+                   }}}
+            >
+            <p class="mb-2">
+              … or load, paste, or drag and drop your own SVG file to add a new node to your theory.<br>
+              (cf documentation for annotation details).
+            </p>
+            <p>
+              <Button>
+                <input
+                  type="file"
+                  accept=".svg"
+                  onchange={async (e) => {
+                           const files = (e.target as HTMLInputElement).files;
+                           if (files?.length) {
+                             handleSVGFiles(files);
+                           }}}
+                />
+              </Button>
+            </p>
+          </div>
         </div>
-        <div class={`text-sm mb-3 text-gray-600 w-full h-30 ${isDraggingSVG ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border flex flex-col`}
-             role="region"
-             data-diagproof-dropzone="true"
-             aria-label="File upload dropzone"
-             ondragenter={() => isDraggingSVG = true}
-          ondragover={(e) => e.preventDefault()}
-          ondragleave={(e) => {
-                      if (!(e?.target as HTMLElement)?.dataset?.diagproofDropzone && !(e?.target as HTMLElement)?.closest("data-diagproof-dropzone")) {
-                        isDraggingSVG = false;
-                      }}}
-             ondrop={async (e) => {
-                    e.preventDefault();
-                    isDraggingSVG = false;
-
-                    const files = e.dataTransfer?.files;
-                    if (files?.length) {
-                      handleSVGFiles(files);
-                    }}}
-          >
-          <p class="mb-2">
-            … or load, paste, or drag and drop your own SVG file to add a new node to your theory.<br>
-            (cf documentation for annotation details).
-          </p>
-          <p>
-            <Button>
-              <input
-                type="file"
-                accept=".svg"
-                onchange={async (e) => {
-                         const files = (e.target as HTMLInputElement).files;
-                         if (files?.length) {
-                           handleSVGFiles(files);
-                         }}}
-              />
-            </Button>
-          </p>
-                </div>
-
       </div>
     </div>
 
