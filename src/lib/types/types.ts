@@ -60,9 +60,20 @@ export type Error = {
   message: string,
 }
 
+/** Rules */
+
+export type RuleName = string
+export type Rule = {
+  /** Might be undefined when creating the rule */
+  lhs?: Diagram,
+  rhs?: Diagram,
+}
+
+/** Theory contains nodes and rules we can apply on the nodes */
 export type Theory = {
   theoryName?: string,
   availableNodes?: Record<NodeKind, AvailableNode>,
+  rules?: Record<RuleName, Rule>,
 }
 
 /** Structure representing a diagram tab */

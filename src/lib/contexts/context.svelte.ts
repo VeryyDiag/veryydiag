@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
@@ -394,6 +394,70 @@ export class DiagramConfClass {
     })
     return true
   }
+
+  createRule = (ruleName: RuleName | undefined = undefined, rule: Rule = {}, theoryID: TheoryID | undefined = undefined,) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    let newRuleName = ruleName || "My rule (click me to edit)"
+    let nb = 0
+    if (this.diagramConf.theories[id]?.rules === undefined) {
+      this.diagramConf.theories[id].rules = {}
+    }
+    // Try to find an available rule name
+    while (this.diagramConf?.theories[id]?.rules?.[`${newRuleName}${nb == 0 ? "" : nb}`] !== undefined) {
+      nb++
+    }
+    this.diagramConf.theories[id].rules[`${newRuleName}${nb == 0 ? "" : nb}`] = rule
+    return `${newRuleName}${nb == 0 ? "" : nb}`
+  }
+
+  renameRule = (oldRuleName: NodeKind, newRuleName: NodeKind, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    if (oldRuleName === newRuleName) {
+      return true
+    }
+    if (this.diagramConf.theories[id]?.rules === undefined) {
+      this.diagramConf.theories[id].rules = {}
+    }
+    if (this.diagramConf?.theories[id]?.rules?.[newRuleName] !== undefined) {
+      this.sendNotification("error", `In theory ${this.diagramConf?.theories[id].theoryName} the rule ${newRuleName} already exists.`)
+      return false
+    }
+    this.diagramConf.theories[id].rules[newRuleName] = this.diagramConf.theories[id].rules[oldRuleName]
+    delete this.diagramConf.theories[id].rules[oldRuleName];
+    // TODO: We need to also rename all references to this… once it is implemented!
+    return true
+  }
+
+  setRuleLhs = (ruleName: RuleName, diagram : Diagram | undefined = undefined, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    const diag = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
+    if (this.diagramConf?.theories[id]?.rules?.[ruleName] === undefined) {
+      this.sendNotification("error", `Weird, the rule ${ruleName} does not exist. Report a bug.`)
+      return
+    }
+    this.diagramConf.theories[id].rules[ruleName].lhs = diag
+  }
+
+  setRuleRhs = (ruleName: RuleName, diagram : Diagram | undefined = undefined, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    const diag = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
+    if (this.diagramConf?.theories[id]?.rules?.[ruleName] === undefined) {
+      this.sendNotification("error", `Weird, the rule ${ruleName} does not exist. Report a bug.`)
+      return
+    }
+    this.diagramConf.theories[id].rules[ruleName].rhs = diag
+  }
+
+  deleteRule = (ruleName: RuleName, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    if (this.diagramConf?.theories[id]?.rules?.[ruleName] === undefined) {
+      this.sendNotification("error", `The rule ${ruleName} does not exist. Report a bug.`)
+      return
+    }
+    delete this.diagramConf.theories[id].rules[ruleName]
+  }
+
+  
 }
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();
