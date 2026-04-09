@@ -45,6 +45,10 @@ export class DiagramConfClass {
     return this.diagramConf
   }
 
+  getSVG = () => {
+    return this.svg
+  }
+
   getCurrentDiagram = () : Diagram => {
     return this.diagramConf.diagrams[this.diagramConf.currentDiagramTab]
   }
