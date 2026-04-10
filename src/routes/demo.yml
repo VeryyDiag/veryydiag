@@ -21,7 +21,7 @@ viewport:
   h: 20
 availableNodes:
   - nodeKind: myDiscard
-    svgName: diagproofDiscard
+    svgName: builtins.circuits.discard
   - nodeKind: myInputDiscard
-    svgName: diagproofInputDiscard
+    svgName: builtins.circuits.inputDiscard
             

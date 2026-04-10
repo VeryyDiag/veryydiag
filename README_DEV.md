@@ -1,4 +1,4 @@
-# DiagProof & CryptoDiag: how to contribute
+# ProofDiag & CryptoDiag: how to contribute
 
 Once you've created a project and installed dependencies with `npm install` start a development server:
 

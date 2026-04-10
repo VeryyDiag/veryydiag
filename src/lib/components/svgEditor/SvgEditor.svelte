@@ -91,7 +91,7 @@
        use:drag={onlySvg ? undefined : diagramConfClass}
        use:removeSelection={onlySvg ? undefined : diagramConfClass}
        style="touch-action: none;"
-       data-diagproof-main-svg={onlySvg ? undefined : "true"}
+       data-proofdiag-main-svg={onlySvg ? undefined : "true"}
        role="toolbar"
        tabindex="0" >
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->

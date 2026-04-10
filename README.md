@@ -1,7 +1,7 @@
-# DiagProof & CryptoDiag
+# ProofDiag & CryptoDiag
 
 This repository hosts two related projects:
-- **DiagProof**: A generic web-based program called allowing you to write diagrammatic proofs by applying some graph rewriting rules. You have lot's of freedom here: just define your basic nodes (SVG images with some special attributes to define connections) and rewriting rules (from the software), and you can prove that two graphs are equivalent based on these rewriting rules.
+- **ProofDiag**: A generic web-based program called allowing you to write diagrammatic proofs by applying some graph rewriting rules. You have lot's of freedom here: just define your basic nodes (SVG images with some special attributes to define connections) and rewriting rules (from the software), and you can prove that two graphs are equivalent based on these rewriting rules.
 - **CryptoDiag**: We also instantiate these rules to obtain a framework to write formal security proofs. These proofs aim to be:
   - **Intuitive**: once you know the framework, it should be as simple as possible (at least compared to Rocq…) to transfer an intuition of security like "this part is secret" into a formal security proof.
   - **Easy to read**: proofs written into existing frameworks (EasyCrypt…) are just impossible to read and check without the help of a computer. Reading the proof gives little intuition while we aim to

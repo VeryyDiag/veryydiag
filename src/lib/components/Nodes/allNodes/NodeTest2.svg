@@ -72,7 +72,7 @@
        inkscape:label="input0"
        class="input0"
        transform="rotate(90)"
-       data-diagproof-anchor="in.0" />
+       data-proofdiag-anchor="in.0" />
     <circle
        style="fill:#aa0000;stroke:none;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none"
        id="path6-3"
@@ -82,6 +82,6 @@
        inkscape:label="input0"
        class="input0"
        transform="rotate(90)"
-       data-diagproof-anchor="out.0" />
+       data-proofdiag-anchor="out.0" />
   </g>
 </svg>

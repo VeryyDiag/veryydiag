@@ -4,14 +4,14 @@ import type { Node } from "$lib/types/types";
 // ===================== SVG =====================
 // This provides a list of default SVG files that you may use in any theory as a starting point
 
-const allImages = import.meta.glob<{ default: string }>('./allNodes/Node*.svg', {
+const allImages = import.meta.glob<{ default: string }>('./allNodes/builtins/**/*.svg', {
   query: '?raw',
   eager: true,
 })
 
 // The same SVG image may be used by multiple theories and we may not want to always redefine them all. Hence we provide a list of
 // SVG images that can be used via svgName and that have lower priority than user-defined images (possible to change styles etc)
-const officialNodeImagesList : {[x: string]: string} = Object.fromEntries(Object.entries(allImages).map(([k, v]) => [k.replace(/^.\/allNodes\/Node/i, "diagproof").replace(/\.svg/, ""), v.default]));
+const officialNodeImagesList : {[x: string]: string} = Object.fromEntries(Object.entries(allImages).map(([k, v]) => [k.replace(/^.\/allNodes\/builtins/i, "builtins").replace(/\.svg$/, "").replace(/\//g, "."), v.default]));
 
 export const allDefaultSvgNames = Object.keys(officialNodeImagesList)
 

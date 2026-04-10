@@ -17,8 +17,8 @@
                            mythirdnode: {nodeKind: "discard", pos: {x: 2, y: 1}},
                          },
                          availableNodes: {
-                           inputDiscard: {svgName: "diagproofInputDiscard"},
-                           discard: {svgName: "diagproofDiscard"},
+                           inputDiscard: {svgName: "builtins.circuits.inputDiscard"},
+                           discard: {svgName: "builtins.circuits.discard"},
                          },
                          links: [
                            {

@@ -47,7 +47,6 @@
 <div class="text-base mb-3 text-gray-600">
   <p>
     <Icon icon="ph:arrow-bend-down-right-bold" width="15" height="15" class="inline align-baseline mr-1"/>
-    Rule
     <span contenteditable spellcheck="false" role="button" tabindex="0"
           onblur={(e) => {
                  const res = diagramConfClass.renameRule(ruleName, (e.target as HTMLElement).innerText)
@@ -63,7 +62,7 @@
       <div class="grow-1">
         {#if subDiagramConfLhs === undefined}
           <div class="w-28 text-center text-sm">
-            Click on "Lhs" to define me from the current diagram
+            Click on "Set lhs" to define me from the current diagram
           </div>
         {:else}
           <SvgEditor onlySvg={1} diagramConf={subDiagramConfLhs} />
@@ -75,7 +74,7 @@
       <div class="grow-1">
         {#if subDiagramConfRhs === undefined}
           <div class="w-28 text-center text-sm">
-            Click on "Rhs" to define me from the current diagram
+            Click on "Set rhs" to define me from the current diagram
           </div>
         {:else}
           <SvgEditor onlySvg={1} diagramConf={subDiagramConfRhs} />

@@ -60,7 +60,7 @@
           <Button>
             <input
               type="file"
-              accept=".diagproof,.yml,.yaml,.json"
+              accept=".proofdiag,.yml,.yaml,.json"
               onchange={async (e) => {
                        const files = (e.target as HTMLInputElement).files;
                        if (files?.length) {

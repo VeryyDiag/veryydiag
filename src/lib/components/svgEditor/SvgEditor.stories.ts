@@ -26,13 +26,13 @@ export const Primary: Story = {
         myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}},
       },
       availableNodes: {
-        myDiscard: {svgName: "diagproofDiscard"},
+        myDiscard: {svgName: "builtins.circuits.discard"},
       }
   }},
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
     await expect(svg).not.toBe(null);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="in.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="in.0"]').length).toBe(1);
   },
 };
 
@@ -57,7 +57,7 @@ export const SvgIncluded: Story = {
                            <path d="m201.46 9.317v2.7859"/>
                           </g>
                          </g>
-                         <circle transform="rotate(-90)" cx="-10.71" cy="210.39" r=".71958" data-diagproof-anchor="out.0"/>
+                         <circle transform="rotate(-90)" cx="-10.71" cy="210.39" r=".71958" data-proofdiag-anchor="out.0"/>
                         </g>
                         <rect x="201.13" y="6.6326" width="6.1753" height="8.1649" fill-opacity="0"/>
                        </g>
@@ -70,7 +70,7 @@ export const SvgIncluded: Story = {
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
     await expect(svg).not.toBe(null);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="out.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="out.0"]').length).toBe(1);
   },
 };
 
@@ -96,7 +96,7 @@ export const OnlySvg: Story = {
                            <path d="m201.46 9.317v2.7859"/>
                           </g>
                          </g>
-                         <circle transform="rotate(-90)" cx="-10.71" cy="210.39" r=".71958" data-diagproof-anchor="out.0"/>
+                         <circle transform="rotate(-90)" cx="-10.71" cy="210.39" r=".71958" data-proofdiag-anchor="out.0"/>
                         </g>
                         <rect x="201.13" y="6.6326" width="6.1753" height="8.1649" fill-opacity="0"/>
                        </g>
@@ -109,7 +109,7 @@ export const OnlySvg: Story = {
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
     await expect(svg).not.toBe(null);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="out.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="out.0"]').length).toBe(1);
   },
 };
 
@@ -121,15 +121,15 @@ export const TwoNodes: Story = {
         mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}}
       },
       availableNodes: {
-        inputDiscard: {svgName: "diagproofInputDiscard"},
-        discard: {svgName: "diagproofDiscard"}
+        inputDiscard: {svgName: "builtins.circuits.inputDiscard"},
+        discard: {svgName: "builtins.circuits.discard"}
       }
   }},
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
     await expect(svg).not.toBe(null);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="in.0"]').length).toBe(1);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="out.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="in.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="out.0"]').length).toBe(1);
   },
 };
 
@@ -142,8 +142,8 @@ export const TwoNodesLinked: Story = {
         mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}},
       },
       availableNodes: {
-        inputDiscard: {svgName: "diagproofInputDiscard"},
-        discard: {svgName: "diagproofDiscard"},
+        inputDiscard: {svgName: "builtins.circuits.inputDiscard"},
+        discard: {svgName: "builtins.circuits.discard"},
       },
       links: [
         {
@@ -155,9 +155,9 @@ export const TwoNodesLinked: Story = {
   play: async ({ canvas, userEvent, canvasElement }) => {
     const svg = canvasElement.querySelectorAll("svg");
     await expect(svg).not.toBe(null);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="in.0"]').length).toBe(1);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-anchor="out.0"]').length).toBe(1);
-    await expect(canvasElement.querySelectorAll('[data-diagproof-link]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="in.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-anchor="out.0"]').length).toBe(1);
+    await expect(canvasElement.querySelectorAll('[data-proofdiag-link]').length).toBe(1);
   },
 };
 

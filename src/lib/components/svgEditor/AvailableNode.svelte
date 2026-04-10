@@ -35,7 +35,7 @@
                onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
       >{nodeKind}</span>
   </p>
-  <div class="m-2" data-diagproof-available-node={nodeKind} draggable="true">
+  <div class="m-2" data-proofdiag-available-node={nodeKind} draggable="true">
     <SvgEditor onlySvg={1.3} diagramConf={subDiagramConf}/>
   </div>
 </div>
