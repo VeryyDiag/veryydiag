@@ -1,8 +1,19 @@
-<script>
-  let { enabled = $bindable()} = $props();
+<script lang="ts">
+  let {
+    enabled = $bindable(false),
+    onchange,
+    tiny = false,
+  } : {
+    enabled?: boolean,
+    onchange?: (enabled: boolean) => void,
+    tiny?: boolean,
+  } = $props();
 
   function toggle() {
     enabled = !enabled;
+    if (onchange) {
+      onchange(enabled)
+    }
   }
 </script>
 
@@ -11,7 +22,7 @@
   class={["inline-block align-middle mx-2 relative w-16 h-9 flex items-center rounded-full transition-all duration-300 backdrop-blur-md border shadow-lg",
         enabled
         ? 'bg-green-200/80 border-green-400 shadow-green-500/30'
-        : 'bg-gray-200/80 border-gray-300 shadow-black/10'
+        : 'bg-gray-200/80 border-gray-300 shadow-black/10',
         ]}
 >
   <!-- Track highlight -->

@@ -11,6 +11,7 @@
     addPanelCollapsed = $bindable(),
     downloadPanel = $bindable(),
     loadFilePanel = $bindable(),
+    panelDetailsEnabled = $bindable(),
     resetViewport,
   } = $props()
 
@@ -124,6 +125,18 @@
       title="Add node"
       >
       <Icon icon="mdi:plus" width="25" height="25"/>
+    </button>
+
+    <!-- Add tool -->
+    <button
+      class={[
+            styleButton,
+            panelDetailsEnabled ? styleButtonEnabled : styleButtonDisabled
+            ]}
+      onclick={() => {panelDetailsEnabled = !panelDetailsEnabled}}
+      title="Show/hide detail panel when selecting a node"
+      >
+      <Icon icon="mdi:card-account-details-outline" width="30" height="30"/>
     </button>
 
     <!-- Remove tool -->

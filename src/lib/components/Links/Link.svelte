@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Point, Link } from "$lib/types/types"
-  import { randomID, fullAnchorToIDAndAnchor, cm } from "$lib/utils";
+  import { randomID, fullAnchorToIDAndAnchor, cm } from "$lib/utils.svelte";
   import { getContextDiagram, registerErrors } from "$lib/contexts/context.svelte";
 
   let diagramConfClass = getContextDiagram()

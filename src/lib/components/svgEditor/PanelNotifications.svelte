@@ -4,7 +4,7 @@
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { getContextDiagram } from "$lib/contexts/context.svelte";
 
-  import { capitalizeFirstLetter } from "$lib/utils"
+  import { capitalizeFirstLetter } from "$lib/utils.svelte"
   import { stylePanel } from "./commonStyles.svelte" 
 
   let diagramConfClass = getContextDiagram()

@@ -1,7 +1,7 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
+import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils.svelte';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-proofdiag-anchor]") !== null

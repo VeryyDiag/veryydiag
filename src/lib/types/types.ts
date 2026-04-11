@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { randomID } from '$lib/utils';
+import { randomID } from '$lib/utils.svelte';
 
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
@@ -16,11 +16,36 @@ export type Point = {
   x: number,
   y: number,
 }
-                   
+
+/** Parameters of a node, like the name of a box… */
+export type ParamName = string
+/** Parameter specification */
+export const paramAvailableTypes = ["integer", "string", "boolean"]
+export type ParamSpec = {
+  type: typeof paramAvailableTypes[number],
+  default: number | string,
+  /** If unique is true, we forbid diagrams with the same value appearing twice (used mostly to uniquely
+   *  identify diagram outputs). If not specified, assumed to be false.
+   */
+  unique?: boolean,
+}
+/** Parameter instantiation */
+export type Param = {
+  value: number | string | boolean,
+}
+
+export type ParamSpecs = Record<ParamName, ParamSpec>
+export type Params = Record<ParamName, Param>
 export type AvailableNode = {
   svgString?: string, // You can either specify the SVG directly in the YML file…
   svgName?: string, // … or specify a name of a SVG …
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
+  /** Parameters that characterize the node. They are often extracted from the svg itself,
+   *  but we can override them here, e.g. to make it easier to parse
+   */
+  paramSpecs?: ParamSpecs,
+  params?: Params,
+  /** Value given to the parameters */
   // TODO: … or specify the URL of a SVG file
 }
 
@@ -243,4 +268,49 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
 
   // Check if all nodes have available theories
   return cleanedConfig
+}
+
+
+export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(svg, "image/svg+xml")
+  // Not possible to use CSS selectors because of the (mandatory) namespace…
+  // We can only select elements irrespective of their namespace via CSS selectors.
+  // https://stackoverflow.com/a/23047888/4987648
+  const allElements = doc.getElementsByTagNameNS("proofdiag", "newparam")
+  return Object.fromEntries([...allElements].map(elt => {
+    const name = elt.getAttribute("name")
+    const type = elt.getAttribute("type")
+    const def = elt.getAttribute("default")
+    const unique = elt.getAttribute("unique")
+    if (name === null) {
+      throw new Error(`No 'name' field was provided when creating a new parameter in the SVG file.`)
+    }
+    if (type === null) {
+      throw new Error(`No 'type' field was provided for the param '${name}'`)
+    }
+    if (def === null) {
+      throw new Error(`No 'def' field was provided for the param '${name}'`)
+    }
+    if (!(paramAvailableTypes.includes(type))) {
+      throw new Error(`In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`)
+    }
+    if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
+      throw new Error(`The type is int but the default value ${def} can't be turned into a def.`)
+    }
+    if (type === "boolean" && !["true", "false"].includes(def)) {
+      throw new Error(`The type is boolean but the default value (${def}) is not true/false.`)
+    }
+    if (unique !== null && !["true", "false"].includes(unique)) {
+      throw new Error(`In the definition of the ${name} parameter, the unique field must be true.`)
+    }
+    return [
+      name,
+      {
+        ...(unique !== null && unique === "true" && {unique: true}),
+        type,
+        default: def,
+      }
+    ]
+  }))
 }

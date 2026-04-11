@@ -4,7 +4,7 @@
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID } from "$lib/utils"
+  import { cm, randomID } from "$lib/utils.svelte"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
 
@@ -15,6 +15,7 @@
   import PanelDownload from "./PanelDownload.svelte";
   import PanelTheory from "./PanelTheory.svelte";
   import PanelToolbar from "./PanelToolbar.svelte";
+  import PanelDetails from "./PanelDetails.svelte";
 
   /**
    * Interactive SVG editor component
@@ -75,7 +76,8 @@
   let addPanelCollapsed = $state(false);
   let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
-   
+  let panelDetailsEnabled = $state(true)
+  
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
@@ -91,6 +93,7 @@
        use:drag={onlySvg ? undefined : diagramConfClass}
        use:removeSelection={onlySvg ? undefined : diagramConfClass}
        style="touch-action: none;"
+       data-proofdiag-app="true"
        data-proofdiag-main-svg={onlySvg ? undefined : "true"}
        role="toolbar"
        tabindex="0" >
@@ -128,12 +131,16 @@
       bind:addPanelCollapsed={addPanelCollapsed}
       bind:downloadPanel={downloadPanel}
       bind:loadFilePanel={loadFilePanel}
+      bind:panelDetailsEnabled={panelDetailsEnabled}
       resetViewport={resetViewport}
     />
 
     <!-- Theory panel -->
     <PanelTheory bind:addPanelCollapsed={addPanelCollapsed} />
-    
+
+    <!-- Theory panel -->
+    <PanelDetails bind:panelDetailsEnabled={panelDetailsEnabled} />
+
     <!-- Errors -->
     <PanelError />
 

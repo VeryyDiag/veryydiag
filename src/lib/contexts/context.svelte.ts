@@ -1,9 +1,9 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName } from "$lib/types/types";
-import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, createReactiveMap2D } from '$lib/utils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
 
 // Configuration
@@ -12,7 +12,35 @@ import { SvelteSet } from 'svelte/reactivity';
 export class DiagramConfClass {
   /** Contains the configuration of the current diagram that will be saved to files */
   diagramConf = $state<DiagramConf>(diagramConfByUserToDiagramConf({}))
+  /** Some informations are contained in the SVG file. To avoid duplicating it while allowing easier
+   *  parsing, we derive them.
+   */
 
+  diagramConfDerivedParams = createReactiveMap2D<Record<TheoryID, Theory>, ParamSpecs>(
+    () => this.diagramConf.theories,
+    {
+      getOuterKeys: x => Object.keys(x),
+      getInnerKeys: (theories, k) => Object.keys(theories?.[k]?.availableNodes || {}),
+      transform: (theories, k1, k2) => {
+        const node = theories?.[k1]?.availableNodes?.[k2]
+        if (node?.paramSpecs !== undefined) {
+          return node.paramSpecs
+        } else if (node?.svgString !== undefined) {
+          return extractNodeParamSpecsFromSVG(node.svgString)
+        } else if (node?.svgName !== undefined) {
+          const str = officialSvgNameToSvgString(node.svgName)
+          if (str !== undefined) {
+            return extractNodeParamSpecsFromSVG(str)
+          } else {
+            throw new Error(`The node ${node.svgName} has no matching SVG`)
+          }
+        }
+        return {}
+      },
+    }
+  )
+  getDiagramConfDerivedParams = () => this.diagramConfDerivedParams
+  
   /**
    * While it is possible to get coordinates of anchors via DOM access,
    * it is not super efficient and leads to a small lag when moving a node.
@@ -21,7 +49,7 @@ export class DiagramConfClass {
    */
   relativeAnchorPos = $state<Record<string, Point>>({})
 
-  /** Pointer to the main SVG element */
+    /** Pointer to the main SVG element */
   // Put the type inside $state!! https://github.com/sveltejs/svelte/issues/14435
   svg = $state<SVGGraphicsElement | undefined>(undefined)
 
@@ -457,8 +485,33 @@ export class DiagramConfClass {
     delete this.diagramConf.theories[id].rules[ruleName]
   }
 
-  
+  getLinkSelection = () => {
+    return this.linkSelection
+  }
+
+  getNodeSelection = () => {
+    return this.nodeSelection
+  }
+
+  changeNodeParam = (nodeID: NodeID, paramName: ParamName, newValue: string | boolean | number, diagID: DiagramID | undefined = undefined) => {
+    const id = diagID || this.diagramConf.currentDiagramTab
+    console.log("Changing to value", newValue)
+    const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
+    if (node === undefined) {
+      throw new Error(`Node ${nodeID} does not exist in diagram ${id}`)
+    }
+    const currentTheory = this.diagramConf?.diagrams?.[id]?.theory || "main"
+    if (this.diagramConfDerivedParams?.[currentTheory]?.[node.nodeKind]?.[paramName] === undefined) {
+      throw new Error(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
+    }
+    if (node?.params === undefined) {
+      node.params = {}
+    }
+    node.params[paramName] = { value: newValue }
+  }
 }
+
+// *** Jump to end, not sure how to cleanly avoid this huge class **
 
 export const [getContextDiagram, setContextDiagram] = createContext<DiagramConfClass>();
 

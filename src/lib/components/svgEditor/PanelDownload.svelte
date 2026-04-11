@@ -7,7 +7,7 @@
   import SvgEditor from "./SvgEditor.svelte"
   import { mount } from 'svelte';
   import Toogle from '$lib/components/reusable/Toogle.svelte'
-  import { downloadStringAsFile } from "$lib/utils"
+  import { downloadStringAsFile } from "$lib/utils.svelte"
   import { stringify } from 'yaml'
   import {flushSync} from "svelte"
 

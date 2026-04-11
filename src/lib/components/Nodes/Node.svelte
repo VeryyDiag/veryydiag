@@ -3,7 +3,7 @@
   import type { AvailableNode, Node } from "$lib/types/types"
   import { componentNameToComponent } from "$lib/components/Nodes/allNodes"
   import { registerErrors } from "$lib/contexts/context.svelte";
-  import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils";
+  import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils.svelte";
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   
   // This file is used to draw arbitrary nodes
@@ -82,6 +82,6 @@
 </script>
 {#if Component !== undefined}
   <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" data-proofdiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
-    <Component {...({...props, ...availableNode})}/>
+    <Component svgGroupRef={container} {...({...props, ...availableNode})}/>
   </g>
 {/if}

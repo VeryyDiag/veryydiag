@@ -10,6 +10,7 @@
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    sodipodi:docname="external.svg"
    data-proofdiag-newparam="name=name|type=string"
+   xmlns:proofdiag="proofdiag"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,8 +26,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="14.838495"
-     inkscape:cx="19.173103"
-     inkscape:cy="20.285076"
+     inkscape:cx="19.105711"
+     inkscape:cy="20.419861"
      inkscape:window-width="1920"
      inkscape:window-height="1006"
      inkscape:window-x="0"
@@ -47,23 +48,54 @@
        x="0.57411194"
        y="0.55527782" />
     <circle
-       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.565;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.254984;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="path1"
        cx="5"
+       cy="3.6041086"
+       r="0.42247096"
+       data-proofdiag-param-show="multipleWiresAllowed" />
+    <circle
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.362456;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path1-4"
+       cx="5"
        cy="5"
-       r="0.93612087"
+       r="0.60053635"
        data-proofdiag-anchor="ext" />
+    <circle
+       style="fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.254984;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path1-3"
+       cx="5"
+       cy="6.3958912"
+       r="0.42247096"
+       data-proofdiag-param-show="multipleWiresAllowed" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#3e3936;fill-opacity:1;stroke:none;stroke-width:1;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        x="5.0539727"
-       y="2.9599252"
+       y="2.7517126"
        id="text1"
-       data-proofdiag-param-content="name"><tspan
+       data-proofdiag-param-content="name"
+       lengthAdjust="spacingAndGlyphs"><tspan
          sodipodi:role="line"
          id="tspan1"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#3e3936;fill-opacity:1;stroke:none;stroke-width:1;stroke-dasharray:none"
          x="5.0539727"
-         y="2.9599252">1</tspan></text>
+         y="2.7517126">1</tspan></text>
   </g>
+  <metadata
+     id="metadata1">
+    <proofdiag:newparam
+       name="name"
+       unique="true"
+       default="1"
+       type="string" />
+    <proofdiag:newparam
+       name="namenb"
+       default="42"
+       type="integer" />
+    <proofdiag:newparam
+       name="multipleWiresAllowed"
+       default="true"
+       type="boolean" />
+  </metadata>
 </svg>
