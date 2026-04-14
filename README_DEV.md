@@ -92,3 +92,6 @@ let {
 
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3
+- Write more tests (and fix existing ones)
+- Check if all errors are cached correctly
+- Implement the unique constraint

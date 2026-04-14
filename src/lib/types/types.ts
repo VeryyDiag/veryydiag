@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { randomID } from '$lib/utils.svelte';
+import { assertNotUndefined, randomID } from '$lib/utils.svelte';
 
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
@@ -54,10 +54,22 @@ export type Node = AvailableNode & { nodeKind: string, pos: Point }
 // Dots are forbiden in NodeID
 export type NodeID = string
 export type NodeKind = string
+
 export type AnchorName = string
 /** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
 export type IDAnchor = string
 export type TheoryID = string
+
+/** Special kind of nodes used to describe connectivity with the outside world */
+export const nodeKindBoundaries : NodeKind[] = [ "diagramBoundary" ]
+export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node | undefined {
+  return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`)
+}
+export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
+  const nodeKind = assertNotUndefined(nodeFromNodeID(nodeID, diagram)?.nodeKind, `The node ${nodeID} has no nodeKind`)
+  return nodeKindBoundaries.includes(nodeKind)
+}
+
 
 export type Viewport = {
   x: number
@@ -92,6 +104,31 @@ export type Rule = {
   /** Might be undefined when creating the rule */
   lhs?: Diagram,
   rhs?: Diagram,
+}
+
+export type NodeBijection = Record<NodeID, NodeID>
+export type LinkBijection = Record<LinkID, LinkID>
+
+export type ProofStep = {
+  ruleName: RuleName,
+  /** Specify if we apply the rule from left to right, or right to left */
+  direction: "lr" | "rl",
+  /**
+   * To know how to apply the rule precisely, we should specify how to map each node+anchor of the rule to
+   * its corresponding position in the graph. This mapping may automatically be determined when possible,
+   * e.g. by the javascript code, but this is done only once (more efficient + always work).
+   * Here, we map nodes in the "from" rule to nodes in the original graph.
+   * Note that here we do not specify the boundary nodes.
+   */
+  nodeBijectionFrom: NodeBijection,
+  /** Same for links */
+  linkBijectionFrom: LinkBijection,
+  /** Similarly, we maintain a map "node in 'to' rule" -> "node in final diagram".
+   *  We can't just take the name in the new rule as we may have name collision.
+   */
+  nodeBijectionTo: Record<NodeID, NodeID>,
+  /** Same for links */
+  linkBijectionTo: Record<LinkID, LinkID>,
 }
 
 /** Theory contains nodes and rules we can apply on the nodes */
