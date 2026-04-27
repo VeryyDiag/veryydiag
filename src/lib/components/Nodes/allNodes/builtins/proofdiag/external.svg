@@ -10,11 +10,11 @@
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    sodipodi:docname="external.svg"
    data-proofdiag-newparam="name=name|type=string"
-   xmlns:proofdiag="proofdiag"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:proofdiag="proofdiag">
   <sodipodi:namedview
      id="namedview1"
      pagecolor="#ffffff"
@@ -26,7 +26,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="14.838495"
-     inkscape:cx="19.105711"
+     inkscape:cx="19.038319"
      inkscape:cy="20.419861"
      inkscape:window-width="1920"
      inkscape:window-height="1006"
@@ -74,7 +74,7 @@
        x="5.0539727"
        y="2.7517126"
        id="text1"
-       data-proofdiag-param-content="name"
+       data-proofdiag-param-content="boundaryName"
        lengthAdjust="spacingAndGlyphs"><tspan
          sodipodi:role="line"
          id="tspan1"
@@ -85,7 +85,7 @@
   <metadata
      id="metadata1">
     <proofdiag:newparam
-       name="name"
+       name="boundaryName"
        unique="true"
        default="1"
        type="string" />

@@ -1,7 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertNotUndefined, randomID } from '$lib/utils.svelte';
-
+import { assertNotUndefined, randomID, toString } from '$lib/utils.svelte';
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
@@ -29,16 +28,28 @@ export type ParamSpec = {
    */
   unique?: boolean,
 }
+export type ParamValue = number | string | boolean
 /** Parameter instantiation */
 export type Param = {
-  value: number | string | boolean,
+  value: ParamValue
+}
+
+export type AnchorProps = {
 }
 
 export type ParamSpecs = Record<ParamName, ParamSpec>
 export type Params = Record<ParamName, Param>
 export type AvailableNode = {
   svgString?: string, // You can either specify the SVG directly in the YML file…
-  svgName?: string, // … or specify a name of a SVG …
+  svgName?: string, // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
+  /**
+   * Anchors provided by the node.
+   * They are typically automatically derived from the SVG file when importing it, but we also
+   * add them here to avoid XML parsing when verifying the proof and have a self-contained Yaml
+   * file that we may certify using other tools that may not allow easy XML parsing (Rocq…).
+   * It also provide some robustness, as we can use it to detect when the SVG file changed.
+   */
+  anchors?: Record<AnchorName, AnchorProps>,
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
   /** Parameters that characterize the node. They are often extracted from the svg itself,
    *  but we can override them here, e.g. to make it easier to parse
@@ -49,7 +60,18 @@ export type AvailableNode = {
   // TODO: … or specify the URL of a SVG file
 }
 
-export type Node = AvailableNode & { nodeKind: string, pos: Point }
+export function getParam(node: Node, theory: Theory, paramName: ParamName) : ParamValue | undefined {
+  if (node?.params?.[paramName] !== undefined) {
+    return node.params[paramName].value
+  } else {
+    return theory?.availableNodes?.[node?.nodeKind]?.paramSpecs?.[paramName]?.default
+  }
+}
+
+// TODO: actually we always specify a nodeKind and don't care about most props of Available nodes
+// as we always fetch them from the theory itself.
+// So remove them from the definition of Node.
+export type Node = AvailableNode & { nodeKind: string, pos?: Point }
 
 // Dots are forbiden in NodeID
 export type NodeID = string
@@ -69,6 +91,16 @@ export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
   const nodeKind = assertNotUndefined(nodeFromNodeID(nodeID, diagram)?.nodeKind, `The node ${nodeID} has no nodeKind`)
   return nodeKindBoundaries.includes(nodeKind)
 }
+
+export function getBoundaryName(node: Node, theory: Theory) : string | undefined {
+  const p = getParam(node, theory, "boundaryName")
+  if (p === undefined) {
+    return undefined
+  } else {
+    return toString(p)
+  }
+}
+
 
 
 export type Viewport = {

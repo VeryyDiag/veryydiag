@@ -1,12 +1,45 @@
-import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, LinkBijection } from "$lib/types/types" 
-import { assertNotUndefined } from "$lib/utils.svelte" 
-import { isBoundaryNode, nodeKindBoundaries } from "$lib/types/types"
+import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind } from "$lib/types/types" 
+import { assertNotUndefined, areSetsEqual } from "$lib/utils.svelte" 
+import { isBoundaryNode, nodeKindBoundaries, getBoundaryName } from "$lib/types/types"
 import { fullAnchorToIDAndAnchor } from "$lib/utils.svelte" 
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
+/** Check if a diagram is syntaxically correct (all links point to existing nodes etc).
+ * Returns true if it is well formed, or throw an exception if not.
+ */
+export function checkDiagram(diagram: Diagram, theory: Theory) : boolean {
+  // Check if all nodeKinds exist in the theory
+  Object.entries((diagram?.nodes || {})).forEach(([nodeID, node]) => {
+    if ((theory?.availableNodes || {})?.[node.nodeKind] === undefined) {
+      throw new Error(`The nodeKind ${node.nodeKind} for node ${nodeID} does not exist in the theory.`)
+    }
+  })
+  // Check if all links are properly formed
+  Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {
+    const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(link.from)
+    if (diagram?.nodes?.[nodeFrom] === undefined) {
+      throw new Error(`The source node ${nodeFrom} does not exist in the link ${linkID}`)
+    }
+    if (theory?.availableNodes?.[diagram?.nodes?.[nodeFrom].nodeKind]?.anchors?.[anchorFrom] === undefined) {
+      throw new Error(`The anchor ${anchorFrom} in the source node ${nodeFrom} does not exist in the link ${linkID}`)
+    }
+    const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(link.to)
+    if (diagram?.nodes?.[nodeTo] === undefined) {
+      throw new Error(`The destination node ${nodeTo} does not exist in the link ${linkID}`)
+    }
+    if (theory?.availableNodes?.[diagram?.nodes?.[nodeTo].nodeKind]?.anchors?.[anchorTo] === undefined) {
+      throw new Error(`The anchor ${anchorTo} in the source node ${nodeTo} does not exist in the link ${linkID}`)
+    }
+  })
+  // TODO: check if all parameters have good types etc
+  return true
+}
+
 /** Make sure to provide a **copy** of the diagram if you want to keep it,
  * since we will remove nodes etc to create the new diagram */
-export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory) {
+export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory): Diagram {
+  // TODO: check if diagrams/rules are well formed (all links points to existing links etc),
+  // both as input and output
   const rule = theory.rules?.[proofStep.ruleName]
   if (rule === undefined) {
     throw new Error(`The rule ${proofStep.ruleName} does not exist`)
@@ -69,13 +102,40 @@ export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory
   }
   // TODO: Check if links actually belong to the nodes in the rewritting context (more generally that the diagram is valid)
 
+  // We check if both rules have the same boundary, and all boundaries have unique names
+  const boundaryFrom = Object.entries(ruleFrom?.nodes || {}).map(([nodeID, node]) => {
+    if (isBoundaryNode(nodeID, ruleFrom)) {
+      return node
+    }
+    return undefined
+  }).filter(x => x !== undefined)
+  const boundaryFromNames = boundaryFrom.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryFromNamesSet = new Set(boundaryFromNames)
+  const boundaryTo = Object.entries(ruleTo?.nodes || {}).map(([nodeID, node]) => {
+    if (isBoundaryNode(nodeID, ruleTo)) {
+      return node
+    }
+    return undefined
+  }).filter(x => x !== undefined)
+  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryToNamesSet = new Set(boundaryToNames)
+  if (boundaryFromNamesSet.size !== boundaryFromNames.length) {
+    throw new Error(`Some boundary nodes are specified multiple times in the starting rule`)
+  }
+  if (boundaryToNamesSet.size !== boundaryToNames.length) {
+    throw new Error(`Some boundary nodes are specified multiple times in the ending rule`)
+  }
+  if (!areSetsEqual(boundaryFromNamesSet, boundaryToNamesSet)) {
+    throw new Error(`You should have the same sets of boundary nodes in the right and left parts of the rule`)
+  }
+  
   // We build the inverse of the bijection for efficiency reasons (A = first diagram, B = first rule diagram)
   const linkAtoB : Record<NodeID, NodeID> = Object.fromEntries(Object.entries(proofStep.linkBijectionFrom).map(([k,v]) => [v, k]))
   const nodeAtoB : Record<NodeID, NodeID> = Object.fromEntries(Object.entries(proofStep.nodeBijectionFrom).map(([k,v]) => [v, k]))
 
   // Instructions to delete/rewire/etc We avoid to remove in the loop in case it disturbs the process.
   const linksToDelete : LinkID[] = []
-  
+
   // All links are either boundary links, outside current rewritting context, or listed in the bijection
   Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {    
     // Check if the link is inside the rewritting context (i.e. rule applies to current link)
@@ -103,9 +163,9 @@ export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory
         }
       }
     } else {
-      // The link starts inside the context
+      // The link starts inside the rule context
       if (!nodesA.includes(toNode)) {
-        // The link ends outside the context: this node is next to the boundary
+        // The link ends outside the rule context: this node is next to the boundary
         // We check if the corresponding node allows boundary connections
         const nodeAtBoundaryR = nodeAtoB[fromNode]
         // TODO: think about case when a rewritting rules has two boundary nodes pointing to the same node
@@ -143,13 +203,40 @@ export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory
     }
     delete diagram.nodes[nodeID]
   })
-  // TODO: think about how to set the position of the new node (center of all other nodes?)
   // We add the new nodes
-  nodesD.forEach((nodeID) => {
-    if (diagram?.nodes?.[nodeID] !== undefined) {
-      throw new Error(`Collision with the identifier ${nodeID} in rule and original diagram `)
+  Object.entries(ruleTo?.nodes || {}).forEach(([nodeID, node]) => {
+    const newNodeID = proofStep.nodeBijectionTo[nodeID]
+    if (diagram?.nodes?.[newNodeID] !== undefined) {
+      throw new Error(`Collision with the identifier ${newNodeID} in rule and original diagram. Rename the node in nodeBijectiontTo to make sure it is unique.`)
     }
-    // TODO
+    // We don't add the boundary nodes, they will already be present
+    if (isBoundaryNode(nodeID, ruleTo)) {
+      return
+    }
+    if (diagram?.nodes === undefined) {
+      diagram.nodes = {}
+    }
+    diagram.nodes[newNodeID] = node;
+    // TODO: think about how to set the position of the new node (center of all other nodes?)
   })
-  // We reconnect them to the boundary
+  // We add the links of the new rule
+  Object.entries(ruleTo?.linksWithID || {}).forEach(([linkID, link]) => {
+    const newLinkID = proofStep.linkBijectionTo[linkID]
+    if (diagram?.linksWithID?.[newLinkID] !== undefined) {
+      throw new Error(`Collision with the identifier ${newLinkID} in rule and original diagram. Rename the link in linkBijectiontTo to make sure it is unique.`)
+    }
+    if (isBoundaryNode(link.from, ruleTo) || isBoundaryNode(link.to, ruleTo)) {
+      // We add the links involving the boundary
+      // const fromNode = isBoundaryNode(link.from, ruleTo) ? TODO : [ link.from ]
+      // TODO
+      return
+    } else {
+      // We add the regular links not involving the boundary
+      if (diagram?.linksWithID === undefined) {
+        diagram.linksWithID = {}
+      }
+      diagram.linksWithID[newLinkID] = link;
+    }
+  })
+  return diagram
 }

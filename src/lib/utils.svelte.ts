@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { AnchorName, IDAnchor, NodeID, Point } from './types/types';
+import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/types';
+
 // This file contains generic utils functions
 
 export function assertNotUndefined<T>(x: T | undefined, m: string): T {
@@ -23,6 +24,18 @@ export function toBoolean(x: string | boolean | number) {
     throw new Error("Expecting a boolean but got a number ${x}")
   } else if (typeof x === 'boolean') {
     return x
+  }
+}
+
+export function toString(x: ParamValue) : string {
+  if (typeof x === 'string' ) {
+    return x
+  } else if (typeof x === 'number') {
+    return `${x}`
+  } else if (typeof x === 'boolean') {
+    return x ? "true" : "false"
+  } else {
+    throw new Error(`The type "${typeof x}" is not string, number or boolean.`)
   }
 }
 
@@ -265,3 +278,5 @@ export function createReactiveMap2D<S, U>(
   
   return mapped
 }
+
+export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));

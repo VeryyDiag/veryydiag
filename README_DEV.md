@@ -21,6 +21,13 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
 
+## Unit testing
+
+You can test basic functions by creating a file called `*.test.ts` and that follows vitest syntax. To run all unit tests (including storybook, see below), run:
+```
+npm run test:unit
+```
+
 ## Testing with storybook
 
 To test the project, you can run:

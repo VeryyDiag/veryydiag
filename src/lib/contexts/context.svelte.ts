@@ -298,7 +298,7 @@ export class DiagramConfClass {
     if (diag?.nodes?.[nodeID] === undefined) {
       return {message: `No node ${nodeID} to get position from`}
     }
-    return diag.nodes[nodeID].pos
+    return diag.nodes[nodeID].pos || {x: 0, y: 0}
   }
 
 
