@@ -76,6 +76,8 @@ export type Node = AvailableNode & { nodeKind: string, pos?: Point }
 // Dots are forbiden in NodeID
 export type NodeID = string
 export type NodeKind = string
+/** A boundary name is the param 'name' given to a boundary node */
+export type BoundaryName = string
 
 export type AnchorName = string
 /** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
@@ -138,15 +140,19 @@ export type Rule = {
   rhs?: Diagram,
 }
 
+/** Maps a node ID in the rule to a node ID in the diagram */
 export type NodeBijection = Record<NodeID, NodeID>
+/** Maps a link ID in the rule to a link ID in the diagram */
 export type LinkBijection = Record<LinkID, LinkID>
+/** Maps a boundary name in the rule to a list of links in the diagram */
+export type BoundaryLinks = Record<BoundaryName, LinkID[]>
 
 export type ProofStep = {
   ruleName: RuleName,
   /** Specify if we apply the rule from left to right, or right to left */
   direction: "lr" | "rl",
   /**
-   * To know how to apply the rule precisely, we should specify how to map each node+anchor of the rule to
+   * To know how to apply the rule precisely, we should specify how to map each node of the rule to
    * its corresponding position in the graph. This mapping may automatically be determined when possible,
    * e.g. by the javascript code, but this is done only once (more efficient + always work).
    * Here, we map nodes in the "from" rule to nodes in the original graph.
@@ -155,6 +161,13 @@ export type ProofStep = {
   nodeBijectionFrom: NodeBijection,
   /** Same for links */
   linkBijectionFrom: LinkBijection,
+  /** We also associate to each boundary node (specified via is boundary name),
+   *  a list of links in the source diagram (no need to specify it in the destination
+   *  diagram since names of the links will be preserved). This can sometimes be inferred
+   *  automatically, but sometimes not in a non-ambiguous way (e.g. two boundary nodes
+   *  connected to the same node in the zx copy rule) hence we include it here.
+   */
+  boundaryLinks: BoundaryLinks,
   /** Similarly, we maintain a map "node in 'to' rule" -> "node in final diagram".
    *  We can't just take the name in the new rule as we may have name collision.
    */
