@@ -86,15 +86,30 @@ export type TheoryID = string
 
 /** Special kind of nodes used to describe connectivity with the outside world */
 export const nodeKindBoundaries : NodeKind[] = [ "diagramBoundary" ]
+
 export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node | undefined {
   return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`)
 }
+
 export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
   const nodeKind = assertNotUndefined(nodeFromNodeID(nodeID, diagram)?.nodeKind, `The node ${nodeID} has no nodeKind`)
   return nodeKindBoundaries.includes(nodeKind)
 }
 
-export function getBoundaryName(node: Node, theory: Theory) : string | undefined {
+export function getBoundaryNameFromBoundaryNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
+  const node = diagram?.nodes?.[nodeID]
+  if (node === undefined) {
+    throw new Error(`The node ${nodeID} does not exist in the diagram`)
+  }
+  const boundaryName = getParam(node, theory, "boundaryName")
+  if (boundaryName === undefined) {
+    throw new Error(`The parameter boundaryName does not exist in ${nodeID}, i.e. it is not a boundary node`)
+  }
+  return toString(boundaryName)
+}
+
+
+    export function getBoundaryName(node: Node, theory: Theory) : string | undefined {
   const p = getParam(node, theory, "boundaryName")
   if (p === undefined) {
     return undefined
