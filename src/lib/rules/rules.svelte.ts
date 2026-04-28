@@ -1,5 +1,5 @@
-import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind } from "$lib/types/types" 
-import { assertNotUndefined, areSetsEqual } from "$lib/utils.svelte" 
+import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule } from "$lib/types/types" 
+import { assertNotUndefined, assertNotUndefinedNR, areSetsEqual, assertDontThrow } from "$lib/utils.svelte" 
 import { isBoundaryNode, nodeKindBoundaries, getBoundaryName } from "$lib/types/types"
 import { fullAnchorToIDAndAnchor } from "$lib/utils.svelte" 
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
@@ -7,7 +7,7 @@ import { fullAnchorToIDAndAnchor } from "$lib/utils.svelte"
 /** Check if a diagram is syntaxically correct (all links point to existing nodes etc).
  * Returns true if it is well formed, or throw an exception if not.
  */
-export function checkDiagram(diagram: Diagram, theory: Theory) : boolean {
+export function checkDiagram(diagram: Diagram, theory: Theory) : true {
   // Check if all nodeKinds exist in the theory
   Object.entries((diagram?.nodes || {})).forEach(([nodeID, node]) => {
     if ((theory?.availableNodes || {})?.[node.nodeKind] === undefined) {
@@ -35,21 +35,49 @@ export function checkDiagram(diagram: Diagram, theory: Theory) : boolean {
   return true
 }
 
+export function checkRule(rule: Rule, theory: Theory) {
+  const lhs = assertNotUndefined(rule.lhs, `The LHS of the rule is undefined.`)
+  const rhs = assertNotUndefined(rule.rhs, `The RHS of the rule is undefined.`)
+  assertDontThrow(() => checkDiagram(lhs, theory), `The diagram on the LHS side is not well formed`)
+  assertDontThrow(() => checkDiagram(rhs, theory), `The diagram on the RHS side is not well formed`)
+  // We check if both rules have the same boundary, and all boundaries have unique names
+  const boundaryFrom = Object.entries(lhs?.nodes || {}).map(([nodeID, node]) => {
+    if (isBoundaryNode(nodeID, lhs)) {
+      return node
+    }
+    return undefined
+  }).filter(x => x !== undefined)
+  const boundaryFromNames = boundaryFrom.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryFromNamesSet = new Set(boundaryFromNames)
+  const boundaryTo = Object.entries(rhs?.nodes || {}).map(([nodeID, node]) => {
+    if (isBoundaryNode(nodeID, rhs)) {
+      return node
+    }
+    return undefined
+  }).filter(x => x !== undefined)
+  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryToNamesSet = new Set(boundaryToNames)
+  // TODO: more explicit 
+  if (boundaryFromNamesSet.size !== boundaryFromNames.length) {
+    throw new Error(`Some boundary nodes are specified multiple times in the starting rule`)
+  }
+  if (boundaryToNamesSet.size !== boundaryToNames.length) {
+    throw new Error(`Some boundary nodes are specified multiple times in the ending rule`)
+  }
+  if (!areSetsEqual(boundaryFromNamesSet, boundaryToNamesSet)) {
+    throw new Error(`You should have the same sets of boundary nodes in the right and left parts of the rule`)
+  }
+}
+
 /** Make sure to provide a **copy** of the diagram if you want to keep it,
  * since we will remove nodes etc to create the new diagram */
 export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory): Diagram {
   // TODO: check if diagrams/rules are well formed (all links points to existing links etc),
   // both as input and output
-  const rule = theory.rules?.[proofStep.ruleName]
-  if (rule === undefined) {
-    throw new Error(`The rule ${proofStep.ruleName} does not exist`)
-  }
-  if (rule?.lhs === undefined) {
-    throw new Error(`The rule ${proofStep.ruleName} has an undefined lhs`)
-  }
-  if (rule?.rhs === undefined) {
-    throw new Error(`The rule ${proofStep.ruleName} has an undefined rhs`)
-  }
+  const rule = assertNotUndefined(theory.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist`)
+  assertNotUndefinedNR(rule?.lhs, `The rule ${proofStep.ruleName} has an undefined lhs`)
+  assertNotUndefinedNR(rule?.rhs, `The rule ${proofStep.ruleName} has an undefined rhs`)
+  assertDontThrow(() => checkRule(rule, theory), `The rule ${proofStep.ruleName} contained in the current proofStep is invalid`)
   const ruleFrom: Diagram = proofStep.direction === "lr" ? rule.lhs : rule.rhs;
   // List of nodes involved in the rule (resp. diagram) A -> B -> C -> D
   const nodesB : NodeID[] = Object.keys(ruleFrom?.nodes || {})
@@ -101,33 +129,6 @@ export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory
     throw new Error(`We detected that you forgot some links from the diagram in linkBijectionFrom`)
   }
   // TODO: Check if links actually belong to the nodes in the rewritting context (more generally that the diagram is valid)
-
-  // We check if both rules have the same boundary, and all boundaries have unique names
-  const boundaryFrom = Object.entries(ruleFrom?.nodes || {}).map(([nodeID, node]) => {
-    if (isBoundaryNode(nodeID, ruleFrom)) {
-      return node
-    }
-    return undefined
-  }).filter(x => x !== undefined)
-  const boundaryFromNames = boundaryFrom.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
-  const boundaryFromNamesSet = new Set(boundaryFromNames)
-  const boundaryTo = Object.entries(ruleTo?.nodes || {}).map(([nodeID, node]) => {
-    if (isBoundaryNode(nodeID, ruleTo)) {
-      return node
-    }
-    return undefined
-  }).filter(x => x !== undefined)
-  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
-  const boundaryToNamesSet = new Set(boundaryToNames)
-  if (boundaryFromNamesSet.size !== boundaryFromNames.length) {
-    throw new Error(`Some boundary nodes are specified multiple times in the starting rule`)
-  }
-  if (boundaryToNamesSet.size !== boundaryToNames.length) {
-    throw new Error(`Some boundary nodes are specified multiple times in the ending rule`)
-  }
-  if (!areSetsEqual(boundaryFromNamesSet, boundaryToNamesSet)) {
-    throw new Error(`You should have the same sets of boundary nodes in the right and left parts of the rule`)
-  }
   
   // We build the inverse of the bijection for efficiency reasons (A = first diagram, B = first rule diagram)
   const linkAtoB : Record<NodeID, NodeID> = Object.fromEntries(Object.entries(proofStep.linkBijectionFrom).map(([k,v]) => [v, k]))

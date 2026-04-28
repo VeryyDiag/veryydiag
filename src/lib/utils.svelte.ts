@@ -3,11 +3,28 @@ import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/ty
 
 // This file contains generic utils functions
 
-export function assertNotUndefined<T>(x: T | undefined, m: string): T {
-  if (x === undefined ) {
+export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<T> {
+  if (x === undefined || x === null) {
     throw new Error(m)
   } else {
     return x
+  }
+}
+
+/** Like assertNotUndefined but don't return anything (NR = No Return) to help typescript to infer something about the input.
+ * See https://github.com/microsoft/TypeScript/issues/40562 and https://github.com/microsoft/TypeScript/issues/34636
+ */
+export function assertNotUndefinedNR<T>(x: T | undefined, m: string): asserts x is NonNullable<T> {
+  if (x === undefined || x === null) {
+    throw new Error(m)
+  }
+}
+
+export function assertDontThrow<T>(f: () => T, m: string): T {
+  try {
+    return f()
+  } catch (e) {
+    throw new Error(`${m}: (${e})`)
   }
 }
 

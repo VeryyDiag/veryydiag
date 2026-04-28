@@ -96,7 +96,7 @@ export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
   return nodeKindBoundaries.includes(nodeKind)
 }
 
-export function getBoundaryNameFromBoundaryNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
+export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
   const node = diagram?.nodes?.[nodeID]
   if (node === undefined) {
     throw new Error(`The node ${nodeID} does not exist in the diagram`)
@@ -109,7 +109,7 @@ export function getBoundaryNameFromBoundaryNode(nodeID: NodeID, diagram: Diagram
 }
 
 
-    export function getBoundaryName(node: Node, theory: Theory) : string | undefined {
+export function getBoundaryName(node: Node, theory: Theory) : string | undefined {
   const p = getParam(node, theory, "boundaryName")
   if (p === undefined) {
     return undefined
@@ -159,8 +159,8 @@ export type Rule = {
 export type NodeBijection = Record<NodeID, NodeID>
 /** Maps a link ID in the rule to a link ID in the diagram */
 export type LinkBijection = Record<LinkID, LinkID>
-/** Maps a boundary name in the rule to a list of links in the diagram */
-export type BoundaryLinks = Record<BoundaryName, LinkID[]>
+/** Maps a link in a diagram to its boundary name in the rule (multiple links may share the same boundary name) */
+export type BoundaryLinks = Record<LinkID, BoundaryName>
 
 export type ProofStep = {
   ruleName: RuleName,
