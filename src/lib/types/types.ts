@@ -222,6 +222,9 @@ export type ProofStep = {
    * Note that here we do not specify the boundary nodes.
    * We do it this direction in case we introduce special kinds of nodes in rules like "arbitrary graph" that can
    * be attributed to multiple nodes and to maintain same direction as boundaryLinks.
+   * Here (and in other fields), A refers to the starting diagram, B to the starting rule diagram, C to the
+   * resulting rule diagram, and D to the final diagram to obtain.
+   * Hence, nodeBijectionAB means that we map stuff from the starting diagram (A) to stuff in the starting rule (B)
    */
   nodeBijectionAB: NodeBijection,
   /** Same for links */
@@ -230,6 +233,8 @@ export type ProofStep = {
    *  in the rule (specified via its boundary name). This can sometimes be inferred
    *  automatically, but sometimes not in a non-ambiguous way (e.g. two boundary nodes
    *  connected to the same node in the zx copy rule) hence we include it here.
+   *  In the name "boundaryLinksDR", D means "Diagram" and R means "Rule" to mean that we
+   *  map stuff from the diagram to stuff in the rule.
    */
   boundaryLinksDR: BoundaryLinks,
   /** Similarly, we maintain a map "node in 'to' rule" -> "node in final diagram".
