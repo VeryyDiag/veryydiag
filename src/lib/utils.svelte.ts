@@ -3,6 +3,23 @@ import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/ty
 
 // This file contains generic utils functions
 
+export function errToUndef<T>(x: () => T) : T | undefined {
+  try {
+    return x()
+  } catch (e) {
+    return undefined
+  }
+}
+
+export function assertTrue(x: boolean, m: string): true {
+  if (!x) {
+    throw new Error(m)
+  } else {
+    return true
+  }
+}
+
+
 export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<T> {
   if (x === undefined || x === null) {
     throw new Error(m)
@@ -54,6 +71,55 @@ export function toString(x: ParamValue) : string {
   } else {
     throw new Error(`The type "${typeof x}" is not string, number or boolean.`)
   }
+}
+
+export function recordIsBijection(x: Record<string,string>,
+                            { filterLeft = (x) => true,
+                              filterRight = (x) => true,
+                            } : {
+                              filterLeft?: ((x: string) => boolean),
+                              filterRight?: ((x: string) => boolean),
+                            } = {}) : boolean {
+  return (new Set(Object.keys(x).filter(filterLeft))).size === (new Set(Object.values(x).filter(filterRight))).size
+}
+
+export function listsAreBijection(a: string[], b: string[]) : boolean {
+  const s = new Set(a).size
+  return s === (new Set(b)).size && s === a.length
+}
+
+
+export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));
+
+export function listsAreUniqueAndIdenticalSets(a: string[], b: string[]) : boolean {
+  const aSet = new Set(a)
+  const sa = aSet.size
+  const bSet = new Set(b)
+  const sb = bSet.size
+  return sa === a.length && sb === b.length && sa === sb && areSetsEqual(aSet, bSet)
+}
+
+export function listIsUnique<T>(l: T[]) : boolean {
+  const lSet = new Set(l)
+  return l.length == lSet.size
+}
+
+export function values<T>(o: Record<string, T> | undefined) {
+  return Object.values(o || {})
+}
+
+export function keys<T>(o: Record<string, T> | undefined) {
+  return Object.keys(o || {})
+}
+
+export function entries<T>(o: Record<string, T> | undefined) {
+  return Object.entries(o || {})
+}
+
+
+export function inverseBijection(o: Record<string, string>) : Record<string, string> {
+  assertTrue(recordIsBijection(o), `This is not a bijection`)
+  return Object.fromEntries(Object.entries(o).map(([k,v]) => [v, k]))
 }
 
 // getTransformToElement(fromElement, toElement) returns the matrix to apply to turn coordinate in the insideElement coordinate
@@ -295,5 +361,3 @@ export function createReactiveMap2D<S, U>(
   
   return mapped
 }
-
-export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));

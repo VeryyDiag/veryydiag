@@ -87,8 +87,12 @@ export type TheoryID = string
 /** Special kind of nodes used to describe connectivity with the outside world */
 export const nodeKindBoundaries : NodeKind[] = [ "diagramBoundary" ]
 
-export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node | undefined {
+export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node {
   return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`)
+}
+
+export function linkFromNodeID(linkID: LinkID, diagram: Diagram) : Link {
+  return assertNotUndefined(diagram?.linksWithID?.[linkID], `The link ${linkID} does not exist`)
 }
 
 export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
@@ -96,6 +100,7 @@ export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
   return nodeKindBoundaries.includes(nodeKind)
 }
 
+// See also getBoundaryName if you don't want to throw an error
 export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
   const node = diagram?.nodes?.[nodeID]
   if (node === undefined) {
@@ -118,6 +123,27 @@ export function getBoundaryName(node: Node, theory: Theory) : string | undefined
   }
 }
 
+export type NbBoundaryLink = 0|1|2|3
+
+/** Returns the identity of boundary links, 0 = not a boundary link, 1 = from is boundary, not to,
+ * 2 = to is boundary, not from, 3 = both are boundary nodes.
+ */
+export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
+  const nodeFrom = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
+  const nodeTo = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
+  // To help typescript we don't use sum
+  const a = isBoundaryNode(nodeFrom, diagram)
+  const b = isBoundaryNode(nodeTo, diagram)
+  if (!a && !b) {
+    return 0
+  } else if (a && !b) {
+    return 1
+  } else if (b && !a) {
+    return 2
+  } else {
+    return 3
+  }
+}
 
 
 export type Viewport = {
@@ -159,36 +185,60 @@ export type Rule = {
 export type NodeBijection = Record<NodeID, NodeID>
 /** Maps a link ID in the rule to a link ID in the diagram */
 export type LinkBijection = Record<LinkID, LinkID>
-/** Maps a link in a diagram to its boundary name in the rule (multiple links may share the same boundary name) */
-export type BoundaryLinks = Record<LinkID, BoundaryName>
+/** Maps a link in a diagram to its boundary name in the rule. Since a link may have each
+ *  end on a boundary (e.g. ZX ID rule -- = -o-), we need to specify the from/to parts.
+ *  In this specific case (possible only when the boundary accepts a single link), we
+ *  may not preserve the number of links since we basically cut a link in two parts (->)
+ *  or we merge two links in one (<-). In the first case, the new link will have the name
+ *  of the link connected to the lexicographically smaller boundary name (ascii comparison,
+ *  I tried it's trivial to compute also in Rocq). In the split case, the name is given
+ *  via newLinkName{1,2} as documented below.
+ *  One may also have similar rules like -- = -- when the kind of the link is changed etc.
+ */
+export type BoundaryLinks = Record<LinkID, {
+  from?: BoundaryName,
+  to?: BoundaryName,
+  /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
+   *  Name of the first created link (sharing the 'from' anchor). If you don't know if the rule will
+   *  split the link or not, you can always specify it and it will be ignored if needed.
+   */
+  newLinkName1?: LinkID,
+  /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
+   *  Name of the second created link (sharing the 'to' anchor). If you don't know if the rule will
+   *  split the link or not, you can always specify it and it will be ignored if needed.
+   */
+  newLinkName2?: LinkID,
+} >
 
 export type ProofStep = {
   ruleName: RuleName,
   /** Specify if we apply the rule from left to right, or right to left */
   direction: "lr" | "rl",
   /**
-   * To know how to apply the rule precisely, we should specify how to map each node of the rule to
-   * its corresponding position in the graph. This mapping may automatically be determined when possible,
-   * e.g. by the javascript code, but this is done only once (more efficient + always work).
-   * Here, we map nodes in the "from" rule to nodes in the original graph.
+   * To know how to apply the rule precisely, we should specify how to map each node of the diagram to
+   * its corresponding node in the rule. This mapping may automatically be determined when possible,
+   * e.g. by the javascript code, but this is done only once (more efficient + always works).
+   * Here, we map nodes in the left diagram to  "from" rule to nodes in the original graph.
    * Note that here we do not specify the boundary nodes.
+   * We do it this direction in case we introduce special kinds of nodes in rules like "arbitrary graph" that can
+   * be attributed to multiple nodes and to maintain same direction as boundaryLinks.
    */
-  nodeBijectionFrom: NodeBijection,
+  nodeBijectionAB: NodeBijection,
   /** Same for links */
-  linkBijectionFrom: LinkBijection,
-  /** We also associate to each boundary node (specified via is boundary name),
-   *  a list of links in the source diagram (no need to specify it in the destination
-   *  diagram since names of the links will be preserved). This can sometimes be inferred
+  linkBijectionAB: LinkBijection,
+  /** We also associate to each boundary link in the diagram its correspondant boundary name
+   *  in the rule (specified via its boundary name). This can sometimes be inferred
    *  automatically, but sometimes not in a non-ambiguous way (e.g. two boundary nodes
    *  connected to the same node in the zx copy rule) hence we include it here.
    */
-  boundaryLinks: BoundaryLinks,
+  boundaryLinksDR: BoundaryLinks,
   /** Similarly, we maintain a map "node in 'to' rule" -> "node in final diagram".
    *  We can't just take the name in the new rule as we may have name collision.
+   *  We also ignore boundary links which are taken care by boundaryLinksDiagDR
    */
-  nodeBijectionTo: Record<NodeID, NodeID>,
+  nodeBijectionCD: Record<NodeID, NodeID>,
   /** Same for links */
-  linkBijectionTo: Record<LinkID, LinkID>,
+  linkBijectionCD: Record<LinkID, LinkID>,
 }
 
 /** Theory contains nodes and rules we can apply on the nodes */
