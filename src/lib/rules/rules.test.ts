@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import type { Rule } from '$lib/types/types'
 import { checkDiagram, checkRule } from './rules.svelte'
 
 const boundaryAvailableNode = {
@@ -665,7 +666,7 @@ describe('Test well formed diagrams/rules/…', () => {
     })
 
     test('Wrong rule with non unique boundaries', () => {
-      expect(() => checkRule({
+      const rule : any = {
         // Rule
         lhs: {
           nodes: {
@@ -713,7 +714,8 @@ describe('Test well formed diagrams/rules/…', () => {
             },
           },
         },
-      }, {
+      };
+      const theory = {
         // Theory
         availableNodes: {
           A: {
@@ -728,7 +730,17 @@ describe('Test well formed diagrams/rules/…', () => {
           },
           boundary: boundaryAvailableNode
         },
-      })).toThrow()
+      };
+      let ruleA = structuredClone(rule)
+      expect(() => checkRule(ruleA, theory)).toThrow()
+      delete ruleA.lhs.nodes.Bob;
+      expect(() => checkRule(ruleA, theory)).toThrow()
+      delete ruleA.rhs.nodes.baz;
+      // If we delete both problematic elements we are good again
+      expect(checkRule(ruleA, theory)).toBe(true)
+      let ruleB = structuredClone(rule)
+      delete ruleB.rhs.nodes.baz;
+      expect(() => checkRule(ruleB, theory)).toThrow()
     })
 
   })

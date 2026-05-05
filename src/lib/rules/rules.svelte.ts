@@ -129,9 +129,9 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
   return true
 }
 
-/** Make sure to provide a **copy** of the diagram if you want to keep it,
- * since we will remove nodes etc to create the new diagram */
-export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory) : Diagram {
+/** Applies one step of a rewritting proof */
+export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, theory: Theory) : Diagram {
+  let diagram = structuredClone(diagramOrig)
   // I think I do redundant checks (earlier and when creating the graph)…
   // Anyway, better be safe for now ^^
   // TODO: more precise error messages (which element is wrong)
