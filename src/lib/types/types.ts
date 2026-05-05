@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertNotUndefined, randomID, toString } from '$lib/utils.svelte';
+import { assertNotUndefined, assertTrue, randomID, toString } from '$lib/utils.svelte';
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
@@ -16,19 +16,39 @@ export type Point = {
   y: number,
 }
 
-/** Parameters of a node, like the name of a box… */
+/** Parameters of a node, like the name of a box…
+ *  This is semantically more or less equivalent to allowing another input plugged with a node simulating this type,
+ *  but parameters are far less cumbursome (try to write an ascii string as a graph…), and most
+ *  importantly it allows nice graphical designs (I do prefer to see "XOR" than a huge graph encoding the string "XOR").
+ */
 export type ParamName = string
 /** Parameter specification */
 export const paramAvailableTypes = ["integer", "string", "boolean"]
+export type paramAvailableTypesJS = number | string | boolean
 export type ParamSpec = {
   type: typeof paramAvailableTypes[number],
-  default: number | string,
+  default: paramAvailableTypesJS
   /** If unique is true, we forbid diagrams with the same value appearing twice (used mostly to uniquely
    *  identify diagram outputs). If not specified, assumed to be false.
    */
   unique?: boolean,
 }
 export type ParamValue = number | string | boolean
+
+export function checkParamType(paramType: paramAvailableTypesJS, value: ParamSpec["default"]) : true {
+  assertTrue(
+    (typeof value === "string" && paramType === "string")
+    || (typeof value === "number" && paramType === "integer")
+    || (typeof value === "boolean" && paramType === "boolean"),
+    `Expected type ${paramType} but got a non compatible type ${typeof value}`)
+  // TODO: finish
+  if (typeof value === "number" && paramType === "integer") {
+    assertTrue(Number.isInteger(value),
+               `${value} is not integer`)
+  }
+  return true
+}
+
 /** Parameter instantiation */
 export type Param = {
   value: ParamValue
@@ -85,7 +105,7 @@ export type IDAnchor = string
 export type TheoryID = string
 
 /** Special kind of nodes used to describe connectivity with the outside world */
-export const nodeKindBoundaries : NodeKind[] = [ "diagramBoundary" ]
+export const nodeKindBoundaries : NodeKind[] = [ "boundary" ]
 
 export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node {
   return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`)
@@ -108,7 +128,11 @@ export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory
   }
   const boundaryName = getParam(node, theory, "boundaryName")
   if (boundaryName === undefined) {
-    throw new Error(`The parameter boundaryName does not exist in ${nodeID}, i.e. it is not a boundary node`)
+    if (isBoundaryNode(nodeID, diagram)) {
+      throw new Error(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
+    } else {
+      throw new Error(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
+    }
   }
   return toString(boundaryName)
 }

@@ -1,12 +1,34 @@
 import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor } from "$lib/types/types" 
 import { assertNotUndefined, assertNotUndefinedNR, areSetsEqual, assertDontThrow, fullAnchorToIDAndAnchor, recordIsBijection, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef } from "$lib/utils.svelte" 
-import { isBoundaryNode, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode } from "$lib/types/types"
+import { isBoundaryNode, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
+export function checkTheory(theory: Theory) : true {
+  // Check if the parameter specifications are properly defined
+  entries(theory?.availableNodes).forEach(([nodeID, node]) => {
+    entries(node?.paramSpecs).forEach(([paramName, paramSpecs]) => {
+      // The type should be valid
+      paramAvailableTypes.includes(paramSpecs?.type)
+      // A default entry exists for each parameter
+      assertNotUndefinedNR(paramSpecs?.default, `The parameter specification of ${paramName} should provide a default value`)
+      // The default value has the proper type
+      checkParamType(paramSpecs.type, paramSpecs.default)
+      if (paramSpecs?.unique !== undefined) {
+        assertTrue(typeof paramSpecs.unique === "boolean", `The 'unique' property of the parameter specification ${paramName} should be either the boolean true or false (currently: ${paramSpecs.unique})`)
+      }
+    })
+  })
+  return true
+}
+
 /** Check if a diagram is syntaxically correct (all links point to existing nodes etc).
- * Returns true if it is well formed, or throw an exception if not.
+ * Returns true if it is well formed, or throw an exception if not. You can disable tests of the theory if
+ * you already know that it is correctly prepared (for efficiency reasons)
  */
-export function checkDiagram(diagram: Diagram, theory: Theory) : true {
+export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory:boolean = true) : true {
+  if (shouldCheckTheory) {
+    assertDontThrow(() => checkTheory(theory), `The theory is not well formed`)
+  }
   // Check if all nodeKinds exist in the theory
   Object.entries((diagram?.nodes || {})).forEach(([nodeID, node]) => {
     if ((theory?.availableNodes || {})?.[node.nodeKind] === undefined) {
@@ -30,9 +52,21 @@ export function checkDiagram(diagram: Diagram, theory: Theory) : true {
       throw new Error(`The anchor ${anchorTo} in the source node ${nodeTo} does not exist in the link ${linkID}`)
     }
   })
+  // In diagrams, boundary nodes should have names
+  entries(diagram?.nodes).map(([nodeID,node]) => {
+    if (isBoundaryNode(nodeID, diagram)) {
+      getBoundaryNameFromNode(nodeID, diagram, theory)
+    }
+  })
+  // In diagrams, boundary nodes should have a single anchor called 'boundary'
+  if (theory?.availableNodes?.boundary !== undefined) {
+    assertNotUndefinedNR(theory.availableNodes.boundary?.anchors, `The 'boundary' node kind has no anchor while we expect exactly one anchor with name 'boundary'`)
+    assertTrue(listsAreUniqueAndIdenticalSets(keys(theory.availableNodes.boundary.anchors), ["boundary"]),
+               `The 'boundary' node kind should have a single anchor called 'boundary' while it has the following anchors: ${JSON.stringify(keys(theory.availableNodes.boundary.anchors))}`)
+  }
   // In diagrams, boundary nodes should have at most one connected wire
   assertTrue(
-    listIsUnique(Object.entries(diagram?.linksWithID || {}).map(([linkID,link]) => {
+    listIsUnique(entries(diagram?.linksWithID).map(([linkID,link]) => {
       const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
       const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
       return [errToUndef(() => getBoundaryNameFromNode(fromNode, diagram, theory)),
@@ -40,15 +74,31 @@ export function checkDiagram(diagram: Diagram, theory: Theory) : true {
     }).flat()),
     `The diagram has some boundary nodes connected to multiple wires`
   )
-  // TODO: check if all parameters have good types etc
+  // If a parameter is defined for a node, a paramSpec is also defined with appropriate type
+  entries(diagram?.nodes).forEach(([nodeID, node]) => {
+    entries(node?.params).forEach(([paramName, param]) => {
+      const paramSpecs = assertNotUndefined(
+        theory?.availableNodes?.[node.nodeKind]?.paramSpecs?.[paramName],
+        `The parameter ${paramName} specified in ${nodeID} does not exist in the paramSpecs of the theory`
+      )
+      // Check if the type matches
+      assertDontThrow(
+        () => checkParamType(paramSpecs.type, param.value),
+        `The parameter ${paramName} specified in the node ${nodeID} has a wrong type`
+      )
+    })
+  })
   return true
 }
 
-export function checkRule(rule: Rule, theory: Theory) {
+export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean = true) {
+  if (shouldCheckTheory) {
+    assertDontThrow(() => checkTheory(theory), `The theory is not well formed`)
+  }
   const lhs = assertNotUndefined(rule.lhs, `The LHS of the rule is undefined.`)
   const rhs = assertNotUndefined(rule.rhs, `The RHS of the rule is undefined.`)
-  assertDontThrow(() => checkDiagram(lhs, theory), `The diagram on the LHS side is not well formed`)
-  assertDontThrow(() => checkDiagram(rhs, theory), `The diagram on the RHS side is not well formed`)
+  assertDontThrow(() => checkDiagram(lhs, theory, false), `The diagram on the LHS side is not well formed`)
+  assertDontThrow(() => checkDiagram(rhs, theory, false), `The diagram on the RHS side is not well formed`)
   // We check if both rules have the same boundary, and all boundaries have unique names
   const boundaryFrom = Object.entries(lhs?.nodes || {}).map(([nodeID, node]) => {
     if (isBoundaryNode(nodeID, lhs)) {
@@ -68,29 +118,30 @@ export function checkRule(rule: Rule, theory: Theory) {
   const boundaryToNamesSet = new Set(boundaryToNames)
   // TODO: more explicit errors
   if (boundaryFromNamesSet.size !== boundaryFromNames.length) {
-    throw new Error(`Some boundary nodes are specified multiple times in the starting rule`)
+    throw new Error(`Some boundary names are specified multiple times in the starting rule`)
   }
   if (boundaryToNamesSet.size !== boundaryToNames.length) {
-    throw new Error(`Some boundary nodes are specified multiple times in the ending rule`)
+    throw new Error(`Some boundary names are specified multiple times in the ending rule`)
   }
   if (!areSetsEqual(boundaryFromNamesSet, boundaryToNamesSet)) {
     throw new Error(`You should have the same sets of boundary nodes in the right and left parts of the rule`)
   }
-  
+  return true
 }
 
 /** Make sure to provide a **copy** of the diagram if you want to keep it,
  * since we will remove nodes etc to create the new diagram */
-export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory): Diagram {
+export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory: Theory) : Diagram {
   // I think I do redundant checks (earlier and when creating the graph)…
   // Anyway, better be safe for now ^^
   // TODO: more precise error messages (which element is wrong)
   // ========== First we check if the proofStep is well formed ==========
+  assertDontThrow(() => checkTheory(theory), `The theory is not well formed`)
   const rule = assertNotUndefined(theory.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist`)
   assertTrue((["lr", "rl"]).includes(proofStep.direction), `The proofStep direction should either be lr or rl, not ${proofStep.direction} `)
   assertNotUndefinedNR(rule?.lhs, `The rule ${proofStep.ruleName} has an undefined lhs`)
   assertNotUndefinedNR(rule?.rhs, `The rule ${proofStep.ruleName} has an undefined rhs`)
-  assertDontThrow(() => checkRule(rule, theory), `The rule ${proofStep.ruleName} contained in the current proofStep is invalid`)
+  assertDontThrow(() => checkRule(rule, theory, false), `The rule ${proofStep.ruleName} contained in the current proofStep is invalid`)
   const ruleFrom: Diagram = proofStep.direction === "lr" ? rule.lhs : rule.rhs;
   const ruleTo: Diagram = proofStep.direction === "lr" ? rule.rhs : rule.lhs;
   // Check if nodeBijection* is really a bijection and compute its inverse …
@@ -399,6 +450,6 @@ export function proofApplyOneStep(diagram: Diagram, proofStep: ProofStep, theory
     }
   })
   // TODO: check link direction/type/?
-  assertDontThrow(() => checkDiagram(diagram, theory), `The final diagram is not well formed`)
+  assertDontThrow(() => checkDiagram(diagram, theory, false), `The final diagram is not well formed`)
   return diagram
 }
