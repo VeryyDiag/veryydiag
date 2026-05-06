@@ -14,7 +14,7 @@
         nativeBuildInputs = with pkgs; [
           nodejs_22
           playwright-driver.browsers
-	  vitejs
+	        vitejs
         ];
 
         shellHook = ''
