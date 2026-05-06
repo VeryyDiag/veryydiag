@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import type { Rule } from '$lib/types/types'
 import { checkDiagram, checkRule } from './rules.svelte'
+
+// Here are some practical constants that we use regularly in our tests
 
 const boundaryAvailableNode = {
   anchors: {
@@ -12,6 +13,74 @@ const boundaryAvailableNode = {
       default: "1",
     },
   }
+}
+
+const theoryABC = {
+  // Theory
+  availableNodes: {
+    A: {
+      anchors: {
+        in: {}
+      }
+    },          
+    B: {
+      anchors: {
+        in: {},
+        out: {}
+      }
+    },
+    C: {
+      anchors: {
+        out: {}
+      }
+    },
+    boundary: boundaryAvailableNode
+  },
+};
+
+const theoryABCparam = {
+  // Theory
+  availableNodes: {
+    A: {
+      anchors: {
+        in: {}
+      }
+    },          
+    B: {
+      anchors: {
+        in: {},
+        out: {}
+      },
+      paramSpecs: {
+        gateName: {
+          type: "string",
+          default: "XOR"
+        }
+      },
+    },
+    C: {
+      anchors: {
+        in: {}
+      }
+    },
+    boundary: boundaryAvailableNode
+  },
+};
+
+const diagramA = {
+  nodes: {
+    myA: {
+      nodeKind: "A"
+    },
+  },
+}
+
+const diagramB = {
+  nodes: {
+    myB: {
+      nodeKind: "B"
+    },
+  },
 }
 
 // Describe = group tests by (sub)-category
@@ -67,75 +136,48 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(checkDiagram({
         nodes: {
           mySingleNode: {
-            nodeKind: "basicKind"
+            nodeKind: "B"
           },
         },
         linksWithID: {
           foo: {
-            from: "mySingleNode.out0",
-            to: "mySingleNode.in0",
+            from: "mySingleNode.in", // <-- that's wrong
+            to: "mySingleNode.out",
           }
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              out0: {},
-              in0: {},
-            }
-          },
-        },
-      })).toBe(true)
+      }, theoryABC)).toBe(true)
     })
 
     test('Test broken link input/output', () => {
-      // Missing from from
-      expect(() =>checkDiagram({
+      // Missing from
+      expect(() => checkDiagram({
         nodes: {
           mySingleNode: {
-            nodeKind: "basicKind"
+            nodeKind: "B"
           },
         },
         linksWithID: {
           foo: {
-            from: "whoAmI.in0",
-            to: "mySingleNode.out0",
+            from: "whoAmI.in", // <-- that's wrong
+            to: "mySingleNode.out",
           }
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              out0: {},
-              in0: {},
-            }
-          },
-        },
-      })).toThrow()
+      }, theoryABC)).toThrow()
       
       // Missing to
-      expect(() =>checkDiagram({
+      expect(() => checkDiagram({
         nodes: {
           mySingleNode: {
-            nodeKind: "basicKind"
+            nodeKind: "B"
           },
         },
         linksWithID: {
           foo: {
-            from: "mySingleNode.out0",
-            to: "whoAmI.in0",
+            from: "mySingleNode.in", 
+            to: "whoAmI.out", // <-- that's wrong
           }
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              out0: {},
-              in0: {},
-            }
-          },
-        },
-      })).toThrow()
+      }, theoryABC)).toThrow()
     })
     
     test('Test broken anchors', () => {
@@ -143,81 +185,48 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(() =>checkDiagram({
         nodes: {
           mySingleNode: {
-            nodeKind: "basicKind"
+            nodeKind: "B"
           },
         },
         linksWithID: {
           foo: {
-            from: "mySingleNode.missingAnchor", // <-- that's wrong
-            to: "mySingleNode.out0",
+            from: "mySingleNode.idontexist", // <-- that's wrong
+            to: "mySingleNode.out",
           }
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              out0: {},
-              in0: {},
-            }
-          },
-        },
-      })).toThrow()
-      
-      // Missing anchor to
+      }, theoryABC)).toThrow()
+
+      // Missing anchor from
       expect(() =>checkDiagram({
         nodes: {
           mySingleNode: {
-            nodeKind: "basicKind"
+            nodeKind: "B"
           },
         },
         linksWithID: {
           foo: {
-            from: "mySingleNode.out0",
-            to: "mySingleNode.missingAnchor", // <-- that's wrong
+            from: "mySingleNode.in",
+            to: "mySingleNode.idontexist", // <-- that's wrong
           }
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              out0: {},
-              in0: {},
-            }
-          },
-        },
-      })).toThrow()
+      }, theoryABC)).toThrow()
     })
 
     test('Trivial diagram with a parameter (default value)', () => {
       expect(checkDiagram({
         nodes: {
-          myGateA: {
-            nodeKind: "gate"
+          myGate: {
+            nodeKind: "B"
           },
         },
-      }, {
-        availableNodes: {
-          gate: {
-            anchors: {
-              in: {},
-              out: {}
-            },
-            paramSpecs: {
-              gateName: {
-                type: "string",
-                default: "My Gate",
-              },
-            },
-          },
-        },
-      })).toBe(true)
+      }, theoryABCparam)).toBe(true)
     })
 
     test('Trivial diagram with a parameter (non default value)', () => {
       expect(checkDiagram({
         nodes: {
           myGateA: {
-            nodeKind: "gate",
+            nodeKind: "B",
             params: {
               gateName: {
                 value: "XOR",
@@ -225,55 +234,26 @@ describe('Test well formed diagrams/rules/…', () => {
             }
           },
         },
-      }, {
-        availableNodes: {
-          gate: {
-            anchors: {
-              in: {},
-              out: {}
-            },
-            paramSpecs: {
-              gateName: {
-                type: "string",
-                default: "My Gate",
-              },
-            },
-          },
-        },
-      })).toBe(true)
+      }, theoryABCparam)).toBe(true)
     })
 
     test('Trivial broken diagram with a badly typed default parameter', () => {
+      let theory : any = structuredClone(theoryABCparam)
+      theory.availableNodes.B.paramSpecs.gateName.default = false
       expect(() => checkDiagram({
         nodes: {
           myGateA: {
             nodeKind: "gate",
           },
         },
-      }, {
-        availableNodes: {
-          gate: {
-            anchors: {
-              in: {},
-              out: {}
-            },
-            paramSpecs: {
-              gateName: {
-                type: "string",
-                default: false, // <-- that's wrong
-              },
-            },
-          },
-        },
-      }
-      )).toThrow()
+      }, theory)).toThrow()
     })
 
     test('Trivial broken diagram with a badly typed parameter', () => {
       expect(() => checkDiagram({
         nodes: {
           myGateA: {
-            nodeKind: "gate",
+            nodeKind: "B",
             params: {
               gateName: {
                 value: false, // <-- that's wrong
@@ -281,52 +261,22 @@ describe('Test well formed diagrams/rules/…', () => {
             }
           },
         },
-      }, {
-        availableNodes: {
-          gate: {
-            anchors: {
-              in: {},
-              out: {}
-            },
-            paramSpecs: {
-              gateName: {
-                type: "string",
-                default: "My Gate",
-              },
-            },
-          },
-        },
-      })).toThrow()
+      }, theoryABCparam)).toThrow()
     })
 
     test('Trivial broken diagram with a non-existing parameter', () => {
       expect(() => checkDiagram({
         nodes: {
           myGateA: {
-            nodeKind: "gate",
+            nodeKind: "B",
             params: {
-              gateNameee: {
-                value: false,
+              gateNamee: {
+                value: "coucou",
               },
             }
           },
         },
-      }, {
-        availableNodes: {
-          gate: {
-            anchors: {
-              in: {},
-              out: {}
-            },
-            paramSpecs: {
-              gateName: {
-                type: "string",
-                default: "My Gate",
-              },
-            },
-          },
-        },
-      })).toThrow()
+      }, theoryABCparam)).toThrow()
     })
 
     
@@ -334,7 +284,7 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(checkDiagram({
         nodes: {
           nodeA: {
-            nodeKind: "basicKind"
+            nodeKind: "A"
           },
           boundaryAlice: {
             nodeKind: "boundary",
@@ -348,29 +298,13 @@ describe('Test well formed diagrams/rules/…', () => {
         linksWithID: {
           l: {from: "nodeA.in", to: "boundaryAlice.boundary"}
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: {
-            anchors: {
-              boundary: {}
-            },
-            paramSpecs: {
-              boundaryName: {
-                type: "string",
-                default: "1",
-              },
-            }
-          },
-        },
-      })).toBe(true)
+      }, theoryABC)).toBe(true)
     })
     
     test('Boundary nodes should have a single anchor called boundary', () => {
+      let theory : any = structuredClone(theoryABC)
+      theory.availableNodes.boundary.anchors.shouldNotBeHere = {}
+      
       expect(() => checkDiagram({
         nodes: {
           nodeA: {
@@ -388,28 +322,16 @@ describe('Test well formed diagrams/rules/…', () => {
         linksWithID: {
           l: {from: "nodeA.in", to: "boundaryAlice.boundary"}
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: {
-            anchors: {
-              boundary: {},
-              shouldNotBeHere: {},
-            },
-          },
-        },
-      })).toThrow()
+      }, theory)).toThrow()
     })
     
     test('Boundary nodes must have a boundary name', () => {
+      let theory : any = structuredClone(theoryABC)
+      delete theory.availableNodes.boundary.paramSpecs.boundaryName
       expect(() => checkDiagram({
         nodes: {
           nodeA: {
-            nodeKind: "basicKind"
+            nodeKind: "A"
           },
           boundaryA: {
             nodeKind: "boundary",
@@ -418,20 +340,7 @@ describe('Test well formed diagrams/rules/…', () => {
         linksWithID: {
           l: {from: "nodeA.in", to: "boundaryA.boundary"}
         },
-      }, {
-        availableNodes: {
-          basicKind: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: {
-            anchors: {
-              boundary: {}
-            }
-          },
-        },
-      })).toThrow()
+      }, theory)).toThrow()
     })
   })
 
@@ -439,69 +348,19 @@ describe('Test well formed diagrams/rules/…', () => {
     test('Trivial rule one node', () => {
       expect(checkRule({
         // Rule
-        lhs: {
-          nodes: {
-            myA: {
-              nodeKind: "A"
-            },
-          },
-        },
-        rhs: {
-          nodes: {
-            myB: {
-              nodeKind: "B"
-            },
-          },
-        },
-      }, {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },          
-        },
-      })).toBe(true)
+        lhs: diagramA,
+        rhs: diagramB,
+      }, theoryABC)).toBe(true)
     })
 
     test('Trivial broken rule (broken diagram)', () => {
+      let diagramBad = structuredClone(diagramB)
+      diagramBad.nodes.myB.nodeKind = "BB"
       expect(() => checkRule({
         // Rule
-        lhs: {
-          nodes: {
-            myA: {
-              nodeKind: "A"
-            },
-          },
-        },
-        rhs: {
-          nodes: {
-            myB: {
-              nodeKind: "BB" // <-- That's wrong
-            },
-          },
-        },
-      }, {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },          
-        },
-      })).toThrow()
+        lhs: diagramA,
+        rhs: diagramBad
+      }, theoryABC)).toThrow()
     })
 
     test('Simple valid rule with one boundary', () => {
@@ -537,22 +396,7 @@ describe('Test well formed diagrams/rules/…', () => {
             },
           },
         },
-      }, {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: boundaryAvailableNode
-        },
-      })).toBe(true)
+      }, theoryABC)).toBe(true)
     })
 
     test('Simple valid rule with two boundaries', () => {
@@ -604,22 +448,7 @@ describe('Test well formed diagrams/rules/…', () => {
             },
           },
         },
-      }, {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: boundaryAvailableNode
-        },
-      })).toBe(true)
+      }, theoryABC)).toBe(true)
     })
 
     test('Wrong rule with different boundaries', () => {
@@ -647,22 +476,7 @@ describe('Test well formed diagrams/rules/…', () => {
             },
           },
         },
-      }, {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: boundaryAvailableNode
-        },
-      })).toThrow()
+      }, theoryABC)).toThrow()
     })
 
     test('Wrong rule with non unique boundaries', () => {
@@ -715,32 +529,16 @@ describe('Test well formed diagrams/rules/…', () => {
           },
         },
       };
-      const theory = {
-        // Theory
-        availableNodes: {
-          A: {
-            anchors: {
-              in: {}
-            }
-          },          
-          B: {
-            anchors: {
-              in: {}
-            }
-          },
-          boundary: boundaryAvailableNode
-        },
-      };
       let ruleA = structuredClone(rule)
-      expect(() => checkRule(ruleA, theory)).toThrow()
+      expect(() => checkRule(ruleA, theoryABC)).toThrow()
       delete ruleA.lhs.nodes.Bob;
-      expect(() => checkRule(ruleA, theory)).toThrow()
+      expect(() => checkRule(ruleA, theoryABC)).toThrow()
       delete ruleA.rhs.nodes.baz;
       // If we delete both problematic elements we are good again
-      expect(checkRule(ruleA, theory)).toBe(true)
+      expect(checkRule(ruleA, theoryABC)).toBe(true)
       let ruleB = structuredClone(rule)
       delete ruleB.rhs.nodes.baz;
-      expect(() => checkRule(ruleB, theory)).toThrow()
+      expect(() => checkRule(ruleB, theoryABC)).toThrow()
     })
 
   })

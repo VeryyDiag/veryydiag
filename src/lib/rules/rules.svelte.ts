@@ -1,4 +1,4 @@
-import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor } from "$lib/types/types" 
+import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks } from "$lib/types/types" 
 import { assertNotUndefined, assertNotUndefinedNR, areSetsEqual, assertDontThrow, fullAnchorToIDAndAnchor, recordIsBijection, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef } from "$lib/utils.svelte" 
 import { isBoundaryNode, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
@@ -452,4 +452,25 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   // TODO: check link direction/type/?
   assertDontThrow(() => checkDiagram(diagram, theory, false), `The final diagram is not well formed`)
   return diagram
+}
+
+
+export function matchSelectionToRule(
+  nodeSelection: NodeID[],
+  linkSelection: LinkID[],
+  inputDiagram: Diagram,
+  ruleDiagram: Diagram
+) : {
+  nodeBijectionAB: Record<NodeID, NodeID>,
+  linkBijectionAB: Record<LinkID, LinkID>,
+  boundaryLinksDR: BoundaryLinks,
+  ambigiousBoundary: BoundaryName[],
+} {
+
+  return {
+    nodeBijectionAB: {},
+    linkBijectionAB: {},
+    boundaryLinksDR: {},
+    ambigiousBoundary: [],    
+  } 
 }
