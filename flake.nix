@@ -5,7 +5,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     # This version matches the npm-installed version (you can use 'npm install playwright@newversion' to make sure
     # npm matches the version installed via nix).
-    nixpkgs.url = "github:nixos/nixpkgs/c97c47f2bac4fa59e2cbdeba289686ae615f8ed4";
+    nixpkgs.url = "github:nixos/nixpkgs/15f4ee454b1dce334612fa6843b3e05cf546efab";
   };
   
   outputs = { flake-parts, ... } @ inputs: flake-parts.lib.mkFlake { inherit inputs; } {
@@ -14,6 +14,7 @@
         nativeBuildInputs = with pkgs; [
           nodejs_22
           playwright-driver.browsers
+	  vitejs
         ];
 
         shellHook = ''
