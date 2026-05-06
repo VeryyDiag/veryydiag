@@ -39,13 +39,13 @@ and click on the `Run tests` button on the bottom left area of the window.
 To add documentation via storybook, you should either enable `tags: ['autodocs']` or, for more freedom, create a file `YourComponent.mdx` with the markdown like this (`<Meta … />` helps to put the file in the right menu but also to avoid writing `of=` everywhere):
 ```
 import { Title, Subtitle, Description, ArgTypes, Primary, Controls, Stories, Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
- 
+
 import * as SvgEditorStories from './SvgEditor.stories.svelte';
 
 <Meta of={SvgEditorStories} />
- 
+
  Title:
- 
+
 <Title />
 
 Subtitle:
@@ -69,7 +69,7 @@ Primary and controls don't work (bug https://github.com/storybookjs/storybook/is
 Per-story code:
 
 Canvas (seems equivalent to Story):
- 
+
 <Canvas of={SvgEditorStories.Primary} />
 
 Controls:
@@ -102,3 +102,4 @@ let {
 - Write more tests (and fix existing ones)
 - Check if all errors are cached correctly
 - Implement the unique constraint
+- Run prettier and ESLint to have uniform code
