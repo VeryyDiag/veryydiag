@@ -1,7 +1,7 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName } from "$lib/types/types";
-import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, createReactiveMap2D } from '$lib/utils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
@@ -32,7 +32,7 @@ export class DiagramConfClass {
           if (str !== undefined) {
             return extractNodeParamSpecsFromSVG(str)
           } else {
-            throw new Error(`The node ${node.svgName} has no matching SVG`)
+            throw new ProofDiagError(`The node ${node.svgName} has no matching SVG`)
           }
         }
         return {}
@@ -203,7 +203,7 @@ export class DiagramConfClass {
           else {
             const c = res?.componentName || "NodeGeneric"
             if (c == "NodeGeneric") {
-              throw new Error(`No svg found with name ${res.svgName} when considering the node kind "${kind}"`);
+              throw new ProofDiagError(`No svg found with name ${res.svgName} when considering the node kind "${kind}"`);
             } else {
               return res
             }
@@ -211,7 +211,7 @@ export class DiagramConfClass {
         } else {
           const c = res?.componentName || "NodeGeneric"
           if (c == "NodeGeneric") {
-            throw new Error(`The node with kind ${kind} has no svgName nor svgString`);
+            throw new ProofDiagError(`The node with kind ${kind} has no svgName nor svgString`);
           } else {
             // Different component, they may accept arbitrary stuff
             return res
@@ -219,7 +219,7 @@ export class DiagramConfClass {
         }
       }
     } else {
-      throw new Error(`The configuration contains no availableNodes with kind ${kind}`);
+      throw new ProofDiagError(`The configuration contains no availableNodes with kind ${kind}`);
     }
   }
 
@@ -498,11 +498,11 @@ export class DiagramConfClass {
     console.log("Changing to value", newValue)
     const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
     if (node === undefined) {
-      throw new Error(`Node ${nodeID} does not exist in diagram ${id}`)
+      throw new ProofDiagError(`Node ${nodeID} does not exist in diagram ${id}`)
     }
     const currentTheory = this.diagramConf?.diagrams?.[id]?.theory || "main"
     if (this.diagramConfDerivedParams?.[currentTheory]?.[node.nodeKind]?.[paramName] === undefined) {
-      throw new Error(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
+      throw new ProofDiagError(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
     }
     if (node?.params === undefined) {
       node.params = {}

@@ -1,6 +1,14 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertNotUndefined, assertTrue, randomID, toString } from '$lib/utils.svelte';
+import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString } from '$lib/utils.svelte';
+
+
+export class ProofDiagError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "Error"
+  }
+}
 
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
@@ -115,23 +123,30 @@ export function linkFromNodeID(linkID: LinkID, diagram: Diagram) : Link {
   return assertNotUndefined(diagram?.linksWithID?.[linkID], `The link ${linkID} does not exist`)
 }
 
-export function isBoundaryNode(nodeID: NodeID, diagram: Diagram) {
-  const nodeKind = assertNotUndefined(nodeFromNodeID(nodeID, diagram)?.nodeKind, `The node ${nodeID} has no nodeKind`)
+export function isBoundaryNode(node: Node) : boolean {
+  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`)
   return nodeKindBoundaries.includes(nodeKind)
+}
+
+export function isBoundaryNodeID(nodeID: NodeID, diagram: Diagram) : boolean {
+  return assertDontThrow(() =>
+    isBoundaryNode(nodeFromNodeID(nodeID, diagram)),
+    `Problem with the node ${nodeID}`
+  )
 }
 
 // See also getBoundaryName if you don't want to throw an error
 export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
   const node = diagram?.nodes?.[nodeID]
   if (node === undefined) {
-    throw new Error(`The node ${nodeID} does not exist in the diagram`)
+    throw new ProofDiagError(`The node ${nodeID} does not exist in the diagram`)
   }
   const boundaryName = getParam(node, theory, "boundaryName")
   if (boundaryName === undefined) {
-    if (isBoundaryNode(nodeID, diagram)) {
-      throw new Error(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
+    if (isBoundaryNodeID(nodeID, diagram)) {
+      throw new ProofDiagError(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
     } else {
-      throw new Error(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
+      throw new ProofDiagError(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
     }
   }
   return toString(boundaryName)
@@ -156,8 +171,8 @@ export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory)
   const nodeFrom = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
   const nodeTo = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
   // To help typescript we don't use sum
-  const a = isBoundaryNode(nodeFrom, diagram)
-  const b = isBoundaryNode(nodeTo, diagram)
+  const a = isBoundaryNodeID(nodeFrom, diagram)
+  const b = isBoundaryNodeID(nodeTo, diagram)
   if (!a && !b) {
     return 0
   } else if (a && !b) {
@@ -350,22 +365,22 @@ export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : Diagr
 
 export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
   if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
-    throw new Error("The diagram has two main nodes (diagramNodes and via diagrams.main)")
+    throw new ProofDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
   }
   if (diagramConfByUser?.links && diagramConfByUser?.diagrams?.main) {
-    throw new Error("The diagram has two main nodes (links and via diagrams.main)")
+    throw new ProofDiagError("The diagram has two main nodes (links and via diagrams.main)")
   }
   if (diagramConfByUser?.viewport && diagramConfByUser?.diagrams?.main) {
-    throw new Error("The diagram has two main nodes (viewport and via diagrams.main)")
+    throw new ProofDiagError("The diagram has two main nodes (viewport and via diagrams.main)")
   }
   if (diagramConfByUser?.svgSize && diagramConfByUser?.diagrams?.main) {
-    throw new Error("The diagram has two main nodes (svgSize and via diagrams.main)")
+    throw new ProofDiagError("The diagram has two main nodes (svgSize and via diagrams.main)")
   }
   if (diagramConfByUser?.linksWithID && diagramConfByUser?.diagrams?.main) {
-    throw new Error("The diagram has two main nodes (linksWithID and via diagrams.main)")
+    throw new ProofDiagError("The diagram has two main nodes (linksWithID and via diagrams.main)")
   }
   if (diagramConfByUser?.availableNodes && diagramConfByUser?.theories?.main) {
-    throw new Error("The diagram has two main theories (availableNodes and via theories.main)")
+    throw new ProofDiagError("The diagram has two main theories (availableNodes and via theories.main)")
   }
 
   const {
@@ -394,7 +409,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     const ids = (links || []).map(v => v?.id).filter((id) => id !== undefined)
     const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
     if (duplicates.length > 0) {
-      throw new Error(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
+      throw new ProofDiagError(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
     }
     return {
       ...rest,
@@ -427,18 +442,18 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
 
   // Check if all tabs are well defined
   if (cleanedConfig.diagrams?.[cleanedConfig.currentDiagramTab] === undefined) {
-    throw new Error(`The diagram '${cleanedConfig.currentDiagramTab}' set as current tab does not exist (${Object.keys(cleanedConfig.diagrams).length > 1 ? Object.keys(cleanedConfig.diagrams) : "no diagram available"}).`)
+    throw new ProofDiagError(`The diagram '${cleanedConfig.currentDiagramTab}' set as current tab does not exist (${Object.keys(cleanedConfig.diagrams).length > 1 ? Object.keys(cleanedConfig.diagrams) : "no diagram available"}).`)
   }
 
   cleanedConfig.diagramTabs.forEach((tab) => {
     if (cleanedConfig.diagrams?.[tab] === undefined) {
-      throw new Error(`The diagram ${cleanedConfig.currentDiagramTab} set in the list of tabs does not exist.`)
+      throw new ProofDiagError(`The diagram ${cleanedConfig.currentDiagramTab} set in the list of tabs does not exist.`)
     }
   })
 
   Object.entries(cleanedConfig.diagrams).forEach(([diagID, diag]) => {
     if (cleanedConfig.theories?.[diag?.theory || "main"] === undefined) {
-      throw new Error(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
+      throw new ProofDiagError(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
     }
   })
 
@@ -460,25 +475,25 @@ export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
     const def = elt.getAttribute("default")
     const unique = elt.getAttribute("unique")
     if (name === null) {
-      throw new Error(`No 'name' field was provided when creating a new parameter in the SVG file.`)
+      throw new ProofDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
     }
     if (type === null) {
-      throw new Error(`No 'type' field was provided for the param '${name}'`)
+      throw new ProofDiagError(`No 'type' field was provided for the param '${name}'`)
     }
     if (def === null) {
-      throw new Error(`No 'def' field was provided for the param '${name}'`)
+      throw new ProofDiagError(`No 'def' field was provided for the param '${name}'`)
     }
     if (!(paramAvailableTypes.includes(type))) {
-      throw new Error(`In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`)
+      throw new ProofDiagError(`In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`)
     }
     if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
-      throw new Error(`The type is int but the default value ${def} can't be turned into a def.`)
+      throw new ProofDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
     }
     if (type === "boolean" && !["true", "false"].includes(def)) {
-      throw new Error(`The type is boolean but the default value (${def}) is not true/false.`)
+      throw new ProofDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
     }
     if (unique !== null && !["true", "false"].includes(unique)) {
-      throw new Error(`In the definition of the ${name} parameter, the unique field must be true.`)
+      throw new ProofDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
     }
     return [
       name,

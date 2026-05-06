@@ -1,7 +1,22 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/types';
+import { ProofDiagError } from './types/types';
 
 // This file contains generic utils functions
+
+/** Allow to modify non-destructively a nested array by working on a copy
+ *  (super helpful in tests)
+ *  A bit like "produce" by immer, except that we work on a full copy.
+ *  This is also simpler and more typescript friendly (and less vitest buggy?)
+ *  but less efficient since we do a full copy instead of the object instead of shallow copy…
+ *  but maybe safer as well since both copies are really different.
+ *  f must change its input destructively
+ */
+export function editCopy<A>(obj: A, f: (x: A) => void) : A {
+  let objCopy = structuredClone(obj)
+  f(objCopy)
+  return objCopy
+}
 
 export function errToUndef<T>(x: () => T) : T | undefined {
   try {
@@ -13,7 +28,7 @@ export function errToUndef<T>(x: () => T) : T | undefined {
 
 export function assertTrue(x: boolean, m: string): true {
   if (!x) {
-    throw new Error(m)
+    throw new ProofDiagError(m)
   } else {
     return true
   }
@@ -22,7 +37,7 @@ export function assertTrue(x: boolean, m: string): true {
 
 export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new Error(m)
+    throw new ProofDiagError(m)
   } else {
     return x
   }
@@ -33,7 +48,7 @@ export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<
  */
 export function assertNotUndefinedNR<T>(x: T | undefined, m: string): asserts x is NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new Error(m)
+    throw new ProofDiagError(m)
   }
 }
 
@@ -41,7 +56,7 @@ export function assertDontThrow<T>(f: () => T, m: string): T {
   try {
     return f()
   } catch (e) {
-    throw new Error(`${m}: (${e})`)
+    throw new ProofDiagError(`${m}: (${e})`)
   }
 }
 
@@ -52,10 +67,10 @@ export function toBoolean(x: string | boolean | number) {
     } else if (x === "false") {
       return false
     } else {
-      throw new Error(`Impossible to convert string "${x}" into a boolean`)
+      throw new ProofDiagError(`Impossible to convert string "${x}" into a boolean`)
     }
   } else if (typeof x === 'number') {
-    throw new Error("Expecting a boolean but got a number ${x}")
+    throw new ProofDiagError("Expecting a boolean but got a number ${x}")
   } else if (typeof x === 'boolean') {
     return x
   }
@@ -69,7 +84,7 @@ export function toString(x: ParamValue) : string {
   } else if (typeof x === 'boolean') {
     return x ? "true" : "false"
   } else {
-    throw new Error(`The type "${typeof x}" is not string, number or boolean.`)
+    throw new ProofDiagError(`The type "${typeof x}" is not string, number or boolean.`)
   }
 }
 
@@ -91,12 +106,36 @@ export function listsAreBijection(a: string[], b: string[]) : boolean {
 
 export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));
 
+export function areSetsEqualThrow<T>(a: Set<T>, b: Set<T>) : true {
+  if (a.size === b.size && [...a].every(value => b.has(value))) {
+    return true
+  } else {
+    const adiff = Array.from(a.difference(b))
+    const bdiff = Array.from(b.difference(a))
+    throw new ProofDiagError(`The sets are different: first set contains the values ${JSON.stringify(adiff)} not contained in second set, and second set contains ${JSON.stringify(bdiff)} not contained in first set`)
+  }
+}
+
 export function listsAreUniqueAndIdenticalSets(a: string[], b: string[]) : boolean {
   const aSet = new Set(a)
   const sa = aSet.size
   const bSet = new Set(b)
   const sb = bSet.size
   return sa === a.length && sb === b.length && sa === sb && areSetsEqual(aSet, bSet)
+}
+
+export function listsAreUniqueAndIdenticalSetsThrow(a: string[], b: string[]) : true {
+  const aSet = new Set(a)
+  const sa = aSet.size
+  const bSet = new Set(b)
+  const sb = bSet.size
+  if (sa !== a.length) {
+    throw new ProofDiagError(`The first lists contains redundant items ${JSON.stringify(a.filter(x => aSet.has(x)))}`)
+  }
+  if (sb !== b.length) {
+    throw new ProofDiagError(`The second lists contains redundant items ${JSON.stringify(b.filter(x => bSet.has(x)))}`)
+  }
+  return areSetsEqualThrow(aSet, bSet)
 }
 
 export function listIsUnique<T>(l: T[]) : boolean {
