@@ -226,7 +226,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
       values(linkBijectionAB),
       keys(ruleFrom?.linksWithID).filter(linkID => nbBoundaryLink(linkID, ruleFrom, theory) === 0)
     ),
-    `Some links exist in the starting rule but do not exist in the output of linkBijectionAB`
+    `Some links exist in the starting rule but do not exist in the output of linkBijectionAB, or the other way around. After comes the difference of the output of linkBijectionAB vs the non-boundary links that appear in the starting rule: `
   )
   // === … inputs of linkBijectionCD is one-to-one mapping to links in C (except boundary links)…
   assertDontThrow(
@@ -335,13 +335,11 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     delete diagram.linksWithID[linkID]
   })
   // We remove the old nodes
-  console.log(`Starting to delete`)
   nodesA.forEach((nodeID) => {
     assertNotUndefinedNR(
       diagram?.nodes?.[nodeID],
       `Impossible to delete node ${nodeID}, the node does not exist`
     )
-    console.log(`Deleting ${nodeID}`)
     delete diagram.nodes[nodeID]
   })
   // We add the new nodes
@@ -363,19 +361,23 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   })
   // We add the links of the new rule
   entries(ruleTo?.linksWithID).forEach(([linkID, link]) => {
+    const nLink = nbBoundaryLink(linkID, ruleTo, theory)
+    if (nLink > 0) {
+      // Boundary links. We will take care of them later (but still check)
+      return
+    } 
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
     const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
     const newLinkID = assertNotUndefined(
       proofStep?.linkBijectionCD[linkID],
-      `The ${linkID} does not exist in linkBijectionCD, how should we translate it to the new diagram?`
+      `The link '${linkID}' does not exist in linkBijectionCD, how should we translate it to the new diagram?`
     )
     assertTrue(
       diagram?.linksWithID?.[newLinkID] === undefined,
       `Collision with the identifier ${newLinkID} in rule and original diagram. Rename the link in linkBijectiontTo to make sure it is unique.`
     )
-    const nLink = nbBoundaryLink(linkID, ruleTo, theory)
     if (nLink > 0) {
-      // Boundary links. We will take care of them later (but still check)
+      // Boundary links. We will take care of them later
       return
     } else {
       // We add the regular links not involving the boundary
@@ -402,7 +404,6 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     }
   })
   // === For efficiency reasons, we first map boundary names to full anchor in the final graph
-  // (we only consider nodes that have a single boundary node)
   const boundaryNameToFullAnchorD : Record<BoundaryName, {
     /** Name of the node/anchor in the final graph to connect to given a node whose boundary name is the input of this record */
     fullAnchorD: IDAnchor,
@@ -411,6 +412,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   }> = Object.fromEntries(entries(ruleTo?.linksWithID).map(([linkID, link]) => {
     const n = nbBoundaryLink(linkID, ruleTo, theory)
     if (n === 0 || n === 3) {
+      // TODO: check what to do for n = 3
       return undefined
     }
     if (n === 1) {

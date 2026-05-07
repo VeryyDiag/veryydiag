@@ -195,6 +195,19 @@ const diagramAtoC = {
   },
 } satisfies Diagram
 
+const diagramA2toC = {
+  nodes: {
+    myA2: diagramA2.nodes.myA2,
+    myC: diagramC.nodes.myC,
+  },
+  linksWithID: {
+    foo: {
+      from: "myA2.out",
+      to: "myC.in"
+    },
+  },
+} satisfies Diagram
+
 const diagramAtoAlice = {
   nodes: {
     myA: diagramA.nodes.myA,
@@ -215,6 +228,27 @@ const diagramAtoAlice = {
   },
 } satisfies Diagram
 
+const diagramAprimetoAlice = {
+  nodes: {
+    myAprime: diagramAprime.nodes.myAprime,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+      },
+    }
+  },
+  linksWithID: {
+    fooPrime: {
+      from: "myAprime.out",
+      to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
+
 const diagramA2toAlice = {
   nodes: {
     myA2: diagramA2.nodes.myA2,
@@ -234,6 +268,29 @@ const diagramA2toAlice = {
     },
   },
 } satisfies Diagram
+
+const diagramA2primetoAlice = {
+  nodes: {
+    myA2prime: diagramA2prime.nodes.myA2prime,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+      },
+    }
+  },
+  linksWithID: {
+    bar: {
+      from: "myA2prime.out",
+      to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
+
+
 
 const diagramBtoAliceAndBob = {
   nodes: {
@@ -310,9 +367,16 @@ const theoryABCrules = {
       lhs: diagramA,
       rhs: diagramA2
     },
+    AprimetoA2prime: {
+      lhs: diagramAprime,
+      rhs: diagramA2prime
+    },
+    AprimetoA2primeWithLinks: {
+      lhs: diagramAprimetoAlice,
+      rhs: diagramA2primetoAlice,
+    },
   }
 } satisfies Theory;
-
 
 const proofStepAtoA2 = {
   ruleName: "AtoA2",
@@ -328,18 +392,52 @@ const proofStepAtoA2 = {
   linkBijectionCD: {},
 } satisfies ProofStep
 
-const proofStepAprimetoA2prime = {
-  ruleName: "AtoA2",
+const proofStepAtoA2ViaPrime = {
+  ruleName: "AprimetoA2prime",
   direction: "lr",
   nodeBijectionAB: {
-    myAprime: "myA",
+    myA: "myAprime",
   },
   linkBijectionAB: {},
   boundaryLinksDR: {},
   nodeBijectionCD: {
-    myA2: "myA2prime"
+    myA2prime: "myA2"
   },
   linkBijectionCD: {},
+} satisfies ProofStep
+
+const proofStepAtoA2ViaPrimeInverse = {
+  ruleName: "AprimetoA2prime",
+  direction: "rl",
+  nodeBijectionAB: {
+    myA2: "myA2prime"
+  },
+  linkBijectionAB: {},
+  boundaryLinksDR: {},
+  nodeBijectionCD: {
+    myAprime: "myA",
+  },
+  linkBijectionCD: {},
+} satisfies ProofStep
+
+const proofStepAtoA2WithLinksViaPrime = {
+  ruleName: "AprimetoA2primeWithLinks",
+  direction: "lr",
+  nodeBijectionAB: {
+    myA: "myAprime",
+  },
+  linkBijectionAB: {
+  },
+  boundaryLinksDR: {
+    foo: {
+      to: "Alice",
+    }
+  },
+  nodeBijectionCD: {
+    myA2prime: "myA2"
+  },
+  linkBijectionCD: {
+  },
 } satisfies ProofStep
 
 
@@ -571,15 +669,34 @@ describe('Test well formed diagrams/rules/…', () => {
     })  
     test('Trivial one node rule, no link, but different names', () => {
       expect(
-        proofApplyOneStep(diagramAprime, proofStepAprimetoA2prime, theoryABCrules)
-      ).toEqual(diagramA2prime)
-    })  
+        proofApplyOneStep(diagramA, proofStepAtoA2ViaPrime, theoryABCrules)
+      ).toEqual(diagramA2)
+    })
+    test('Apply rule other direction', () => {
+      expect(
+        proofApplyOneStep(diagramA2, proofStepAtoA2ViaPrimeInverse, theoryABCrules)
+      ).toEqual(diagramA)
+    }) 
     test('Trivial broken rule with node name mismatch', () => {
       expect(
-        () => proofApplyOneStep(diagramA, // <-- should be diagramAprime
-                                proofStepAprimetoA2prime, theoryABCrules)
-      ).toThrow()
+        () => proofApplyOneStep(diagramAprime, // <-- should be diagramA to work
+                                proofStepAtoA2ViaPrime, theoryABCrules)
+      ).toThrow(ProofDiagError)
     })  
+    test('Trivial broken rule with links', () => {
+      expect(
+        () => proofApplyOneStep(diagramAtoC, // <-- this contains an extra link that breaks the proof
+                                proofStepAtoA2, theoryABCrules)
+      ).toThrow(ProofDiagError)
+    })  
+
+    test('Simple rule with one link', () => {
+      expect(proofApplyOneStep(diagramAtoC,
+                               proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+      ).toEqual(diagramA2toC)
+    })  
+
+    // TODO: ID and copy rules in ZX are interesting to test
   })
   
 })

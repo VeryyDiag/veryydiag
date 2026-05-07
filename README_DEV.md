@@ -28,6 +28,13 @@ You can test basic functions by creating a file called `*.test.ts` and that foll
 npm run test:unit
 ```
 
+If you simply want to run tests non involving storybook (simpler to deploy since you don't need to install playwright), just run:
+```
+npm run test:unit:server
+```
+
+For debugging, the output of `console.log(…)` are shown above the tests, or you can also connect them to an actual debugger/chrome as described in https://vitest.dev/guide/learn/debugging-tests.html#debugging-tools.
+
 ## Testing with storybook
 
 To test the project, you can run:

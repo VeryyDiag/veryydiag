@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString } from '$lib/utils.svelte';
+import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString, fullAnchorToIDAndAnchor } from '$lib/utils.svelte';
 
 
 export class ProofDiagError extends Error {
@@ -129,15 +129,16 @@ export function isBoundaryNode(node: Node) : boolean {
 }
 
 export function isBoundaryNodeID(nodeID: NodeID, diagram: Diagram) : boolean {
-  return assertDontThrow(() =>
-    isBoundaryNode(nodeFromNodeID(nodeID, diagram)),
-    `Problem with the node ${nodeID}`
+  return assertDontThrow(
+    () => isBoundaryNode(nodeFromNodeID(nodeID, diagram)),
+    `Problem with the node ${nodeID} when checking if it is a boundary node`
   )
 }
 
-// See also getBoundaryName if you don't want to throw an error
+// See also getBoundaryName if you don't want to throw an error. You may also specify full ID + anchor
+// instead of NodeID.
 export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
-  const node = diagram?.nodes?.[nodeID]
+  const node = diagram?.nodes?.[fullAnchorToIDAndAnchor(nodeID)[0]]
   if (node === undefined) {
     throw new ProofDiagError(`The node ${nodeID} does not exist in the diagram`)
   }
@@ -168,8 +169,10 @@ export type NbBoundaryLink = 0|1|2|3
  * 2 = to is boundary, not from, 3 = both are boundary nodes.
  */
 export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
-  const nodeFrom = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
-  const nodeTo = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
+  const nodeFromFull = assertNotUndefined(linkFromNodeID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
+  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull)
+  const nodeToFull = assertNotUndefined(linkFromNodeID(linkID, diagram)?.to, `The link ${linkID} has no "to"`)
+  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull)
   // To help typescript we don't use sum
   const a = isBoundaryNodeID(nodeFrom, diagram)
   const b = isBoundaryNodeID(nodeTo, diagram)
