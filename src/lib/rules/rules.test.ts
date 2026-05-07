@@ -774,9 +774,8 @@ describe('Test well formed diagrams/rules/…', () => {
       ).toThrow(ProofDiagError)
 
     })
-
     
     // TODO: ID and copy rules in ZX are interesting to test
   })
-  
-})
+    
+  })
