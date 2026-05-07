@@ -187,6 +187,31 @@ export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory)
   }
 }
 
+export function equivalentNodes(IDAnchorA: IDAnchor, diagramA: Diagram, IDAnchorB: IDAnchor, diagramB: Diagram, nodeBijectionAB: NodeBijection | undefined = undefined) : true {
+  const [nodeA, anchorA] = fullAnchorToIDAndAnchor(IDAnchorA)
+  const [nodeB, anchorB] = fullAnchorToIDAndAnchor(IDAnchorB)
+  if (nodeBijectionAB !== undefined) {
+    // Check if the corresponding links diagram/rule are pointing to the
+    // same node (after translation)/anchor
+    assertTrue(
+      nodeB === nodeBijectionAB?.[nodeA],
+      `Different node name (${nodeB} != ${nodeBijectionAB?.[nodeA]} = translation of ${nodeA})`
+    )
+  }
+  // Same anchor?
+  assertTrue(
+    anchorA === anchorB,
+    `Different anchor name ${anchorA} != ${anchorB} (from resp. ${nodeA} and ${nodeB})`
+  )
+  // Check if they point to a node with the same kind
+  assertTrue(
+    (diagramA?.nodes?.[nodeA]?.nodeKind !== undefined) &&
+    (diagramA?.nodes?.[nodeA]?.nodeKind === diagramB?.nodes?.[nodeB]?.nodeKind),
+    `Different node kind (${diagramA?.nodes?.[nodeA]?.nodeKind} != ${diagramB?.nodes?.[nodeB]?.nodeKind}) (from resp. ${nodeA} and ${nodeB})`
+  )
+  return true
+}
+
 
 export type Viewport = {
   x: number
@@ -229,6 +254,7 @@ export type NodeBijection = Record<NodeID, NodeID>
 export type LinkBijection = Record<LinkID, LinkID>
 /** Maps a link in a diagram to its boundary name in the rule. Since a link may have each
  *  end on a boundary (e.g. ZX ID rule -- = -o-), we need to specify the from/to parts.
+ *  For instance, {from: Alice} means that the link starts from the boundary Alice.
  *  In this specific case (possible only when the boundary accepts a single link), we
  *  may not preserve the number of links since we basically cut a link in two parts (->)
  *  or we merge two links in one (<-). In the first case, the new link will have the name

@@ -457,6 +457,14 @@ describe('Test well formed diagrams/rules/…', () => {
         },
       }, theoryA)).toThrow(ProofDiagError)
 
+      expect(() => checkDiagram({
+        nodes: {
+          "name.with.a.dot": {
+            nodeKind: "A"
+          },
+        },
+      }, theoryA)).toThrow(ProofDiagError)
+
       expect(() => checkDiagram(<any>{
         nodes: {
           mySingleNode: {
@@ -694,8 +702,80 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(proofApplyOneStep(diagramAtoC,
                                proofStepAtoA2WithLinksViaPrime, theoryABCrules)
       ).toEqual(diagramA2toC)
-    })  
 
+      // Try to rename the output node
+      expect(proofApplyOneStep(diagramAtoC,
+                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
+                                       draft.nodeBijectionCD.myA2prime = "nameIprefer"
+                                     }), theoryABCrules)
+      ).toEqual(editCopy(diagramA2toC, (draft:any) => {
+        draft.nodes.nameIprefer = draft.nodes.myA2
+        delete draft.nodes.myA2
+        draft.linksWithID.foo.from = "nameIprefer.out"
+      }))
+
+    })
+
+    test('Renaming works', () => {
+      // Try to rename the output node
+      expect(proofApplyOneStep(diagramAtoC,
+                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
+                                 draft.nodeBijectionCD.myA2prime = "nameIprefer"
+                               }), theoryABCrules)
+      ).toEqual(editCopy(diagramA2toC, (draft:any) => {
+        draft.nodes.nameIprefer = draft.nodes.myA2
+        delete draft.nodes.myA2
+        draft.linksWithID.foo.from = "nameIprefer.out"
+      }))
+    })
+
+    test('Simple broken rules with one link', () => {
+      expect(() => proofApplyOneStep(diagramAtoC,
+                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                       draft.nodeBijectionAB.idontexist = "myAprime"
+                                     }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      expect(() => proofApplyOneStep(
+        diagramAtoC,
+        editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+          draft.nodeBijectionAB.dontexist = draft.nodeBijectionAB.myA2prime
+          delete draft.nodeBijectionAB.myA2prime
+        }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      // Bad boundary name (empty)
+      expect(() => proofApplyOneStep(diagramAtoC,
+                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                 draft.boundaryLinksDR.foo = {}
+                               }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      
+      // Bad boundary name (to)
+      expect(() => proofApplyOneStep(diagramAtoC,
+                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                       draft.boundaryLinksDR.foo.to = "AAAlice"
+                                     }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      // Bad boundary name (from)
+      expect(() => proofApplyOneStep(diagramAtoC,
+                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                 draft.boundaryLinksDR.foo = {from: "AAAlice"}
+                               }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      // Inverse to and from
+      expect(() => proofApplyOneStep(diagramAtoC,
+                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                       draft.boundaryLinksDR.foo = {from: draft.boundaryLinksDR.foo.to}
+                                     }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+    })
+
+    
     // TODO: ID and copy rules in ZX are interesting to test
   })
   

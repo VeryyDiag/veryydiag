@@ -1,6 +1,6 @@
 import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks } from "$lib/types/types" 
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow } from "$lib/utils.svelte" 
-import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode } from "$lib/types/types"
+import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
 export function checkTheory(theory: Theory) : true {
@@ -35,10 +35,18 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
       (theory?.availableNodes || {})?.[node?.nodeKind],
       `The nodeKind ${node?.nodeKind} for node ${nodeID} does not exist in the theory.`
     )
+    // Node names should not contain a dot
+    assertTrue(!nodeID.includes("."),
+               `The node ${nodeID} contains a dot (.) while this should be forbidden`
+    )
   })
   // Check if all links are properly formed
   entries(diagram?.linksWithID).forEach(([linkID, link]) => {
-    const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(link.from)
+    const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(
+      assertNotUndefined(
+        link.from,
+        `The link ${linkID} has no 'from' entry`
+    ))
     assertNotUndefinedNR(
       diagram?.nodes?.[nodeFrom],
       `The source node ${nodeFrom} does not exist in the link ${linkID}`
@@ -47,7 +55,11 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
       theory?.availableNodes?.[diagram?.nodes?.[nodeFrom]?.nodeKind]?.anchors?.[anchorFrom],
       `The anchor ${anchorFrom} in the source node ${nodeFrom} does not exist in the link ${linkID}`
     )
-    const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(link.to)
+    const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(
+      assertNotUndefined(
+        link.to,
+        `The link ${linkID} has no 'to' entry`
+    ))
     assertNotUndefinedNR(
       diagram?.nodes?.[nodeTo],
       `The destination node ${nodeTo} does not exist in the link ${linkID}`
@@ -274,12 +286,30 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     )
     assertTrue(
       boundaryNames?.to === undefined || boundaryNamesB.has(boundaryNames.to),
-      `The link ${linkID} points, according to boundaryLinksDR, to a boundary ${boundaryNames?.to} that does not exist in the from rule`
+      `The link ${linkID} points, according to boundaryLinksDR, to a boundary ${boundaryNames?.to} that does not exist in the from rule (should be one of ${JSON.stringify(Array.from(boundaryNamesB))})`
     )
   })
   // No need to check this on the boundaryNamesC since we checked earlier (checkRule) that they have the same set of boundaryNames
   // TODO: deal with nodes not accepting multiple inputs
-  
+
+  // It will be handy later to map all boundaries in the rule to their connected part in the diagram
+  // From above (checkDiagram) we already know that there is at most one link per boundary
+  const boundaryToNode = Object.fromEntries(entries(ruleFrom?.linksWithID).map(([linkID, link]) => {
+    const n = nbBoundaryLink(linkID, ruleFrom, theory)
+    if (n === 0) { // not a boundary link
+      return undefined
+    } else if (n === 1) { // from is boundary link
+      return [getBoundaryNameFromNode(link.from, ruleFrom, theory), {
+        to: link.to,
+      }]
+    } else if (n === 2) { // to is boundary link
+      return [getBoundaryNameFromNode(link.to, ruleFrom, theory), {
+        from: link.from
+      }]
+    } else {
+      throw new ProofDiagError(`NOT IMPLEMENTED YET`)
+    }
+  }).filter((x) => x !== undefined))
   
   // Instructions to delete/rewire/etc We avoid to remove in the loop in case it disturbs the process.
   let linksToDelete : LinkID[] = []
@@ -289,7 +319,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {    
     // Check if the link is inside the rewriting region (i.e. rule applies to current link)
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
-    const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
+    const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link?.to)
     if (!nodesA.includes(fromNode)) {
       // The link does NOT start inside the rewriting region
       if (!nodesA.includes(toNode)) {
@@ -301,27 +331,59 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
         )
       } else {
         // The link ends inside the rewriting region. Hence this node is next to the boundary
-        // Check if it appears in boundaryLinksAB
-        assertTrue(
-          boundaryLinks.has(linkID),
+        // Check if it appears in boundaryLinksDR
+        const boundary = assertNotUndefined(
+          proofStep?.boundaryLinksDR?.[linkID],
           `The link ${linkID} seems to be in the boundary of the rewriting region as its destination appears in nodeBijectionAB, but the link does not appear in boundaryLinksDR`
+        )
+        const boundaryFrom = assertNotUndefined(
+          boundary?.from,
+          `The boundary link ${linkID} is not having the same direction as its corresponding link in the rule (or maybe you misconfigured boundaryLinksDR?)`
+        )
+        // Check that the end is pointing to the good node:
+        assertDontThrow(
+          () => equivalentNodes(link.to, diagram, boundaryToNode[boundaryFrom].to, ruleFrom),
+          `The boundary link ${linkID} in the original diagram points to a different place/kind of node than its corresponding link ${boundaryToNode[boundaryFrom]?.to} in the rule`
         )
       }
     } else {
       // The link starts inside the rule region
       if (!nodesA.includes(toNode)) {
-        // The link ends outside the rule region: this node is next to the boundary
-        // Check if it appears in boundaryLinksAB
-        assertTrue(
-          boundaryLinks.has(linkID),
-          `The link ${linkID} seems to be in the boundary of the rewriting region as its source appears in nodeBijectionAB, but the link does not appear in boundaryLinksDR`
+        // The link starts inside the rewriting region. Hence this node is next to the boundary
+        // Check if it appears in boundaryLinksDR
+        const boundary = assertNotUndefined(
+          proofStep?.boundaryLinksDR?.[linkID],
+          `The link ${linkID} seems to be in the boundary of the rewriting region as its destination appears in nodeBijectionAB, but the link does not appear in boundaryLinksDR`
+        )
+        const boundaryTo = assertNotUndefined(
+          boundary?.to,
+          `The boundary link ${linkID} is not having the same direction as its corresponding link in the rule (or maybe you misconfigured boundaryLinksDR?)`
+        )
+        // Check that the link is starting from the good node:
+        assertDontThrow(
+          () => equivalentNodes(link.from, diagram, boundaryToNode[boundaryTo]?.from, ruleFrom),
+          `The boundary link ${linkID} in the original diagram starts from a different place/kind of node than its corresponding link ${boundaryToNode?.[boundaryTo]?.from} in the rule`
         )
       } else {
         // The link also ends inside the rewriting region: this link must be present in the bijection.
-        assertNotUndefinedNR(
+        const correspondingLinkID = assertNotUndefined(
           linkBijectionAB?.[linkID],
           `The link ${linkID} appears to be in the rewriting region (from/to belongs to nodeBijectionAB) but it does not appear in linkBijectionAB, meaning that we don't know how to map it to its corresponding node in the rule.`
         )
+        // We also need to check that it starts/ends at the correct place in the final diagram
+        const linkRule = assertNotUndefined(
+          ruleFrom?.linksWithID?.[correspondingLinkID],
+          `The link ${linkID} is supposed to map to the link ${linkBijectionAB?.[linkID]} that does not exist in the rule.`
+        )
+        assertDontThrow(
+          () => equivalentNodes(link.from, diagram, linkRule.from, ruleFrom, nodeBijectionAB),
+          `The link ${linkID} in the original diagram starts from a different place/kind of node than its corresponding link ${correspondingLinkID} in the rule`
+        )
+        assertDontThrow(
+          () => equivalentNodes(link.to, diagram, linkRule.to, ruleFrom, nodeBijectionAB),
+          `The link ${linkID} in the original diagram points to a different place/kind of node than its corresponding link ${correspondingLinkID} in the rule`
+        )
+        // TODO: check parameters, allow undirected links (may partially be done in equivalentNodes)...
       }
     }
   });
