@@ -172,7 +172,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   // === Nodes in the nodeBijectionAB exist in the diagram A…
   keys(nodeBijectionAB).forEach(nodeID => assertNotUndefined(
     diagram?.nodes?.[nodeID],
-    `The node ${nodeID} specified in the input of nodeBijectionAB does not exist in the original diagram`)
+    `The node ${nodeID} specified in the input of nodeBijectionAB does not exist in the original diagram which contains ${JSON.stringify(keys(diagram?.nodes))}`)
   )
   // === … Nodes in the nodeBijectionAB exist in the rule diagram B…
   values(nodeBijectionAB).forEach(nodeID => assertNotUndefined(
@@ -238,18 +238,18 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   )
   // === Boundary nodes should not appear in the bijection…
   assertTrue(
-    keys(nodeBijectionAB).filter(nodeID => isBoundaryNodeID(nodeID, diagram)).length > 0,
-    `Boundary nodes are not allowed in the input of nodeBijectionAB`
+    keys(nodeBijectionAB).filter(nodeID => isBoundaryNodeID(nodeID, diagram)).length === 0,
+    `Boundary nodes are not allowed in the input of nodeBijectionAB, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionAB).filter(nodeID => isBoundaryNodeID(nodeID, diagram)))}`
   )
   // … (in either ends)
   assertTrue(
-    keys(nodeBijectionBA).filter(nodeID => isBoundaryNodeID(nodeID, ruleFrom)).length > 0,
-    `Boundary nodes are not allowed in the output of nodeBijectionAB`
+    keys(nodeBijectionBA).filter(nodeID => isBoundaryNodeID(nodeID, ruleFrom)).length === 0,
+    `Boundary nodes are not allowed in the output of nodeBijectionAB, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionBA).filter(nodeID => isBoundaryNodeID(nodeID, ruleFrom)))}`
   )
   // … also for nodeBijection CD
   assertTrue(
-    keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)).length > 0,
-    `Boundary nodes are not allowed in the input of nodeBijectionCD`
+    keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)).length === 0,
+    `Boundary nodes are not allowed in the input of nodeBijectionCD, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)))}`
   )
   
   // TODO: check link direction etc + the existance of a node with the same name does not guarantee that they have equal
@@ -335,11 +335,13 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     delete diagram.linksWithID[linkID]
   })
   // We remove the old nodes
+  console.log(`Starting to delete`)
   nodesA.forEach((nodeID) => {
     assertNotUndefinedNR(
       diagram?.nodes?.[nodeID],
       `Impossible to delete node ${nodeID}, the node does not exist`
     )
+    console.log(`Deleting ${nodeID}`)
     delete diagram.nodes[nodeID]
   })
   // We add the new nodes

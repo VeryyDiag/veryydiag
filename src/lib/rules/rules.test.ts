@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { checkDiagram, checkRule } from './rules.svelte'
-import { ProofDiagError, type AvailableNode, type Diagram, type Theory } from '$lib/types/types'
+import { checkDiagram, checkRule, proofApplyOneStep } from './rules.svelte'
+import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStep } from '$lib/types/types'
 // Nice syntax to update nested objects in an immutable way via
 // const myobj2 = produce(myobj, draft => {draft.foo.bar.baz = 5})
 import { produce, castDraft, type Draft } from "immer"
@@ -121,9 +121,25 @@ const diagramA = {
   },
 } satisfies Diagram
 
+const diagramAprime = {
+  nodes: {
+    myAprime: {
+      nodeKind: "A"
+    },
+  },
+} satisfies Diagram
+
 const diagramA2 = {
   nodes: {
     myA2: {
+      nodeKind: "A2"
+    },
+  },
+} satisfies Diagram
+
+const diagramA2prime = {
+  nodes: {
+    myA2prime: {
       nodeKind: "A2"
     },
   },
@@ -285,6 +301,48 @@ const diagramB2toAliceAndBob = {
   },
 } satisfies Diagram
 
+// Rules to apply
+const theoryABCrules = {
+  // Theory
+  availableNodes: theoryABC.availableNodes,
+  rules: {
+    AtoA2: {
+      lhs: diagramA,
+      rhs: diagramA2
+    },
+  }
+} satisfies Theory;
+
+
+const proofStepAtoA2 = {
+  ruleName: "AtoA2",
+  direction: "lr",
+  nodeBijectionAB: {
+    myA: "myA",
+  },
+  linkBijectionAB: {},
+  boundaryLinksDR: {},
+  nodeBijectionCD: {
+    myA2: "myA2"
+  },
+  linkBijectionCD: {},
+} satisfies ProofStep
+
+const proofStepAprimetoA2prime = {
+  ruleName: "AtoA2",
+  direction: "lr",
+  nodeBijectionAB: {
+    myAprime: "myA",
+  },
+  linkBijectionAB: {},
+  boundaryLinksDR: {},
+  nodeBijectionCD: {
+    myA2: "myA2prime"
+  },
+  linkBijectionCD: {},
+} satisfies ProofStep
+
+
 // Describe = group tests by (sub)-category
 describe('Test well formed diagrams/rules/…', () => {
   describe('Well formed diagrams', () => {
@@ -400,7 +458,7 @@ describe('Test well formed diagrams/rules/…', () => {
         draft.availableNodes.boundary.anchors.shouldNotBeHere = {}
       }))).toThrow(ProofDiagError)
     })
-    
+
     test('Boundary nodes must have a boundary name', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft : any) => {
         delete draft.availableNodes.boundary.paramSpecs.boundaryName
@@ -421,6 +479,21 @@ describe('Test well formed diagrams/rules/…', () => {
         delete draft.nodes.aliceBoundary.params
       }), theoryABC)).toBe(true)      
     })
+
+    test('Boundary nodes should have exactly one connected link', () => {
+      // Zero link
+      expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        delete draft.linksWithID.foo
+      }), theoryABC)).toThrow(ProofDiagError)
+      // 2 links
+      expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        draft.linksWithID.foo2 = {
+          from: "myA.out",
+          to: "aliceBoundary.boundary"
+        }
+      }), theoryABC)).toThrow(ProofDiagError)
+    })
+
   })
 
   describe('Well formed rules', () => {
@@ -491,4 +564,22 @@ describe('Test well formed diagrams/rules/…', () => {
     })
 
   })
+
+  describe('Test application of proofApplyOneStep', () => {
+    test('Trivial one node rule, no link', () => {
+      expect(proofApplyOneStep(diagramA, proofStepAtoA2, theoryABCrules)).toEqual(diagramA2)
+    })  
+    test('Trivial one node rule, no link, but different names', () => {
+      expect(
+        proofApplyOneStep(diagramAprime, proofStepAprimetoA2prime, theoryABCrules)
+      ).toEqual(diagramA2prime)
+    })  
+    test('Trivial broken rule with node name mismatch', () => {
+      expect(
+        () => proofApplyOneStep(diagramA, // <-- should be diagramAprime
+                                proofStepAprimetoA2prime, theoryABCrules)
+      ).toThrow()
+    })  
+  })
+  
 })
