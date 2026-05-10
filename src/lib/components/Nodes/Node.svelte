@@ -3,7 +3,7 @@
   import type { AvailableNode, Node } from "$lib/types/types"
   import { componentNameToComponent } from "$lib/components/Nodes/allNodes"
   import { registerErrors } from "$lib/contexts/context.svelte";
-  import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils.svelte";
+  import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils";
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   
   // This file is used to draw arbitrary nodes

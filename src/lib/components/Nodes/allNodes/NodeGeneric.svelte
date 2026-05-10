@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContextDiagram, getContextErrors, registerErrors } from "$lib/contexts/context.svelte";
   import type { Node } from "$lib/types/types";
-  import { getTransformToElement, randomID, cmToUnit, unitToCm, toBoolean } from "$lib/utils.svelte";
+  import { getTransformToElement, randomID, cmToUnit, unitToCm, toBoolean } from "$lib/utils";
   
   let diagramConfClass = getContextDiagram()
   

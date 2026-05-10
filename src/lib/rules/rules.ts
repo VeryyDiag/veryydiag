@@ -1,5 +1,5 @@
-import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks } from "$lib/types/types" 
-import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow } from "$lib/utils.svelte" 
+import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks } from "$lib/types/types"
+import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow } from "$lib/utils"
 import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
@@ -141,7 +141,7 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
     }
     return undefined
   }).filter(x => x !== undefined)
-  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined) 
+  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
   assertDontThrow(
     () => listsAreUniqueAndIdenticalSetsThrow(boundaryFromNames, boundaryToNames),
     `You should have the same sets of boundary nodes in the right and left parts of the rule`
@@ -263,7 +263,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)).length === 0,
     `Boundary nodes are not allowed in the input of nodeBijectionCD, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)))}`
   )
-  
+
   // TODO: check link direction etc + the existance of a node with the same name does not guarantee that they have equal
   // nodeKind, params etc
 
@@ -310,13 +310,13 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
       throw new ProofDiagError(`NOT IMPLEMENTED YET`)
     }
   }).filter((x) => x !== undefined))
-  
+
   // Instructions to delete/rewire/etc We avoid to remove in the loop in case it disturbs the process.
   let linksToDelete : LinkID[] = []
   const boundaryLinks = new Set(keys(proofStep.boundaryLinksDR))
   // All links are either boundary links, outside current rewriting region, or listed in the bijection
   // (here we want to prevent e.g. a wire between two nodes in the rewriting region where this list is not listed in node/linkBijection)
-  Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {    
+  Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {
     // Check if the link is inside the rewriting region (i.e. rule applies to current link)
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
     const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link?.to)
@@ -427,7 +427,7 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     if (nLink > 0) {
       // Boundary links. We will take care of them later (but still check)
       return
-    } 
+    }
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
     const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
     const newLinkID = assertNotUndefined(
@@ -544,6 +544,6 @@ export function matchSelectionToRule(
     nodeBijectionAB: {},
     linkBijectionAB: {},
     boundaryLinksDR: {},
-    ambigiousBoundary: [],    
-  } 
+    ambigiousBoundary: [],
+  }
 }

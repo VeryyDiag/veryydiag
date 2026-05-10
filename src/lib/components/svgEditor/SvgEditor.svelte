@@ -4,7 +4,7 @@
   import Link from "$lib/components/Links/Link.svelte"  
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID } from "$lib/utils.svelte"
+  import { cm, randomID } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
 

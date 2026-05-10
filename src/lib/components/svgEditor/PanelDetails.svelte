@@ -4,7 +4,7 @@
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte" 
   import Toogle from '../reusable/Toogle.svelte';
-  import { toBoolean } from '$lib/utils.svelte';
+  import { toBoolean } from '$lib/utils';
 
   let diagramConfClass = getContextDiagram()
 

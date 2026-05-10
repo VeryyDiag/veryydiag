@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { checkDiagram, checkRule, proofApplyOneStep } from './rules.svelte'
+import { checkDiagram, checkRule, proofApplyOneStep } from './rules'
 import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStep } from '$lib/types/types'
 // Nice syntax to update nested objects in an immutable way via
-// const myobj2 = produce(myobj, draft => {draft.foo.bar.baz = 5})
-import { produce, castDraft, type Draft } from "immer"
-import { editCopy } from '$lib/utils.svelte' 
+// const myobj2 = editCopy(myobj, draft => {draft.foo.bar.baz = 5})
+import { editCopy } from '$lib/utils'
 
 // TODO: check if exactly one link to boundary (not more, not less)
 
@@ -40,7 +39,7 @@ const theoryABC = {
       anchors: {
         out: {}
       }
-    },          
+    },
     A2: {
       anchors: {
         out: {}
@@ -74,12 +73,12 @@ const theoryABCparam = {
       anchors: {
         out: {}
       }
-    },          
+    },
     A2: {
       anchors: {
         out: {}
       }
-    },          
+    },
     B: {
       anchors: {
         in: {},
@@ -488,13 +487,13 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.from = "whoAmI.out"
       }), theoryABC)).toThrow(ProofDiagError)
-      
+
       // Missing to
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.to = "whoAmI.in"
       }), theoryABC)).toThrow(ProofDiagError)
     })
-    
+
     test('Test broken anchors', () => {
       // Missing/bad anchor from
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
@@ -554,11 +553,11 @@ describe('Test well formed diagrams/rules/…', () => {
 
     })
 
-    
+
     test('Trivial diagram with a boundary node', () => {
       expect(checkDiagram(diagramAtoAlice, theoryABC)).toBe(true)
     })
-    
+
     test('Boundary nodes should have a single anchor called boundary', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft: any) => {
         draft.availableNodes.boundary.anchors.shouldNotBeHere = {}
@@ -583,7 +582,7 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         // It is removed, but then we use the default value, so it's OK
         delete draft.nodes.aliceBoundary.params
-      }), theoryABC)).toBe(true)      
+      }), theoryABC)).toBe(true)
     })
 
     test('Boundary nodes should have exactly one connected link', () => {
@@ -654,12 +653,12 @@ describe('Test well formed diagrams/rules/…', () => {
         })
       };
       expect(() => checkRule(rule, theoryABC)).toThrow(ProofDiagError)
-      
+
       expect(() => checkRule(editCopy<any>(rule, (draft) => {
         delete draft.lhs.nodes.bobBoundary
         delete draft.lhs.linksWithID.toBob
       }), theoryABC)).toThrow(ProofDiagError)
-      
+
       // If we delete both problematic elements we are good again
       expect(checkRule(editCopy<any>(rule, (draft) => {
         delete draft.lhs.nodes.bobBoundary
@@ -674,7 +673,7 @@ describe('Test well formed diagrams/rules/…', () => {
   describe('Test application of proofApplyOneStep', () => {
     test('Trivial one node rule, no link', () => {
       expect(proofApplyOneStep(diagramA, proofStepAtoA2, theoryABCrules)).toEqual(diagramA2)
-    })  
+    })
     test('Trivial one node rule, no link, but different names', () => {
       expect(
         proofApplyOneStep(diagramA, proofStepAtoA2ViaPrime, theoryABCrules)
@@ -684,19 +683,19 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(
         proofApplyOneStep(diagramA2, proofStepAtoA2ViaPrimeInverse, theoryABCrules)
       ).toEqual(diagramA)
-    }) 
+    })
     test('Trivial broken rule with node name mismatch', () => {
       expect(
         () => proofApplyOneStep(diagramAprime, // <-- should be diagramA to work
                                 proofStepAtoA2ViaPrime, theoryABCrules)
       ).toThrow(ProofDiagError)
-    })  
+    })
     test('Trivial broken rule with links', () => {
       expect(
         () => proofApplyOneStep(diagramAtoC, // <-- this contains an extra link that breaks the proof
                                 proofStepAtoA2, theoryABCrules)
       ).toThrow(ProofDiagError)
-    })  
+    })
 
     test('Simple rule with one link', () => {
       expect(proofApplyOneStep(diagramAtoC,
@@ -751,7 +750,7 @@ describe('Test well formed diagrams/rules/…', () => {
                                }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
-      
+
       // Bad boundary name (to)
       expect(() => proofApplyOneStep(diagramAtoC,
                                      editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
@@ -774,8 +773,8 @@ describe('Test well formed diagrams/rules/…', () => {
       ).toThrow(ProofDiagError)
 
     })
-    
+
     // TODO: ID and copy rules in ZX are interesting to test
   })
-    
+
   })

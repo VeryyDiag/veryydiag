@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString, fullAnchorToIDAndAnchor } from '$lib/utils.svelte';
+import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString, fullAnchorToIDAndAnchor } from '$lib/utils';
 
 
 export class ProofDiagError extends Error {
