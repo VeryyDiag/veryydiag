@@ -67,7 +67,10 @@
 
     <!-- Proof mode -->
     <button
-      class={[styleButton, styleButtonDisabled]} title="Proof mode" >
+      class={[styleButton, styleButtonDisabled]}
+      title="Start the proof mode"
+      onclick={() => diagramConfClass.addProof()}
+    >
 
       <Icon icon="streamline:triangle-arrow-roadmap-remix" color="black" width="25" height="25" />
     </button>

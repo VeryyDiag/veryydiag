@@ -16,6 +16,7 @@
   import PanelTheory from "./PanelTheory.svelte";
   import PanelToolbar from "./PanelToolbar.svelte";
   import PanelDetails from "./PanelDetails.svelte";
+  import PanelProofMode from "./PanelProofMode.svelte";
 
   /**
    * Interactive SVG editor component
@@ -71,6 +72,7 @@
     }
   })
 
+  let proofMode = diagramConfClass.isInProofMode()
 
   let addPanelCollapsed = $state(false);
   let loadFilePanel = $state(false)
@@ -139,6 +141,9 @@
 
     <!-- Theory panel -->
     <PanelDetails bind:panelDetailsEnabled={panelDetailsEnabled} />
+
+    <!-- Proof mode panel -->
+    <PanelProofMode bind:panelDetailsEnabled={panelDetailsEnabled} />
 
     <!-- Errors -->
     <PanelError />

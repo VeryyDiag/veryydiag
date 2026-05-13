@@ -2,7 +2,7 @@
   /** Theory panel */
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { getContextDiagram } from "$lib/contexts/context.svelte";
-  import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte" 
+  import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte"
   import Toogle from '../reusable/Toogle.svelte';
   import { toBoolean } from '$lib/utils';
 
@@ -14,13 +14,17 @@
   let nodeSelection = $derived(diagramConfClass.getNodeSelection())
   let nbSelectedItems = $derived(linkSelection.size + nodeSelection.size)
   let enabled = $derived(panelDetailsEnabled && nbSelectedItems >= 1)
-  
+
+  // We need to know if we are in proof mode since we shrink in proof mode
+  let proofModeEnabled = $derived(diagramConfClass.isInProofMode())
+
 </script>
 <div class={[
-           "absolute right-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center transition-all duration-300",
-           stylePanel,
-           !enabled && "opacity-0 invisible",
-           ]}>
+                "absolute right-4 -translate-y-1/2 w-xs min-w-0 flex flex-col items-center transition-all duration-300",
+                proofModeEnabled ? "top-74/100 h-46/100" : "top-1/2  h-9/10",
+                stylePanel,
+                !enabled && "opacity-0 invisible",
+                ]}>
 
     <!-- Scroll bar is for this box -->
     <div class="p-2 m-0 h-full overflow-auto mix-h-0 min-w-0 w-full">
@@ -60,4 +64,3 @@
       {/if}
     </div>
 </div>
-

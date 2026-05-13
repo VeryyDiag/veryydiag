@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual } from '$lib/utils';
@@ -85,9 +85,31 @@ export class DiagramConfClass {
     )
     return tab.diagramID
   }
+
+  getCurrentProofID = () : ProofID => {
+    const tab = this.diagramConf.currentTab
+    assertTrue(tab?.tabKind === "tabProof",
+               `The current tab is not a proof `
+    )
+    return tab.proofID
+  }
   
   getCurrentDiagram = () : Diagram => {
-    return this.diagramConf.diagrams[this.getCurrentDiagramID()]
+    const tab = this.diagramConf.currentTab
+    const tabKind = tab.tabKind
+    if (tabKind === "tabDiagram") {
+      return this.diagramConf.diagrams[this.getCurrentDiagramID()]
+    } else if (tabKind === "tabProof") {
+      // TODO: adapt to actually show the current diagram under edit and not the first diagram of the proof.
+      const proofID = this.getCurrentProofID()
+      return this.diagramConf.proofs[proofID].startingDiagram
+    } else {
+      assertNever(tabKind)
+    }
+  }
+ 
+  getCurrentTab = () : Tab => {
+    return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
   }
 
   getTabObject = (tab: Tab) : Diagram | Proof => {
@@ -100,11 +122,15 @@ export class DiagramConfClass {
       assertNever(tabKind)
     }
   }
-
+  
   getCurrentTabObject = () : Diagram | Proof => {
-    return this.getTabObject(this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" })
+    return this.getTabObject(this.getCurrentTab())
   }
 
+  isInProofMode = () : boolean => {
+    return this.getCurrentTab().tabKind === "tabProof"
+  }
+  
   getCurrentTheoryName = () : string => {
     return this.getCurrentDiagram()?.theory || "main"
   }
@@ -345,14 +371,14 @@ export class DiagramConfClass {
     this.notifications = this.notifications.filter(x => x !== notif)
   }
 
-  addDiagram = (diagID: DiagramID | undefined = undefined, diag : Diagram = {}) => {
+  addDiagram = (diagID: DiagramID | undefined = undefined, diag : Diagram = {}, theory: TheoryID | undefined = undefined) => {
     const id : DiagramID = diagID || randomID()
     this.diagramConf.diagrams[id] = {
       ...({
         name: "Click to edit",
         nodes: {},
         linksWithID: {},
-        theory: this.getCurrentTheoryName(),
+        theory: theory || this.getCurrentTheoryName(),
       }),
       ...diag
     }
@@ -371,20 +397,23 @@ export class DiagramConfClass {
   removeTab = (tab: Tab | undefined = undefined) => {
     const tabToDelete = tab || this.diagramConf.currentTab
     const tabKind = tabToDelete.tabKind
-    this.diagramConf.tabs = this.diagramConf.tabs.filter(x => isDeepEqual(x, tab))
+    this.diagramConf.tabs = this.diagramConf.tabs.filter(x => !isDeepEqual(x, tabToDelete))
+    let theory = undefined // Needed to recreate a diagram if this is the last tab
     if (tabKind === "tabDiagram") {
       const id = tabToDelete.diagramID
+      theory = this.diagramConf.diagrams[id].theory
       delete this.diagramConf.diagrams[id];
     } else if (tabKind === "tabProof") {
       const id = tabToDelete.proofID
+      theory = this.diagramConf.proofs[id].startingDiagram.theory
       delete this.diagramConf.proofs[id];
     } else {
       assertNever(tabKind)
     }
     if (this.diagramConf.tabs.length === 0) {
-      this.addDiagram("main", {name: "Main diagram"})
+      this.addDiagram("main", {name: "Main diagram"}, theory)
     }
-    if (isDeepEqual(this.diagramConf.currentTab, tab)) {
+    if (isDeepEqual(this.diagramConf.currentTab, tabToDelete)) {
       this.diagramConf.currentTab = this.diagramConf.tabs[0]
     }
   }
@@ -545,6 +574,29 @@ export class DiagramConfClass {
       node.params = {}
     }
     node.params[paramName] = { value: newValue }
+  }
+
+  // ==== Proof-related stuff
+  addProof = (diagram: Diagram | undefined = undefined) => {
+    const startingDiagram = diagram || this.getCurrentDiagram()
+    if (this.diagramConf?.proofs === undefined) {
+      this.diagramConf.proofs = {}
+    }
+    const id = randomID()
+    this.diagramConf.proofs[id] = {
+      name: `Proof from ${startingDiagram?.name || "???"}`,
+      startingDiagram: $state.snapshot(startingDiagram),
+      allSteps: {
+        description: "This proof shows that (click me to edit me)…",
+        steps: [],
+      },
+    }
+    const tab : Tab = {
+      tabKind: "tabProof",
+      proofID: id,
+    }
+    this.diagramConf.tabs.push(tab)
+    this.diagramConf.currentTab = tab
   }
 }
 

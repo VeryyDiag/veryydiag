@@ -330,7 +330,7 @@ export type ProofStepMove = {
 export type GroupOfProofSteps = {
   /** Optional string to describe what we are doing in this step */
   description?: string,
-  group: GroupOfProofSteps | ProofStepMove | ProofStep
+  steps: (GroupOfProofSteps | ProofStepMove | ProofStep)[]
 }
 
 /** ID of a proof */
@@ -339,10 +339,8 @@ export type ProofID = string
 export type Proof = {
   /** The name of the proof shown in the TAB */
   name: string,
-  /** The starting diagram of the proof */
+  /** The starting diagram of the proof. Also specifies the theory since the diagram itself refers to a theory. */
   startingDiagram: Diagram,
-  /** The theory used to run this proof */
-  theory: Theory,
   /** Specifies all the steps in the current proof */
   allSteps: GroupOfProofSteps,
 }
