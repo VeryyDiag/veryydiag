@@ -859,4 +859,4 @@ describe('Test well formed diagrams/rules/…', () => {
     // TODO: ID and copy rules in ZX are interesting to test
   })
 
-  })
+})
