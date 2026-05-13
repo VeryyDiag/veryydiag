@@ -1,9 +1,9 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual } from '$lib/utils';
 import { createReactiveMap2D } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
 
@@ -78,8 +78,31 @@ export class DiagramConfClass {
     return this.svg
   }
 
+  getCurrentDiagramID = () : DiagramID => {
+    const tab = this.diagramConf.currentTab
+    assertTrue(tab?.tabKind === "tabDiagram",
+               `The current tab is not a diagram `
+    )
+    return tab.diagramID
+  }
+  
   getCurrentDiagram = () : Diagram => {
-    return this.diagramConf.diagrams[this.diagramConf.currentDiagramTab]
+    return this.diagramConf.diagrams[this.getCurrentDiagramID()]
+  }
+
+  getTabObject = (tab: Tab) : Diagram | Proof => {
+    const tabKind = tab.tabKind
+    if (tabKind === "tabDiagram") {
+      return this.diagramConf.diagrams[tab.diagramID]
+    } else if (tabKind === "tabProof") {
+      return this.diagramConf.proofs[tab.proofID]
+    } else {
+      assertNever(tabKind)
+    }
+  }
+
+  getCurrentTabObject = () : Diagram | Proof => {
+    return this.getTabObject(this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" })
   }
 
   getCurrentTheoryName = () : string => {
@@ -326,30 +349,43 @@ export class DiagramConfClass {
     const id : DiagramID = diagID || randomID()
     this.diagramConf.diagrams[id] = {
       ...({
-        diagramName: "Click to edit",
+        name: "Click to edit",
         nodes: {},
         linksWithID: {},
         theory: this.getCurrentTheoryName(),
       }),
       ...diag
     }
-    this.diagramConf.diagramTabs.push(id)
-    this.diagramConf.currentDiagramTab = id
-  }
-
-  changeDiagramTab = (diagID: DiagramID) => {
-    this.diagramConf.currentDiagramTab = diagID
-  }
-
-  removeDiagram = (diagID: DiagramID | undefined = undefined) => {
-    const id = diagID || this.diagramConf.currentDiagramTab
-    this.diagramConf.diagramTabs = this.diagramConf.diagramTabs.filter(x => x !== id)
-    delete this.diagramConf.diagrams[id];
-    if (this.diagramConf.diagramTabs.length === 0) {
-      this.addDiagram("main", {diagramName: "Main diagram"})
+    const tab : Tab = {
+      tabKind: "tabDiagram",
+      diagramID: id,
     }
-    if (this.diagramConf.currentDiagramTab === id) {
-      this.diagramConf.currentDiagramTab = this.diagramConf.diagramTabs[0]
+    this.diagramConf.tabs.push(tab)
+    this.diagramConf.currentTab = tab
+  }
+
+  changeTab = (tab: Tab) => {
+    this.diagramConf.currentTab = tab
+  }
+
+  removeTab = (tab: Tab | undefined = undefined) => {
+    const tabToDelete = tab || this.diagramConf.currentTab
+    const tabKind = tabToDelete.tabKind
+    this.diagramConf.tabs = this.diagramConf.tabs.filter(x => isDeepEqual(x, tab))
+    if (tabKind === "tabDiagram") {
+      const id = tabToDelete.diagramID
+      delete this.diagramConf.diagrams[id];
+    } else if (tabKind === "tabProof") {
+      const id = tabToDelete.proofID
+      delete this.diagramConf.proofs[id];
+    } else {
+      assertNever(tabKind)
+    }
+    if (this.diagramConf.tabs.length === 0) {
+      this.addDiagram("main", {name: "Main diagram"})
+    }
+    if (isDeepEqual(this.diagramConf.currentTab, tab)) {
+      this.diagramConf.currentTab = this.diagramConf.tabs[0]
     }
   }
 
@@ -495,7 +531,7 @@ export class DiagramConfClass {
   }
 
   changeNodeParam = (nodeID: NodeID, paramName: ParamName, newValue: string | boolean | number, diagID: DiagramID | undefined = undefined) => {
-    const id = diagID || this.diagramConf.currentDiagramTab
+    const id = diagID || this.getCurrentDiagramID()
     console.log("Changing to value", newValue)
     const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
     if (node === undefined) {

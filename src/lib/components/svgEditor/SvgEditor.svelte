@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { DiagramConfByUser, Error } from "$lib/types/types"
-  import Node from "$lib/components/Nodes/Node.svelte"  
-  import Link from "$lib/components/Links/Link.svelte"  
+  import Node from "$lib/components/Nodes/Node.svelte"
+  import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
@@ -27,11 +27,10 @@
     /** Enable some extra information when debugging */
     debug?: boolean;
     /**
-       Only prints like a fixed image SVG (can't pan, modify etc) when number is defined.
-       The number represents the zoom (set to 1 to print 1 by default).
+     * Only prints like a fixed image SVG (can't pan, modify etc) when number is defined.
+     * The number represents the zoom (set to 1 to print 1 by default).
      */
     onlySvg?: number;
-    /** */
   }
   let {
     diagramConf = {},
@@ -41,7 +40,7 @@
 
   let diagramConfClass : DiagramConfClass = new DiagramConfClass();
   setContextDiagram(diagramConfClass)
-  
+
   let allErrors = $state<ErrorsMap>({})
   setContextErrors(allErrors)
 
@@ -56,7 +55,7 @@
 
   const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
   $effect(() => {diagramConf; resetViewport()})
-  
+
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   let errors = $derived(errorsImport ? [errorsImport.message] : [])
   registerErrors(uid, () => errors)
@@ -65,19 +64,19 @@
   $effect(() => {
     diagramConfClass.setSvg(svgRef)
   })
-  
+
   $effect(() => {
     if (onlySvg !== undefined) {
       resetViewport()
     }
   })
 
-  
+
   let addPanelCollapsed = $state(false);
   let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
   let panelDetailsEnabled = $state(true)
-  
+
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
@@ -125,7 +124,7 @@
 
   <div class="relative w-screen h-screen overflow-clip" use:addNodeToDiagram={diagramConfClass} use:pasteFile={diagramConfClass}>
     {@render svg("100%", "100%")}
-    
+
     <!-- Toolbar -->
     <PanelToolbar
       bind:addPanelCollapsed={addPanelCollapsed}
@@ -146,13 +145,12 @@
 
     <!-- Notifications -->
     <PanelNotifications />
-    
+
     <!-- Load file panel -->
-    <PanelLoadFile bind:loadFilePanel={loadFilePanel} />   
+    <PanelLoadFile bind:loadFilePanel={loadFilePanel} />
 
     <!-- Download panel -->
     <PanelDownload bind:downloadPanel={downloadPanel} />
 
   </div>
 {/if}
-

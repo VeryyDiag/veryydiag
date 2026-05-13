@@ -3,7 +3,8 @@
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { getContextDiagram } from "$lib/contexts/context.svelte";
 
-  import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte" 
+  import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
+	import { isDeepEqual } from '$lib/utils';
 
   let diagramConfClass = getContextDiagram()
 
@@ -26,22 +27,23 @@
 
   <!-- Tabs for diagrams -->
   <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => diagramConfClass.removeDiagram()}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current tab" onclick={() => diagramConfClass.removeTab()}>
       <Icon icon="mdi:minus" width="20" height="20"/>
     </button>
-    {#each diagramConfClass.getConfig()?.diagramTabs as diagramID}
-      {@const currentTab = diagramID === diagramConfClass.getConfig().currentDiagramTab}
+    {#each diagramConfClass.getConfig()?.tabs as tab}
+      {@const currentTab = isDeepEqual(tab, diagramConfClass.getConfig().currentTab)}
+      {@const currentTabKind = tab?.tabKind === "tabDiagram" ? "diagram" : "proof"}
       <span contenteditable={currentTab} spellcheck="false" role="button" tabindex="0"
-            class={[
-                  "px-2 py-1 border-r border-gray-100 text-sm",
-                  styleSelected(currentTab)
-                  ]}
-            title={currentTab ? "Click to edit the name of the current diagram" : "Click to change the current diagram"}
-            onclick={(e) => {if (!currentTab) {diagramConfClass.changeDiagramTab(diagramID); (e.target as HTMLElement).blur()}}}
-        onblur={(e) => {if (currentTab) {diagramConfClass.getConfig().diagrams[diagramID].diagramName = (e.target as HTMLElement).innerText}}}
+        class={[
+                "px-2 py-1 border-r border-gray-100 text-sm",
+                styleSelected(currentTab)
+                ]}
+        title={currentTab ? `Click to edit the name of the current ${currentTabKind} tab` : "Click to change the current tab"}
+        onclick={(e) => {if (!currentTab) {diagramConfClass.changeTab(tab); (e.target as HTMLElement).blur()}}}
+        onblur={(e) => {if (currentTab) {diagramConfClass.getCurrentTabObject().name = (e.target as HTMLElement).innerText}}}
         onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
         >
-        {diagramConfClass.getConfig()?.diagrams[diagramID]?.diagramName || "No name"}
+        {diagramConfClass.getTabObject(tab).name || "No name"}
       </span>
     {/each}
     <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Add new diagram" onclick={() => diagramConfClass.addDiagram()}>
@@ -49,24 +51,24 @@
     </button>
   </div>
 
-  
+
   <div class={["flex gap-2 p-2 rounded-t-xl", stylePanel]}>
     <button id="reframeBtn"
             class="p-2 rounded-lg transition active:scale-95">
       <b class="mr-0.25">Proof</b>Diag
     </button>
-    
+
     <!-- Creation mode -->
     <button
       class={[styleButton, styleButtonEnabled]} title="Diagram creation mode" >
-      
+
       <Icon icon="fluent-mdl2:edit-create" width="25" height="25" />
     </button>
 
     <!-- Proof mode -->
     <button
       class={[styleButton, styleButtonDisabled]} title="Proof mode" >
-      
+
       <Icon icon="streamline:triangle-arrow-roadmap-remix" color="black" width="25" height="25" />
     </button>
 
@@ -76,7 +78,7 @@
     <!-- <div class="h-10 border-l border-dashed border-gray-300 mx-1"></div> -->
     <!-- <div class="w-px h-5 bg-gradient-to-b from-transparent via-gray-500 to-transparent mx-1"></div> -->
 
-    
+
     <!-- Reframe button -->
     <button id="reframeBtn"
             class={[styleButton, styleButtonDisabled]}
@@ -100,7 +102,7 @@
       <Icon icon="material-symbols:file-open-outline" width="25" height="25"/>
     </button>
 
-    
+
     <!-- Download button -->
     <button id="reframeBtn"
             title="Download diagram/proof or download SVG"
@@ -110,10 +112,10 @@
       <!-- Icon: fit / reset view -->
       <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
     </button>
-    
+
     <!-- ========== Divider for mode-specific tools ========== -->
     <div class={dividerStyle}></div>
-    
+
     <!-- Add tool -->
     <button
       class={[

@@ -1,6 +1,6 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertDontThrow, assertNotUndefined, assertTrue, randomID, toString, fullAnchorToIDAndAnchor } from '$lib/utils';
+import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys } from '$lib/utils';
 
 
 export class ProofDiagError extends Error {
@@ -280,6 +280,8 @@ export type BoundaryLinks = Record<LinkID, {
 
 export type ProofStep = {
   ruleName: RuleName,
+  /** Optional string to describe what we are doing in this step */
+  description?: string,
   /** Specify if we apply the rule from left to right, or right to left */
   direction: "lr" | "rl",
   /**
@@ -314,6 +316,37 @@ export type ProofStep = {
   linkBijectionCD: Record<LinkID, LinkID>,
 }
 
+/** This proof step just specifies that two diagrams are identical except for the position of their nodes */
+export type ProofStepMove = {
+  /** Optional string to describe what we are doing in this step */
+  description?: string,
+  /** For each node you want to move, specify the final position */
+  move: Record<NodeID, Point>
+}
+
+/** We may want to group proof steps together, for instance to be able to fold a boring sequence of steps in the interface,
+ *  or when integrating plugins and strategies we may want to specify that all these steps were derived using a given strategy.
+ */
+export type GroupOfProofSteps = {
+  /** Optional string to describe what we are doing in this step */
+  description?: string,
+  group: GroupOfProofSteps | ProofStepMove | ProofStep
+}
+
+/** ID of a proof */
+export type ProofID = string
+/** Type containing a whole proof (or in-progress proof) */
+export type Proof = {
+  /** The name of the proof shown in the TAB */
+  name: string,
+  /** The starting diagram of the proof */
+  startingDiagram: Diagram,
+  /** The theory used to run this proof */
+  theory: Theory,
+  /** Specifies all the steps in the current proof */
+  allSteps: GroupOfProofSteps,
+}
+
 /** Theory contains nodes and rules we can apply on the nodes */
 export type Theory = {
   theoryName?: string,
@@ -321,10 +354,10 @@ export type Theory = {
   rules?: Record<RuleName, Rule>,
 }
 
-/** Structure representing a diagram tab */
+/** Identify a diagram */
 export type DiagramID = string
 export type Diagram = {
-  diagramName?: string,
+  name?: string,
   nodes?: Record<NodeID, Node>,
   /** Links (we turn links (easier to write) into linksWithID when loading the file for efficiency reasons) */
   linksWithID?: Record<LinkID, Link>,
@@ -337,14 +370,29 @@ export type Diagram = {
   theory?: TheoryID,
 }
 
-/** Configuration stored internally */
+/** Tabs are used to list diagrams/proofs and maybe later plugin-generated tabs etc */
+export type Tab = TabDiagram | TabProof
+
+export type TabDiagram = {
+  tabKind: "tabDiagram",
+  diagramID: DiagramID,
+}
+
+export type TabProof = {
+  tabKind: "tabProof",
+  proofID: ProofID,
+}
+
+/** Configuration of a whole file (contains all diagrams, theories, proofs…) */
 export type DiagramConf = {
   /** Stores all diagrams contained in the current file. */
   diagrams: Record<DiagramID, Diagram>,
+  /** Stores all the proofs that are currently under edit (theorems are moved to theories) */
+  proofs: Record<ProofID, Proof>,
   /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons */
-  diagramTabs: DiagramID[],
+  tabs: Tab[],
   /** Diagram currently under edit */
-  currentDiagramTab: DiagramID,
+  currentTab: Tab,
   /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
   theories: Record<TheoryID, Theory>,
 }
@@ -354,12 +402,14 @@ export type DiagramConf = {
 export type DiagramConfByUser = {
   /** Stores all diagrams contained in the current file. */
   diagrams?: Record<DiagramID, Diagram>,
+  /** Stores all the proofs that are currently under edit (theorems are moved to theories) */
+  proofs?: Record<ProofID, Proof>,
   /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons.
-   * If unspecified, this is equivalent to ["main"]
+   * If unspecified, this is equivalent to a single tab pointing to the "main" diagram
    */
-  diagramTabs?: DiagramID[],
-  /** Diagram currently under edit. If unspecified, equals to "main" */
-  currentDiagramTab?: DiagramID,
+  tabs?: Tab[],
+  /** Diagram currently under edit. If unspecified, equals to the "main" diagram */
+  currentTab?: Tab,
   /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
   theories?: Record<TheoryID, Theory>,
   /** These are shortcuts to quickly specify the "main" diagram without creating a new tab etc
@@ -414,8 +464,9 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
 
   const {
     diagrams = {},
-    diagramTabs = [ "main" ],
-    currentDiagramTab = "main",
+    proofs = {},
+    tabs = [ {tabKind: "tabDiagram", diagramID: "main"} ],
+    currentTab = {tabKind: "tabDiagram", diagramID: "main"},
     theories = {},
     diagramNodes,
     availableNodes,
@@ -425,7 +476,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     svgSize,
   } = diagramConfByUser
   const diagramsPreCleared : Record<DiagramID, Diagram> = (diagramNodes === undefined && links === undefined && viewport === undefined && svgSize === undefined) ? diagrams : {...diagrams, main: {
-    diagramName: "Main diagram",
+    name: "Main diagram",
     nodes: diagramNodes || {},
     links: links || [],
     linksWithID: linksWithID || {},
@@ -455,29 +506,48 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     // We must have at least one diagram or the interface would crash
     diagrams: (Object.keys(diagCleared).length > 0) ? diagCleared : {
       main: {
-        diagramName: "Main diagram",
+        name: "Main diagram",
         nodes: {},
         linksWithID: {},
         theory: "main"
       },
     },
-    diagramTabs: diagramTabs || [ "main" ],
-    currentDiagramTab: currentDiagramTab || "main",
+    proofs: proofs,
+    tabs: tabs || [ {tabKind: "tabDiagram", diagramID: "main"} ],
+    currentTab: currentTab || {tabKind: "tabDiagram", diagramID: "main"},
     theories: (availableNodes !== undefined || Object.keys(theories).length === 0) ? {...theories, main: {
       theoryName: "Main theory",
       availableNodes: availableNodes,
     }} : theories,
   }
 
-  // Check if all tabs are well defined
-  if (cleanedConfig.diagrams?.[cleanedConfig.currentDiagramTab] === undefined) {
-    throw new ProofDiagError(`The diagram '${cleanedConfig.currentDiagramTab}' set as current tab does not exist (${Object.keys(cleanedConfig.diagrams).length > 1 ? Object.keys(cleanedConfig.diagrams) : "no diagram available"}).`)
-  }
-
-  cleanedConfig.diagramTabs.forEach((tab) => {
-    if (cleanedConfig.diagrams?.[tab] === undefined) {
-      throw new ProofDiagError(`The diagram ${cleanedConfig.currentDiagramTab} set in the list of tabs does not exist.`)
+  const isValidTab = (tab: Tab, tabDetails: string) => {
+    const tabKind = tab.tabKind
+    switch (tabKind) {
+      case "tabDiagram":
+        const diagramID = assertNotUndefined(tab?.diagramID, `The ${tabDetails} does not specify a diagramID`)
+        assertNotUndefinedNR(
+          cleanedConfig.diagrams?.[diagramID],
+          `The diagram '${diagramID}' set in ${tabDetails} does not exist (valid diagrams ID are ${JSON.stringify(keys(cleanedConfig.diagrams))}).`
+        )
+        break;
+      case "tabProof":
+        const proofID = assertNotUndefined(tab?.proofID, `The current tab does not specify a proofID`)
+        assertNotUndefinedNR(
+          cleanedConfig?.proofs?.[proofID],
+          `The proof '${proofID}' set in ${tabDetails} does not exist (valid proofs ID are ${JSON.stringify(keys(cleanedConfig.proofs))}).`
+        )
+        break;
+      default:
+        assertNever(tabKind, `Wrong tabKind in currentTab (should be either tabDiagram or tabProof)`)
     }
+  }
+  
+  // Check if all tabs are well defined
+  isValidTab(cleanedConfig.currentTab, `default tab`)
+  
+  cleanedConfig.tabs.forEach((tab, i) => {
+    isValidTab(tab, `${i+1}-th tab`)
   })
 
   Object.entries(cleanedConfig.diagrams).forEach(([diagID, diag]) => {

@@ -26,11 +26,9 @@ export function errToUndef<T>(x: () => T) : T | undefined {
   }
 }
 
-export function assertTrue(x: boolean, m: string): true {
+export function assertTrue(x: boolean, m: string): asserts x {
   if (!x) {
     throw new ProofDiagError(m)
-  } else {
-    return true
   }
 }
 
@@ -58,6 +56,11 @@ export function assertDontThrow<T>(f: () => T, m: string): T {
   } catch (e) {
     throw new ProofDiagError(`${m}: (${e})`)
   }
+}
+
+// Use on pattern matching to ensure we never arrive here.
+export function assertNever(x: never, m: string = `We should never enter this case`): never {
+  throw new ProofDiagError(`${m}: ${x}`);
 }
 
 export function toBoolean(x: string | boolean | number) {
@@ -102,6 +105,21 @@ export function listsAreBijection(a: string[], b: string[]) : boolean {
   const s = new Set(a).size
   return s === (new Set(b)).size && s === a.length
 }
+
+// https://stackoverflow.com/a/77278013
+export const isDeepEqual = <T>(a: T, b: T): boolean => {
+  if (a === b) {
+    return true;
+  }
+
+  const bothAreObjects = a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b);
+
+  return Boolean(
+    bothAreObjects &&
+    Object.keys(a).length === Object.keys(b).length &&
+    Object.entries(a).every(([k, v]) => isDeepEqual(v, b[k as keyof T]))
+  );
+};
 
 
 export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));
