@@ -194,6 +194,23 @@ const diagramAtoC = {
   },
 } satisfies Diagram
 
+const diagramAtoCandA = {
+  nodes: {
+    myA: diagramA.nodes.myA,
+    myC: diagramC.nodes.myC,
+  },
+  linksWithID: {
+    foo: {
+      from: "myA.out",
+      to: "myC.in"
+    },
+    toAitself: {
+      from: "myA.out",
+      to: "myA.out"
+    },
+  },
+} satisfies Diagram
+
 const diagramA2toC = {
   nodes: {
     myA2: diagramA2.nodes.myA2,
@@ -243,6 +260,30 @@ const diagramAprimetoAlice = {
     fooPrime: {
       from: "myAprime.out",
       to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
+const diagramAprimetoAliceAndHerself = {
+  nodes: {
+    myAprime: diagramAprime.nodes.myAprime,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+      },
+    }
+  },
+  linksWithID: {
+    fooPrime: {
+      from: "myAprime.out",
+      to: "aliceBoundary.boundary"
+    },
+    toAitselfPrime: {
+      from: "myAprime.out",
+      to: "myAprime.out"
     },
   },
 } satisfies Diagram
@@ -374,6 +415,10 @@ const theoryABCrules = {
       lhs: diagramAprimetoAlice,
       rhs: diagramA2primetoAlice,
     },
+    AitselfprimetoA2primeWithLinks: {
+      lhs: diagramAprimetoAliceAndHerself,
+      rhs: diagramA2primetoAlice,
+    },
   }
 } satisfies Theory;
 
@@ -439,6 +484,26 @@ const proofStepAtoA2WithLinksViaPrime = {
   },
 } satisfies ProofStep
 
+const proofStepAitselftoA2WithLinksViaPrime = {
+  ruleName: "AitselfprimetoA2primeWithLinks",
+  direction: "lr",
+  nodeBijectionAB: {
+    myA: "myAprime",
+  },
+  linkBijectionAB: {
+    toAitself: "toAitselfPrime",
+  },
+  boundaryLinksDR: {
+    foo: {
+      to: "Alice",
+    }
+  },
+  nodeBijectionCD: {
+    myA2prime: "myA2"
+  },
+  linkBijectionCD: {
+  },
+} satisfies ProofStep
 
 // Describe = group tests by (sub)-category
 describe('Test well formed diagrams/rules/…', () => {
@@ -771,6 +836,23 @@ describe('Test well formed diagrams/rules/…', () => {
                                        draft.boundaryLinksDR.foo = {from: draft.boundaryLinksDR.foo.to}
                                      }), theoryABCrules)
       ).toThrow(ProofDiagError)
+
+    })
+
+    test('Simple rules with internal links', () => {
+
+      // Diagram with internal wires not existing in the rule
+      expect(() => proofApplyOneStep(diagramAtoCandA,
+                                     proofStepAtoA2WithLinksViaPrime,
+                                     theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      // We updated the rule to add this extra internal link, now it works:
+      expect(proofApplyOneStep(diagramAtoCandA,
+                               proofStepAitselftoA2WithLinksViaPrime,
+                               theoryABCrules)
+      ).toEqual(diagramA2toC)
+
 
     })
 
