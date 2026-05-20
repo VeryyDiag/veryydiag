@@ -61,37 +61,14 @@
         {/snippet}
         <li>
           <div class={styleDot}></div>
-          Starting diagram {diagramConfClass.test}
           {@render addMoveStep(0)}
-
-
-
-          <p>You can edit me here (just click on the item to change its value):</p>
-          <p>
-            <button onclick={() => diagramConfClass.test.splice(0, 0, 1)} class="text-sm bg-blue-100 border rounded-lg px-2 py-0.5">Add</button>
-	          {#each diagramConfClass.test as x, i}
-              <span class="inline-div m-3 p-2 rounded-lg">
-		            <span contenteditable role="button" tabindex="0" onblur={(e) => diagramConfClass.test[i] = parseInt((e.target as HTMLElement).innerText)} onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}>{x}</span>
-                <button onclick={() => diagramConfClass.test.splice(i, 1)} class="text-sm bg-red-100 border rounded-lg px-2 py-0.5">Delete</button>
-                <button onclick={() => diagramConfClass.test.splice(i+1, 0, 1)} class="text-sm bg-blue-100 border rounded-lg px-2 py-0.5">Add</button>
-              </span>
-	          {/each}
-          </p>
-
-          <p>
-            The computed list is !!!
-	          {#each diagramConfClass.derivedProofDiagrams as x, i}
-		          <span>{x}, </span>
-	          {/each}
-          </p>
-
-
         </li>
         {#each (currentProof?.steps || []) as proofStep, i}
           {@const kind = proofStep?.kind}
           <li>
             <div class={styleDot}></div>
-            Diagram is {diagramConfClass.derivedProofDiagrams.get(i+1)}
+            Diagram is
+            {JSON.stringify(diagramConfClass.derivedProofDiagrams.get(i+1))}
             {#if kind === "applyRule"}
               Apply rule {proofStep?.ruleName}
               {@render description(i, proofStep)}

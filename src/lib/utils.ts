@@ -300,3 +300,9 @@ export function downloadStringAsFile(content: string, mimeType: string, filename
 export function capitalizeFirstLetter(val: string) {
   return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
+
+/** Help with debug in expressions */
+export function log<A>(x: A, m: string = "Logging ") : A {
+  console.log(m, x)
+  return x
+}

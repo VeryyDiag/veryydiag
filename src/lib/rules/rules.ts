@@ -150,7 +150,7 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
 }
 
 /** Applies one step of kind "move" */
-export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | ProofStepApplyRule, dontCopyDiagram = false) {
+export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | ProofStepApplyRule, dontCopyDiagram : boolean = false) {
   let diagram = dontCopyDiagram ? diagramOrig : structuredClone(diagramOrig);
   entries(proofStep?.move).forEach(([nodeID, pos]) => {
     assertNotUndefinedNR(diagram?.nodes?.[nodeID],
@@ -162,8 +162,8 @@ export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | 
 
 
 /** Applies one step of kind "applyRule" */
-export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRule, theory: Theory) : Diagram {
-  let diagram = structuredClone(diagramOrig)
+export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRule, theory: Theory, dontCopyDiagram : boolean = false) : Diagram {
+  let diagram = dontCopyDiagram ? diagramOrig : structuredClone(diagramOrig)
   // I think I do redundant checks (earlier and when creating the graph)…
   // Anyway, better be safe for now ^^
   // TODO: more precise error messages (which element is wrong)
@@ -540,13 +540,12 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
 }
 
 /** Applies one step of a rewritting proof */
-export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep) : Diagram {
-  const theory = diagramOrig?.theory || {}
+export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, theory: Theory, dontCopyDiagram : boolean = false) : Diagram {
   const kind = proofStep.kind;
   if (kind === "applyRule") {
-    return proofApplyRule(diagramOrig, proofStep, theory)
+    return proofApplyRule(diagramOrig, proofStep, theory, dontCopyDiagram)
   } if (kind === "move") {
-    return proofApplyMove(diagramOrig, proofStep)
+    return proofApplyMove(diagramOrig, proofStep, dontCopyDiagram)
   } else {
     return diagramOrig
   }

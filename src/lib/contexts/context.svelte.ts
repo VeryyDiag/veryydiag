@@ -3,7 +3,7 @@ import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log } from '$lib/utils';
 import { createReactiveMap2D, MapReduce } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
 import { proofApplyOneStep } from '$lib/rules/rules';
@@ -46,72 +46,6 @@ export class DiagramConfClass {
     }
   )
   getDiagramConfDerivedParams = () => this.diagramConfDerivedParams
-
-
-  currentProofSteps = $derived.by(() => {
-    if (this.isInProofMode()) {
-      return this.getCurrentProof().steps;
-    } else {
-      return []
-    }
-  })
-  myExpensiveFunction = (acc: number, lx: number, i: number, verbose : boolean = true) => {
-    if (verbose) {
-      console.log(`Running my expensive function on acc ${acc} with l[i] = ${lx} and i=${i}`);
-    }
-    return acc + lx
-  }
-  test : number[] = $state([])
-  derivedProofDiagrams = new MapReduce(this.test, this.myExpensiveFunction, 0)
-  //derivedProofDiagrams = new MapReduce(currentProofSteps, )
-  // test = $state(2)
-  // derivedProofDiagrams : (() => number)[] = (() => {
-  //   console.log("First derivation of all derivedProofDiagrams")
-  //   const proxy = new Proxy([], {
-  //     get: (target, key) => {
-  //       if (!this.isInProofMode()) {
-  //         return []
-  //       }
-  //       const currentProof = this.getCurrentProof();
-  //       const steps = currentProof.steps;
-  //       const myExpensiveFunction = (n:number) => {
-  //         console.log(`I'm running the very expensive operation on ${n}!`)
-  //         return n * 2
-  //       };        
-  //       if (key === "length") {
-  //         return steps.length + 1
-  //       }
-  //       // It seems like array keys are also encoded as string, it seems fairly inneficient
-  //       // but it's how it's done apparently.
-  //       let keyNb = parseInt(String(key))
-  //       if (!Number.isNaN(keyNb)) {
-  //         console.log(keyNb);
-  //         if (target?.[keyNb] !== undefined) {
-  //           return target[keyNb]
-  //         }
-  //         if (keyNb === 0) {
-  //           //return currentProof.startingDiagram
-  //           const foo = $derived(this.test)
-  //           target[keyNb] = () => foo
-  //           return target[keyNb]
-  //         }
-  //         else {
-  //           const foo = $derived.by( () => {
-  //             console.log("Running internal derived by with keyNb = ", keyNb, " - 1");
-  //             const previousDiagram = proxy[keyNb - 1]();
-  //             console.log("previousDiagram is", previousDiagram)
-  //             //proofApplyOneStep(previousDiagram, steps[key])
-  //             return myExpensiveFunction(previousDiagram)
-  //           })
-  //           target[keyNb] = () => foo
-  //           return target[keyNb]
-  //         }
-  //       }
-  //       throw new Error(`Trying to access the key ${String(key)} of the proxy which should either be 'length' or parsable as integer (it is currently of kind ${typeof key} and value ${String(key)})`)
-  //     }
-  //   })
-  //   return proxy
-  // })()
   
   /**
    * While it is possible to get coordinates of anchors via DOM access,
@@ -201,6 +135,7 @@ export class DiagramConfClass {
   getCurrentTabObject = () : Diagram | Proof => {
     return this.getTabObject(this.getCurrentTab())
   }
+
 
   isInProofMode = () : boolean => {
     return this.getCurrentTab().tabKind === "tabProof"
@@ -316,7 +251,6 @@ export class DiagramConfClass {
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: NodeKind) : AvailableNode => {
     let res = this.getCurrentTheory()?.availableNodes?.[kind]
-    // console.log("res", $state.snapshot(res))
     if (res !== undefined) {
       if (res.svgString !== undefined)
         return res
@@ -636,7 +570,6 @@ export class DiagramConfClass {
 
   changeNodeParam = (nodeID: NodeID, paramName: ParamName, newValue: string | boolean | number, diagID: DiagramID | undefined = undefined) => {
     const id = diagID || this.getCurrentDiagramID()
-    console.log("Changing to value", newValue)
     const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
     if (node === undefined) {
       throw new ProofDiagError(`Node ${nodeID} does not exist in diagram ${id}`)
@@ -702,6 +635,19 @@ export class DiagramConfClass {
   }
 
   
+  #currentProof : Proof | undefined = $derived.by(() => {
+    if (this.isInProofMode()) {
+      return this.getCurrentProof();
+    } else {
+      return undefined
+    }
+  })
+  #currentProofSteps : ProofStep[] = $derived(this.#currentProof?.steps || [])
+  startingDiagram : Diagram = $derived(this.#currentProof?.startingDiagram || {})
+  startingTheory : Theory = $derived(this.startingDiagram?.theory || {})
+  derivedProofDiagrams = $derived(new MapReduce(this.#currentProofSteps, (acc, x, i) => proofApplyOneStep($state.snapshot(acc), x, this.startingTheory), this.startingDiagram))
+
+    
 }
 
 // *** Jump to end, not sure how to cleanly avoid this huge class **
