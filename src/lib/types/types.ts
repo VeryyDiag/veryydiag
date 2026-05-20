@@ -278,7 +278,9 @@ export type BoundaryLinks = Record<LinkID, {
   newLinkName2?: LinkID,
 } >
 
-export type ProofStep = {
+export type ProofStepApplyRule = {
+  /** Kind of proof step */
+  kind: "applyRule",
   ruleName: RuleName,
   /** Optional string to describe what we are doing in this step */
   description?: string,
@@ -314,24 +316,43 @@ export type ProofStep = {
   nodeBijectionCD: Record<NodeID, NodeID>,
   /** Same for links */
   linkBijectionCD: Record<LinkID, LinkID>,
+  /** For each final node you want to move, specify the final position */
+  move?: Record<NodeID, Point>
 }
 
 /** This proof step just specifies that two diagrams are identical except for the position of their nodes */
 export type ProofStepMove = {
+  /** Kind of proof step */
+  kind: "move",
   /** Optional string to describe what we are doing in this step */
   description?: string,
   /** For each node you want to move, specify the final position */
-  move: Record<NodeID, Point>
+  move?: Record<NodeID, Point>
 }
 
-/** We may want to group proof steps together, for instance to be able to fold a boring sequence of steps in the interface,
- *  or when integrating plugins and strategies we may want to specify that all these steps were derived using a given strategy.
+/** Specify that the next proof steps (until ProofStepGroupEnd) belong to the same group, e.g. grouping trivial movements together,
+ *  or proof generated via the same strategy/plugin/…
+ *  We use this method (start & end in the same list instead of nesting proofSteps in a tree) because it is much simpler to deal with
+ *  this encoding in the GUI: it is really efficient to derive the depth anyway, and the computationally expensive task is to actually
+ *  apply the rule, and caching is certainly easier to do on lists than on trees since each application depends on the previous
+ *  application.
  */
-export type GroupOfProofSteps = {
+export type ProofStepGroupStart = {
+  /** Kind of proof step */
+  kind: "group",
+  /** Title given to this group, e.g. shown in bold font */
+  title?: string,
   /** Optional string to describe what we are doing in this step */
-  description?: string,
-  steps: (GroupOfProofSteps | ProofStepMove | ProofStep)[]
+  description?: string,  
 }
+
+/** Ends a group started with ProofStepGroupStart */
+export type ProofStepGroupEnd = {
+  /** Kind of proof step */
+  kind: "groupEnd",
+}
+
+export type ProofStep = ProofStepApplyRule | ProofStepMove | ProofStepGroupStart | ProofStepGroupEnd
 
 /** ID of a proof */
 export type ProofID = string
@@ -341,8 +362,10 @@ export type Proof = {
   name: string,
   /** The starting diagram of the proof. Also specifies the theory since the diagram itself refers to a theory. */
   startingDiagram: Diagram,
+  /** You can write a description of the current proof */
+  description?: string, 
   /** Specifies all the steps in the current proof */
-  allSteps: GroupOfProofSteps,
+  steps: ProofStep[],
 }
 
 /** Theory contains nodes and rules we can apply on the nodes */

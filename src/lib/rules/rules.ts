@@ -1,5 +1,5 @@
-import type { Diagram, ProofStep, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks } from "$lib/types/types"
-import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow } from "$lib/utils"
+import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep } from "$lib/types/types"
+import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever } from "$lib/utils"
 import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
@@ -149,8 +149,20 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
   return true
 }
 
-/** Applies one step of a rewritting proof */
-export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, theory: Theory) : Diagram {
+/** Applies one step of kind "move" */
+export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | ProofStepApplyRule, dontCopyDiagram = false) {
+  let diagram = dontCopyDiagram ? diagramOrig : structuredClone(diagramOrig);
+  entries(proofStep?.move).forEach(([nodeID, pos]) => {
+    assertNotUndefinedNR(diagram?.nodes?.[nodeID],
+                         `The nodeID ${nodeID} does not exist in the diagram when applying the proofStep 'move'`)
+    diagram.nodes[nodeID].pos = pos
+  })
+  return diagram
+}
+
+
+/** Applies one step of kind "applyRule" */
+export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRule, theory: Theory) : Diagram {
   let diagram = structuredClone(diagramOrig)
   // I think I do redundant checks (earlier and when creating the graph)…
   // Anyway, better be safe for now ^^
@@ -527,6 +539,18 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
   return diagram
 }
 
+/** Applies one step of a rewritting proof */
+export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep) : Diagram {
+  const theory = diagramOrig?.theory || {}
+  const kind = proofStep.kind;
+  if (kind === "applyRule") {
+    return proofApplyRule(diagramOrig, proofStep, theory)
+  } if (kind === "move") {
+    return proofApplyMove(diagramOrig, proofStep)
+  } else {
+    return diagramOrig
+  }
+}
 
 export function matchSelectionToRule(
   nodeSelection: NodeID[],

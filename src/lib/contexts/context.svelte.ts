@@ -1,22 +1,27 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual } from '$lib/utils';
-import { createReactiveMap2D } from '$lib/svelteRelatedUtils.svelte';
+import { createReactiveMap2D, MapReduce } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
+import { proofApplyOneStep } from '$lib/rules/rules';
 
 // Configuration
 
-// https://svelte.dev/docs/svelte/$state
+/** This (admitingly huge, not sure how to cleanly separate it) class is the main class that describe the whole file we are working on.
+ *  Even if diagramConf is a $state (hence reactive), don't modify it yourself outside of this class as it allows us to track
+ *  mutations easily, making features like undo/redo stack trivial to implement later.
+ *  See also https://svelte.dev/docs/svelte/$state
+ */ 
 export class DiagramConfClass {
   /** Contains the configuration of the current diagram that will be saved to files */
   diagramConf = $state<DiagramConf>(diagramConfByUserToDiagramConf({}))
+
   /** Some informations are contained in the SVG file. To avoid duplicating it while allowing easier
    *  parsing, we derive them.
    */
-
   diagramConfDerivedParams = createReactiveMap2D<Record<TheoryID, Theory>, ParamSpecs>(
     () => this.diagramConf.theories,
     {
@@ -41,6 +46,72 @@ export class DiagramConfClass {
     }
   )
   getDiagramConfDerivedParams = () => this.diagramConfDerivedParams
+
+
+  currentProofSteps = $derived.by(() => {
+    if (this.isInProofMode()) {
+      return this.getCurrentProof().steps;
+    } else {
+      return []
+    }
+  })
+  myExpensiveFunction = (acc: number, lx: number, i: number, verbose : boolean = true) => {
+    if (verbose) {
+      console.log(`Running my expensive function on acc ${acc} with l[i] = ${lx} and i=${i}`);
+    }
+    return acc + lx
+  }
+  test : number[] = $state([])
+  derivedProofDiagrams = new MapReduce(this.test, this.myExpensiveFunction, 0)
+  //derivedProofDiagrams = new MapReduce(currentProofSteps, )
+  // test = $state(2)
+  // derivedProofDiagrams : (() => number)[] = (() => {
+  //   console.log("First derivation of all derivedProofDiagrams")
+  //   const proxy = new Proxy([], {
+  //     get: (target, key) => {
+  //       if (!this.isInProofMode()) {
+  //         return []
+  //       }
+  //       const currentProof = this.getCurrentProof();
+  //       const steps = currentProof.steps;
+  //       const myExpensiveFunction = (n:number) => {
+  //         console.log(`I'm running the very expensive operation on ${n}!`)
+  //         return n * 2
+  //       };        
+  //       if (key === "length") {
+  //         return steps.length + 1
+  //       }
+  //       // It seems like array keys are also encoded as string, it seems fairly inneficient
+  //       // but it's how it's done apparently.
+  //       let keyNb = parseInt(String(key))
+  //       if (!Number.isNaN(keyNb)) {
+  //         console.log(keyNb);
+  //         if (target?.[keyNb] !== undefined) {
+  //           return target[keyNb]
+  //         }
+  //         if (keyNb === 0) {
+  //           //return currentProof.startingDiagram
+  //           const foo = $derived(this.test)
+  //           target[keyNb] = () => foo
+  //           return target[keyNb]
+  //         }
+  //         else {
+  //           const foo = $derived.by( () => {
+  //             console.log("Running internal derived by with keyNb = ", keyNb, " - 1");
+  //             const previousDiagram = proxy[keyNb - 1]();
+  //             console.log("previousDiagram is", previousDiagram)
+  //             //proofApplyOneStep(previousDiagram, steps[key])
+  //             return myExpensiveFunction(previousDiagram)
+  //           })
+  //           target[keyNb] = () => foo
+  //           return target[keyNb]
+  //         }
+  //       }
+  //       throw new Error(`Trying to access the key ${String(key)} of the proxy which should either be 'length' or parsable as integer (it is currently of kind ${typeof key} and value ${String(key)})`)
+  //     }
+  //   })
+  //   return proxy
+  // })()
   
   /**
    * While it is possible to get coordinates of anchors via DOM access,
@@ -50,7 +121,7 @@ export class DiagramConfClass {
    */
   relativeAnchorPos = $state<Record<string, Point>>({})
 
-    /** Pointer to the main SVG element */
+  /** Pointer to the main SVG element */
   // Put the type inside $state!! https://github.com/sveltejs/svelte/issues/14435
   svg = $state<SVGGraphicsElement | undefined>(undefined)
 
@@ -66,7 +137,7 @@ export class DiagramConfClass {
   
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
-    this.setSvg(svg)
+    this.setSvg(svg)    
   }
 
   // We should use => to preserve the this in order to be able to do onclick={todo.reset}
@@ -92,6 +163,10 @@ export class DiagramConfClass {
                `The current tab is not a proof `
     )
     return tab.proofID
+  }
+
+  getCurrentProof = () : Proof => {
+    return this.diagramConf.proofs[this.getCurrentProofID()]
   }
   
   getCurrentDiagram = () : Diagram => {
@@ -586,10 +661,8 @@ export class DiagramConfClass {
     this.diagramConf.proofs[id] = {
       name: `Proof from ${startingDiagram?.name || "???"}`,
       startingDiagram: $state.snapshot(startingDiagram),
-      allSteps: {
-        description: "This proof shows that (click me to edit me)…",
-        steps: [],
-      },
+      description: "This proof shows that (click to edit me)…",
+      steps: [],
     }
     const tab : Tab = {
       tabKind: "tabProof",
@@ -598,6 +671,37 @@ export class DiagramConfClass {
     this.diagramConf.tabs.push(tab)
     this.diagramConf.currentTab = tab
   }
+
+  currentProof = (proofID: ProofID | undefined = undefined) : Proof => {
+    const actualProofID = proofID || this.getCurrentProofID() 
+    return this.diagramConf.proofs[actualProofID]
+  }
+
+  allProofSteps = (proofID: ProofID | undefined = undefined) : ProofStep[] => {
+    return this.currentProof(proofID).steps
+  }
+
+  updateProofDescription = (description : string, proofID: ProofID | undefined = undefined) => {
+    const proof = this.currentProof(proofID);
+    proof.description = description;
+  }
+
+  updateProofStepDescription = (proofStepPosition: number, description : string, proofID: ProofID | undefined = undefined) => {
+    const proof = this.currentProof(proofID);
+    const step = proof.steps[proofStepPosition]
+    assertTrue(step.kind !== "groupEnd", `You are trying to update the description of the ${proofStepPosition}-th step of the proof that is a groupEnd element and has therefore no description field`)
+    step.description = description;
+  }
+
+  insertMoveStep = (position : number, proofID: ProofID | undefined = undefined) => {
+    const proof = this.currentProof(proofID);
+    if (proof?.steps === undefined) {
+      proof.steps = []
+    }
+    proof.steps.splice(position, 0, {kind: "move", move: {}})
+  }
+
+  
 }
 
 // *** Jump to end, not sure how to cleanly avoid this huge class **

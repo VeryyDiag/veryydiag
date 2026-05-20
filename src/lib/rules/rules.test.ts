@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { checkDiagram, checkRule, proofApplyOneStep } from './rules'
-import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStep } from '$lib/types/types'
+import { checkDiagram, checkRule, proofApplyRule } from './rules'
+import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
 // Nice syntax to update nested objects in an immutable way via
 // const myobj2 = editCopy(myobj, draft => {draft.foo.bar.baz = 5})
 import { editCopy } from '$lib/utils'
@@ -423,6 +423,7 @@ const theoryABCrules = {
 } satisfies Theory;
 
 const proofStepAtoA2 = {
+  kind: "applyRule",
   ruleName: "AtoA2",
   direction: "lr",
   nodeBijectionAB: {
@@ -434,9 +435,10 @@ const proofStepAtoA2 = {
     myA2: "myA2"
   },
   linkBijectionCD: {},
-} satisfies ProofStep
+} satisfies ProofStepApplyRule
 
 const proofStepAtoA2ViaPrime = {
+  kind: "applyRule",
   ruleName: "AprimetoA2prime",
   direction: "lr",
   nodeBijectionAB: {
@@ -448,9 +450,10 @@ const proofStepAtoA2ViaPrime = {
     myA2prime: "myA2"
   },
   linkBijectionCD: {},
-} satisfies ProofStep
+} satisfies ProofStepApplyRule
 
 const proofStepAtoA2ViaPrimeInverse = {
+  kind: "applyRule",
   ruleName: "AprimetoA2prime",
   direction: "rl",
   nodeBijectionAB: {
@@ -462,9 +465,10 @@ const proofStepAtoA2ViaPrimeInverse = {
     myAprime: "myA",
   },
   linkBijectionCD: {},
-} satisfies ProofStep
+} satisfies ProofStepApplyRule
 
 const proofStepAtoA2WithLinksViaPrime = {
+  kind: "applyRule",
   ruleName: "AprimetoA2primeWithLinks",
   direction: "lr",
   nodeBijectionAB: {
@@ -482,9 +486,10 @@ const proofStepAtoA2WithLinksViaPrime = {
   },
   linkBijectionCD: {
   },
-} satisfies ProofStep
+} satisfies ProofStepApplyRule
 
 const proofStepAitselftoA2WithLinksViaPrime = {
+  kind: "applyRule",
   ruleName: "AitselfprimetoA2primeWithLinks",
   direction: "lr",
   nodeBijectionAB: {
@@ -503,7 +508,7 @@ const proofStepAitselftoA2WithLinksViaPrime = {
   },
   linkBijectionCD: {
   },
-} satisfies ProofStep
+} satisfies ProofStepApplyRule
 
 // Describe = group tests by (sub)-category
 describe('Test well formed diagrams/rules/…', () => {
@@ -735,40 +740,40 @@ describe('Test well formed diagrams/rules/…', () => {
 
   })
 
-  describe('Test application of proofApplyOneStep', () => {
+  describe('Test application of proofApplyRule', () => {
     test('Trivial one node rule, no link', () => {
-      expect(proofApplyOneStep(diagramA, proofStepAtoA2, theoryABCrules)).toEqual(diagramA2)
+      expect(proofApplyRule(diagramA, proofStepAtoA2, theoryABCrules)).toEqual(diagramA2)
     })
     test('Trivial one node rule, no link, but different names', () => {
       expect(
-        proofApplyOneStep(diagramA, proofStepAtoA2ViaPrime, theoryABCrules)
+        proofApplyRule(diagramA, proofStepAtoA2ViaPrime, theoryABCrules)
       ).toEqual(diagramA2)
     })
     test('Apply rule other direction', () => {
       expect(
-        proofApplyOneStep(diagramA2, proofStepAtoA2ViaPrimeInverse, theoryABCrules)
+        proofApplyRule(diagramA2, proofStepAtoA2ViaPrimeInverse, theoryABCrules)
       ).toEqual(diagramA)
     })
     test('Trivial broken rule with node name mismatch', () => {
       expect(
-        () => proofApplyOneStep(diagramAprime, // <-- should be diagramA to work
+        () => proofApplyRule(diagramAprime, // <-- should be diagramA to work
                                 proofStepAtoA2ViaPrime, theoryABCrules)
       ).toThrow(ProofDiagError)
     })
     test('Trivial broken rule with links', () => {
       expect(
-        () => proofApplyOneStep(diagramAtoC, // <-- this contains an extra link that breaks the proof
+        () => proofApplyRule(diagramAtoC, // <-- this contains an extra link that breaks the proof
                                 proofStepAtoA2, theoryABCrules)
       ).toThrow(ProofDiagError)
     })
 
     test('Simple rule with one link', () => {
-      expect(proofApplyOneStep(diagramAtoC,
+      expect(proofApplyRule(diagramAtoC,
                                proofStepAtoA2WithLinksViaPrime, theoryABCrules)
       ).toEqual(diagramA2toC)
 
       // Try to rename the output node
-      expect(proofApplyOneStep(diagramAtoC,
+      expect(proofApplyRule(diagramAtoC,
                                      editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
                                        draft.nodeBijectionCD.myA2prime = "nameIprefer"
                                      }), theoryABCrules)
@@ -782,7 +787,7 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Renaming works', () => {
       // Try to rename the output node
-      expect(proofApplyOneStep(diagramAtoC,
+      expect(proofApplyRule(diagramAtoC,
                                editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
                                  draft.nodeBijectionCD.myA2prime = "nameIprefer"
                                }), theoryABCrules)
@@ -794,13 +799,13 @@ describe('Test well formed diagrams/rules/…', () => {
     })
 
     test('Simple broken rules with one link', () => {
-      expect(() => proofApplyOneStep(diagramAtoC,
+      expect(() => proofApplyRule(diagramAtoC,
                                      editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                        draft.nodeBijectionAB.idontexist = "myAprime"
                                      }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
-      expect(() => proofApplyOneStep(
+      expect(() => proofApplyRule(
         diagramAtoC,
         editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
           draft.nodeBijectionAB.dontexist = draft.nodeBijectionAB.myA2prime
@@ -809,7 +814,7 @@ describe('Test well formed diagrams/rules/…', () => {
       ).toThrow(ProofDiagError)
 
       // Bad boundary name (empty)
-      expect(() => proofApplyOneStep(diagramAtoC,
+      expect(() => proofApplyRule(diagramAtoC,
                                editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                  draft.boundaryLinksDR.foo = {}
                                }), theoryABCrules)
@@ -817,21 +822,21 @@ describe('Test well formed diagrams/rules/…', () => {
 
 
       // Bad boundary name (to)
-      expect(() => proofApplyOneStep(diagramAtoC,
+      expect(() => proofApplyRule(diagramAtoC,
                                      editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                        draft.boundaryLinksDR.foo.to = "AAAlice"
                                      }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
       // Bad boundary name (from)
-      expect(() => proofApplyOneStep(diagramAtoC,
+      expect(() => proofApplyRule(diagramAtoC,
                                editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                  draft.boundaryLinksDR.foo = {from: "AAAlice"}
                                }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
       // Inverse to and from
-      expect(() => proofApplyOneStep(diagramAtoC,
+      expect(() => proofApplyRule(diagramAtoC,
                                      editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                        draft.boundaryLinksDR.foo = {from: draft.boundaryLinksDR.foo.to}
                                      }), theoryABCrules)
@@ -842,13 +847,13 @@ describe('Test well formed diagrams/rules/…', () => {
     test('Simple rules with internal links', () => {
 
       // Diagram with internal wires not existing in the rule
-      expect(() => proofApplyOneStep(diagramAtoCandA,
+      expect(() => proofApplyRule(diagramAtoCandA,
                                      proofStepAtoA2WithLinksViaPrime,
                                      theoryABCrules)
       ).toThrow(ProofDiagError)
 
       // We updated the rule to add this extra internal link, now it works:
-      expect(proofApplyOneStep(diagramAtoCandA,
+      expect(proofApplyRule(diagramAtoCandA,
                                proofStepAitselftoA2WithLinksViaPrime,
                                theoryABCrules)
       ).toEqual(diagramA2toC)
