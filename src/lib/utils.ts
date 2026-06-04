@@ -76,6 +76,8 @@ export function toBoolean(x: string | boolean | number) {
     throw new ProofDiagError("Expecting a boolean but got a number ${x}")
   } else if (typeof x === 'boolean') {
     return x
+  } else {
+    throw new ProofDiagError(`Can't turn type ${typeof x} into a boolean`)
   }
 }
 
@@ -101,9 +103,28 @@ export function recordIsBijection(x: Record<string,string>,
   return (new Set(Object.keys(x).filter(filterLeft))).size === (new Set(Object.values(x).filter(filterRight))).size
 }
 
+export function listHasNoDuplicateE(a: string[]) : true {
+  const seen = a.filter((s => v => s.has(v) || !s.add(v))(new Set));
+  if (seen.length !== 0) {
+    throw new ProofDiagError(`The list has some duplicated values ${JSON.stringify(seen)}`)
+  }
+  return true
+}
+
 export function listsAreBijection(a: string[], b: string[]) : boolean {
   const s = new Set(a).size
   return s === (new Set(b)).size && s === a.length
+}
+
+export function listsAreNotOverlapping(a: string[], b: string[]) : boolean {
+  const aS = new Set(a)
+  const bS = new Set(b)
+  return aS.intersection(bS).size === 0
+}
+
+export function listsAreEqualUpToOrdering(a: string[], b: string[]) : boolean {
+  // Don't use set since we want [1] != [1,1]
+  return isDeepEqual(a.toSorted(), b.toSorted())
 }
 
 // https://stackoverflow.com/a/77278013

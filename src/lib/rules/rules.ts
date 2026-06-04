@@ -1,6 +1,6 @@
-import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep } from "$lib/types/types"
-import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever } from "$lib/utils"
-import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes } from "$lib/types/types"
+import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName } from "$lib/types/types"
+import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
+import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
 export function checkTheory(theory: Theory) : true {
@@ -68,6 +68,15 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
       theory?.availableNodes?.[diagram?.nodes?.[nodeTo]?.nodeKind]?.anchors?.[anchorTo],
       `The anchor ${anchorTo} in the source node ${nodeTo} does not exist in the link ${linkID}`
     )
+    // Check if multi-wire boundary nodes are not connected to single-boundary nodes
+    const nbMulti = nbMultiWireBoundaryLink(linkID, diagram, theory);
+    const nbMono = nbMonoWireBoundaryLink(linkID, diagram, theory);
+    assertTrue(nbMulti === 0 || nbMono === 0,
+               `The link ${linkID} is linked to both a mono-wire boundary link and a multi-wire boundary link. This is forbidden.`
+    )
+    assertTrue(nbMulti !== 3,
+               `The link ${linkID} is linked to two multi-wire boundary link. This is forbidden (no clear semantic).`
+    )
   })
   // In diagrams, boundary nodes should have names
   entries(diagram?.nodes).map(([nodeID,node]) => {
@@ -81,27 +90,41 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
     assertTrue(listsAreUniqueAndIdenticalSets(keys(theory.availableNodes.boundary.anchors), ["boundary"]),
                `The 'boundary' node kind should have a single anchor called 'boundary' while it has the following anchors: ${JSON.stringify(keys(theory.availableNodes.boundary.anchors))}`)
   }
-  // In diagrams, each boundary nodes should have exactly one connected wire
+  // In diagrams, each multi-wire boundary nodes should have exactly one connected wire
   assertDontThrow(
     () => listsAreUniqueAndIdenticalSetsThrow(
       // Lists of pointed boundary (must be unique)
       entries(diagram?.linksWithID).map(([linkID,link]) => {
         const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
         const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
-        return [errToUndef(() => getBoundaryNameFromNode(fromNode, diagram, theory)),
-                errToUndef(() => getBoundaryNameFromNode(toNode, diagram, theory))].filter(x => x !== undefined)
+        const a = isMultiWireBoundaryNodeID(fromNode, diagram, theory)
+        const b = isMultiWireBoundaryNodeID(toNode, diagram, theory)
+        assertTrue(!(a && b), `The link ${linkID} is connected to two multi-wire boundary nodes ${fromNode} and ${toNode}`)
+        return [errToUndef(() => a ? getBoundaryNameFromNode(fromNode, diagram, theory) : undefined),
+                errToUndef(() => b ? getBoundaryNameFromNode(toNode, diagram, theory) : undefined)].filter(x => x !== undefined)
       }).flat(),
       // Lists of boundaries
       entries(diagram?.nodes).map(([nodeID, node]) => {
-        if(isBoundaryNode(node)) {
+        if(isMultiWireBoundaryNode(node, theory)) {
           return getBoundaryNameFromNode(nodeID, diagram, theory)
         } else {
           return undefined
         }
       }).filter(x => x !== undefined)
     ),
-    `The diagram has issues with boundary nodes: they should have unique names, and be connected to exactly one node. Next comes the difference between pointed boundaries vs actual boundaries`
+    `The diagram has issues with multi-wire boundary nodes: they should have unique names, and be connected to exactly one node. Next comes the difference between pointed boundaries vs actual boundaries`
   )
+  // All boundary nodes should be different (between mono and multi-wire as well)
+  assertDontThrow(
+    () => listHasNoDuplicateE(
+      entries(diagram?.nodes).map(([nodeID, node]) => {
+        if(isBoundaryNode(node)) {
+          return getBoundaryNameFromNode(nodeID, diagram, theory)
+        } else {
+          return undefined
+        }
+      }).filter(x => x !== undefined)),
+    `Boundary nodes should all have different names in a diagram`)
   // If a parameter is defined for a node, a paramSpec is also defined with appropriate type
   entries(diagram?.nodes).forEach(([nodeID, node]) => {
     entries(node?.params).forEach(([paramName, param]) => {
@@ -109,6 +132,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
         theory?.availableNodes?.[node?.nodeKind]?.paramSpecs?.[paramName],
         `The parameter ${paramName} specified in ${nodeID} does not exist in the paramSpecs of the theory`
       )
+      assertNotUndefined(param?.value, `The parameter ${paramName} should specify its value via a 'value' field. Have you forgotten this field?`)
       // Check if the type matches
       assertDontThrow(
         () => checkParamType(paramSpecs.type, param.value),
@@ -146,6 +170,7 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
     () => listsAreUniqueAndIdenticalSetsThrow(boundaryFromNames, boundaryToNames),
     `You should have the same sets of boundary nodes in the right and left parts of the rule`
   )
+  // TODO: check same set of mono and multi-boundary nodes, with same properties etc.
   return true
 }
 
@@ -176,15 +201,18 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
   assertDontThrow(() => checkRule(rule, theory, false), `The rule ${proofStep.ruleName} contained in the current proofStep is invalid`)
   const ruleFrom: Diagram = proofStep.direction === "lr" ? rule.lhs : rule.rhs;
   const ruleTo: Diagram = proofStep.direction === "lr" ? rule.rhs : rule.lhs;
+  const ruleFromName: string = proofStep.direction === "lr" ? "starting (LHS)" : "starting (RHS)";
+  const ruleToName: string = proofStep.direction === "lr" ? "ending (RHS)" : "ending (LHS)";
   // Check if nodeBijection* is really a bijection and compute its inverse …
-  const nodeBijectionAB = proofStep.nodeBijectionAB
+  const nodeBijectionAB = proofStep?.nodeBijectionAB || {}
   const nodeBijectionBA = assertDontThrow(() => inverseBijection(nodeBijectionAB), `nodeBijectionAB is not a bijection`)
-  const nodeBijectionCD = proofStep.nodeBijectionCD
+  const boundaryAnchorsBA  = proofStep?.boundaryAnchorsBA || {}
+  const nodeBijectionCD = proofStep?.nodeBijectionCD || {}
   const nodeBijectionDC = assertDontThrow(() => inverseBijection(nodeBijectionCD), `nodeBijectionCD is not a bijection`)
   // … same for links
-  const linkBijectionAB = proofStep.linkBijectionAB
+  const linkBijectionAB = proofStep?.linkBijectionAB || {}
   const linkBijectionBA = assertDontThrow(() => inverseBijection(linkBijectionAB), `linkBijectionAB is not a bijection`)
-  const linkBijectionCD = proofStep.linkBijectionCD
+  const linkBijectionCD = proofStep?.linkBijectionCD || {}
   const linkBijectionDC = assertDontThrow(() => inverseBijection(linkBijectionCD), `linkBijectionCD is not a bijection`)
   // List of nodes involved in the rule (resp. diagram) A -> B -> C -> D
   const nodesA : NodeID[] = keys(nodeBijectionAB)
@@ -194,15 +222,51 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
   // ========== First we check if the proofStep is well formed ==========
   // ====== Nodes
   // === Nodes in the nodeBijectionAB exist in the diagram A…
-  keys(nodeBijectionAB).forEach(nodeID => assertNotUndefined(
-    diagram?.nodes?.[nodeID],
-    `The node ${nodeID} specified in the input of nodeBijectionAB does not exist in the original diagram which contains ${JSON.stringify(keys(diagram?.nodes))}`)
-  )
-  // === … Nodes in the nodeBijectionAB exist in the rule diagram B…
-  values(nodeBijectionAB).forEach(nodeID => assertNotUndefined(
-    ruleFrom?.nodes?.[nodeID],
-    `The node ${nodeID} specified in the output of nodeBijectionAB does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule`)
-  )
+  entries(nodeBijectionAB).forEach(([nodeIDA, nodeIDB]) => {
+    const nodeA = assertNotUndefined(
+      diagram?.nodes?.[nodeIDA],
+      `The node '${nodeIDA}' specified in the input of nodeBijectionAB does not exist in the original diagram which contains ${JSON.stringify(keys(diagram?.nodes))}`
+    )
+
+    // === … Nodes in the nodeBijectionAB exist in the rule diagram B…
+    const nodeB = assertNotUndefined(
+      ruleFrom?.nodes?.[nodeIDB],
+      `The node ${nodeIDB} specified in the output of nodeBijectionAB does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule`
+    )
+
+    // === Both nodes have the same kind
+    assertTrue(
+      nodeA?.nodeKind === nodeB?.nodeKind && nodeA?.nodeKind !== undefined,
+      `The node ${nodeIDA} in the diagram should have the same nodeKind (${nodeA?.nodeKind}) as the corresponding node ${nodeIDB} in the rule (with nodeKind ${nodeB?.nodeKind})`
+    )
+    // TODO: check if parameters are identical
+  })
+  // === … Anchors in the boundaryAnchorsBA exist in the rule diagram B and A, correspond to a mono-wire boundary nodes, and are
+  // not already part of the rewritting region.
+  entries(boundaryAnchorsBA).forEach(([idAnchorB, idAnchorA]) => {
+    const [nodeID, anchor] = fullAnchorToIDAndAnchor(idAnchorB);
+    const node = assertNotUndefined(
+      ruleFrom?.nodes?.[nodeID],
+      `The node ${nodeID} specified in the input of boundaryAnchorsBA does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule which contains ${JSON.stringify(keys(ruleFrom?.nodes))}`)
+    const nodeKind = assertNotUndefined(ruleFrom?.nodes?.[nodeID]?.nodeKind, `The node ${nodeID} has no nodeKind`)
+    assertNotUndefined(
+      keys(theory?.availableNodes?.[nodeKind]?.anchors).includes(anchor),
+      `We can't find the anchor ${anchor} for the node ${nodeID} (with nodeKind ${ruleFrom?.nodes?.[nodeID]?.nodeKind}) specified in the input of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKind]?.anchors))}`)
+    assertTrue(
+      isMonoWireBoundaryNode(node, theory),
+      `The node ${nodeID} specified in the input of boundaryAnchorsBA is not a mono-wire boundary node.`
+    )
+
+    const [nodeIDA, anchorA] = fullAnchorToIDAndAnchor(idAnchorA);
+    const nodeA = assertNotUndefined(
+      diagram?.nodes?.[nodeIDA],
+      `The node ${nodeIDA} specified in the input of boundaryAnchorsBA does not exist in the original diagram which contains ${JSON.stringify(keys(diagram?.nodes))}`)
+    const nodeKindA = assertNotUndefined(nodeA?.nodeKind, `Missing nodeKind on node ${nodeIDA}`)
+    assertNotUndefined(
+      keys(theory?.availableNodes?.[nodeKindA]?.anchors).includes(anchorA),
+      `We can't find the anchor ${anchorA} for the node ${nodeIDA} (with nodeKind ${nodeKindA}) specified in the output of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKindA]?.anchors))}`)
+
+  })
   // === … Nodes in the nodeBijectionCD exist in the rule diagram C
   keys(nodeBijectionCD).forEach(nodeID => assertNotUndefined(
     ruleTo?.nodes?.[nodeID],
@@ -213,7 +277,7 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     () => listsAreUniqueAndIdenticalSetsThrow(
       values(nodeBijectionAB),
       keys(ruleFrom?.nodes).filter(nodeID => !isBoundaryNodeID(nodeID, ruleFrom))),
-    `Some nodes exist in the starting rule but do not exist in the output of nodeBijectionAB`
+    `Some nodes exist in the ${ruleFromName} diagram rule but do not exist in the output of nodeBijectionAB`
   )
   // === … inputs of nodeBijectionCD is one-to-one mapping to nodes in C (except boundary nodes)…
   assertDontThrow(
@@ -224,43 +288,75 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     `Some nodes exist in the ending rule but do not exist in the input of nodeBijectionCD`
   )
   // ====== Links
+  // TODO: check if boundaryAnchorsBA only contains node that are mono-boundary.
   // === links in the linkBijectionAB exist in the diagram A…
-  keys(linkBijectionAB).forEach(linkID => assertNotUndefined(
-    diagram?.linksWithID?.[linkID],
-    `The link ${linkID} specified in the input of linkBijectionAB does not exist in the original diagram`)
-  )
-  // === Links in the linkBijectionAB exist in the diagram A…
-  keys(linkBijectionAB).forEach(linkID => assertNotUndefined(
-    diagram?.linksWithID?.[linkID],
-    `The link ${linkID} specified in the input of linkBijectionAB does not exist in the original diagram`)
-  )
-  // === … Links in the linkBijectionAB exist in the rule diagram B…
-  values(linkBijectionAB).forEach(linkID => assertNotUndefined(
-    ruleFrom?.linksWithID?.[linkID],
-    `The link ${linkID} specified in the output of linkBijectionAB does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule`)
-  )
+  entries(linkBijectionAB).forEach(([linkIDA, linkIDB]) => {
+    assertDontThrow(() => {
+      const linkA = assertNotUndefined(
+        diagram?.linksWithID?.[linkIDA],
+        `The link ${linkIDA} specified in the input of linkBijectionAB does not exist in the original diagram`
+      )
+
+      // === … Links in the linkBijectionAB exist in the rule diagram B…
+      const linkB = assertNotUndefined(
+        ruleFrom?.linksWithID?.[linkIDB],
+        `The link ${linkIDB} specified in the output of linkBijectionAB does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule`
+      )
+
+      // Check if the links in linkBijectionAB are equivalent up to translation, i.e. pointing to/from
+      // the same node inside the diagram. Special care must be taken for mono-wire boundary nodes,
+      // so we use boundaryAnchorsBA to do the translation.
+      // Links are always considered undirected/without kinds since we can fake a directed
+      // link/kind via two undirected links connected to a special node with two anchors (directed)
+      // or one anchor (undirected).
+      const [nodeFromB, anchorFromB] = fullAnchorToIDAndAnchor(linkB.from)
+      const translatedLinkBFromA = boundaryAnchorsBA?.[linkB.from] || IDAnchorToFullAnchor(
+        assertNotUndefined(
+          nodeBijectionBA?.[nodeFromB],
+          `The node ${nodeFromB} in the ${ruleFromName} diagram of the rule is not present in nodeBijectionBA nor in boundaryAnchorsBA (${linkB.from} should appear if it is a mono-wire boundary node)`),
+        anchorFromB
+      )
+      const [nodeToB, anchorToB] = fullAnchorToIDAndAnchor(linkB.to)
+      const translatedLinkBToA = boundaryAnchorsBA?.[linkB.to] || IDAnchorToFullAnchor(
+        assertNotUndefined(
+          nodeBijectionBA?.[nodeToB],
+          `The node ${nodeToB} in the ${ruleFromName} diagram of the rule is not present in nodeBijectionBA nor in boundaryAnchorsBA (${linkB.to} should appear if it is a mono-wire boundary node)`),
+        anchorToB
+      )
+
+      assertTrue(
+        listsAreEqualUpToOrdering(
+          [linkA.from, linkA.to],
+          [translatedLinkBFromA, translatedLinkBToA]
+        ),
+        `The link '${linkIDA}', mapped, according to linkBijectionAB, to '${linkIDB}', does not map to the same translated nodes (${JSON.stringify([linkA.from, linkA.to].toSorted())} != ${JSON.stringify([translatedLinkBFromA, translatedLinkBToA].toSorted())})`
+      )
+    }, `Error when processing the mapping '${linkIDA}' --> '${linkIDB}' in linkBijectionAB`)
+  })
   // === … Links in the linkBijectionCD exist in the rule diagram C
   keys(linkBijectionCD).forEach(linkID => assertNotUndefined(
     ruleTo?.linksWithID?.[linkID],
     `The link ${linkID} specified in the input of linkBijectionCD does not exist in the ${proofStep.direction === "lr" ? "RHS" : "LHS"}  diagram of the rule`)
   )
-  // === Outputs of linkBijectionAB is one-to-one mapping to links in B (except boundary links)…
+  // === Outputs of linkBijectionAB is one-to-one mapping to links in B (except multi-wire boundary links)…
   assertDontThrow(
     () => listsAreUniqueAndIdenticalSetsThrow(
       values(linkBijectionAB),
-      keys(ruleFrom?.linksWithID).filter(linkID => nbBoundaryLink(linkID, ruleFrom, theory) === 0)
+      keys(ruleFrom?.linksWithID).filter(linkID => nbMultiWireBoundaryLink(linkID, ruleFrom, theory) === 0)
     ),
-    `Some links exist in the starting rule but do not exist in the output of linkBijectionAB, or the other way around. After comes the difference of the output of linkBijectionAB vs the non-boundary links that appear in the starting rule: `
+    `Some links exist in the ${ruleFromName} diagram rule but do not exist in the output of linkBijectionAB, or the other way around. After comes the difference of the output of linkBijectionAB vs the non-boundary links that appear in the ${ruleFromName} diagram rule: `
   )
-  // === … inputs of linkBijectionCD is one-to-one mapping to links in C (except boundary links)…
+  // === … inputs of linkBijectionCD is one-to-one mapping to links in C (except multi-wire boundary links)…
   assertDontThrow(
     () => listsAreUniqueAndIdenticalSetsThrow(
       keys(linkBijectionCD),
-      keys(ruleTo?.linksWithID).filter(linkID => nbBoundaryLink(linkID, ruleTo, theory) === 0)
+      keys(ruleTo?.linksWithID).filter(linkID => nbMultiWireBoundaryLink(linkID, ruleTo, theory) === 0)
     ),
     `Some links exist in the ending rule but do not exist in the input of linkBijectionCD`
   )
-  // === Boundary nodes should not appear in the bijection…
+
+
+  // === Boundary nodes should not appear in the bijection… TODO: check if it makes sense to allow them?
   assertTrue(
     keys(nodeBijectionAB).filter(nodeID => isBoundaryNodeID(nodeID, diagram)).length === 0,
     `Boundary nodes are not allowed in the input of nodeBijectionAB, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionAB).filter(nodeID => isBoundaryNodeID(nodeID, diagram)))}`
@@ -276,131 +372,84 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     `Boundary nodes are not allowed in the input of nodeBijectionCD, we found the following problematic boundary nodes ${JSON.stringify(keys(nodeBijectionCD).filter(nodeID => isBoundaryNodeID(nodeID, ruleTo)))}`
   )
 
-  // TODO: check link direction etc + the existance of a node with the same name does not guarantee that they have equal
-  // nodeKind, params etc
+  // Check if links in ambiguityBoundaryLinksAB are not already in linkBijectionAB
+  assertTrue(listsAreNotOverlapping(keys(linkBijectionAB), keys(proofStep.ambiguityBoundaryLinksAB)),
+             `The links in ambiguityBoundaryLinksAB and in the input of linkBijectionAB should all be different`)
 
-  // ====== boundaryLinksDr
-  // === Check if all boundary links exist in the input diagram
-  keys(proofStep.boundaryLinksDR).forEach(linkID => assertNotUndefined(diagram?.linksWithID?.[linkID], `The link ${linkID} specified in boundaryLinksDR does not exist in the input diagram`))
-  // === TODO: check same direction etc
-  // === Check if boundaryLinksDR map to an existing boundaryNode in the rule
-  const boundaryNamesB = new Set(
-    entries(ruleFrom?.nodes).map(([nodeID, node]) => getBoundaryName(node, theory)).filter(x => x !== undefined)
-  )
-  entries(proofStep.boundaryLinksDR).forEach(([linkID, boundaryNames]) => {
-    assertTrue(
-      boundaryNames?.from !== undefined || boundaryNames?.to !== undefined,
-      `The link ${linkID} specifies in boundaryLinksDR neither the 'from' nor 'to' field.`
-    )
-    assertTrue(
-      boundaryNames?.from === undefined || boundaryNamesB.has(boundaryNames.from),
-      `The link ${linkID} comes, according to boundaryLinksDR, from a boundary ${boundaryNames?.from} that does not exist in the from rule`
-    )
-    assertTrue(
-      boundaryNames?.to === undefined || boundaryNamesB.has(boundaryNames.to),
-      `The link ${linkID} points, according to boundaryLinksDR, to a boundary ${boundaryNames?.to} that does not exist in the from rule (should be one of ${JSON.stringify(Array.from(boundaryNamesB))})`
-    )
-  })
-  // No need to check this on the boundaryNamesC since we checked earlier (checkRule) that they have the same set of boundaryNames
-  // TODO: deal with nodes not accepting multiple inputs
-
-  // It will be handy later to map all boundaries in the rule to their connected part in the diagram
+  // It will be handy later to map all multi-wire boundaries in the rule to their connected part in the diagram
+  // (the mono-wire boundaries should already be specified in nodeBijectionAB)
   // From above (checkDiagram) we already know that there is at most one link per boundary
-  const boundaryToNode = Object.fromEntries(entries(ruleFrom?.linksWithID).map(([linkID, link]) => {
-    const n = nbBoundaryLink(linkID, ruleFrom, theory)
-    if (n === 0) { // not a boundary link
-      return undefined
-    } else if (n === 1) { // from is boundary link
-      return [getBoundaryNameFromNode(link.from, ruleFrom, theory), {
-        to: link.to,
-      }]
-    } else if (n === 2) { // to is boundary link
-      return [getBoundaryNameFromNode(link.to, ruleFrom, theory), {
-        from: link.from
-      }]
-    } else {
-      throw new ProofDiagError(`NOT IMPLEMENTED YET`)
-    }
-  }).filter((x) => x !== undefined))
+  const multiWireBoundaryNameToAnchorB : Record<BoundaryName, IDAnchor> = {
+    // We allow multi-wire nodes connected to nothing, so we start by getting all multi-wires…
+    ...Object.fromEntries(entries(ruleFrom?.nodes).map(([nodeID, node]) => {
+      if (!isMultiWireBoundaryNode(node, theory)) {
+        return undefined
+      }
+      return [
+        assertNotUndefined(getBoundaryName(node, theory), `The multi-wire boundany node ${nodeID} has no specified boundary name.`),
+        undefined
+      ]
+    }).filter(x => x !== undefined)),
+    // … and now we add the connections (checkDiagram already checks that at most one connection is present)
+    ...Object.fromEntries(entries(ruleFrom?.linksWithID).map(([linkID, link]) => {
+      const n = nbMultiWireBoundaryLink(linkID, ruleFrom, theory)
+      if (n === 0) { // not a multi-wire boundary link
+        return undefined
+      } else if (n === 1) { // from is multi-wire boundary link
+        return [getBoundaryNameFromNode(link.from, ruleFrom, theory), link.from]
+      } else if (n === 2) { // to is boundary link
+        return [getBoundaryNameFromNode(link.to, ruleFrom, theory), link.to]
+      } else {
+        throw new ProofDiagError(`The link ${linkID} points to two multi-wire nodes which is not supported (no clear and useful semantic defined)`)
+    }}).filter((x) => x !== undefined))
+  }
+  const multiWireBoundaryLinksB : IDAnchor[] = values(multiWireBoundaryNameToAnchorB)
 
-  // Instructions to delete/rewire/etc We avoid to remove in the loop in case it disturbs the process.
-  let linksToDelete : LinkID[] = []
-  const boundaryLinks = new Set(keys(proofStep.boundaryLinksDR))
-  // All links are either boundary links, outside current rewriting region, or listed in the bijection
-  // (here we want to prevent e.g. a wire between two nodes in the rewriting region where this list is not listed in node/linkBijection)
-  Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {
-    // Check if the link is inside the rewriting region (i.e. rule applies to current link)
-    const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
-    const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link?.to)
-    if (!nodesA.includes(fromNode)) {
-      // The link does NOT start inside the rewriting region
-      if (!nodesA.includes(toNode)) {
-        // The link does NOT end inside the rewriting region: this link is therefore not concerned by this rule
-        // hence we do nothing. We still check that it does not appear in the boundaryLinks
-        assertTrue(
-          !boundaryLinks.has(linkID),
-          `The link ${linkID} appears in the diagram and in boundaryLinksDR but neither ends of the link are in the input of nodeBijectionAB`
-        )
-      } else {
-        // The link ends inside the rewriting region. Hence this node is next to the boundary
-        // Check if it appears in boundaryLinksDR
-        const boundary = assertNotUndefined(
-          proofStep?.boundaryLinksDR?.[linkID],
-          `The link ${linkID} seems to be in the boundary of the rewriting region as its destination appears in nodeBijectionAB, but the link does not appear in boundaryLinksDR`
-        )
-        const boundaryFrom = assertNotUndefined(
-          boundary?.from,
-          `The boundary link ${linkID} is not having the same direction as its corresponding link in the rule (or maybe you misconfigured boundaryLinksDR?)`
-        )
-        // Check that the end is pointing to the good node:
-        assertDontThrow(
-          () => equivalentNodes(link.to, diagram, boundaryToNode[boundaryFrom].to, ruleFrom),
-          `The boundary link ${linkID} in the original diagram points to a different place/kind of node than its corresponding link ${boundaryToNode[boundaryFrom]?.to} in the rule`
-        )
-      }
-    } else {
-      // The link starts inside the rule region
-      if (!nodesA.includes(toNode)) {
-        // The link starts inside the rewriting region. Hence this node is next to the boundary
-        // Check if it appears in boundaryLinksDR
-        const boundary = assertNotUndefined(
-          proofStep?.boundaryLinksDR?.[linkID],
-          `The link ${linkID} seems to be in the boundary of the rewriting region as its destination appears in nodeBijectionAB, but the link does not appear in boundaryLinksDR`
-        )
-        const boundaryTo = assertNotUndefined(
-          boundary?.to,
-          `The boundary link ${linkID} is not having the same direction as its corresponding link in the rule (or maybe you misconfigured boundaryLinksDR?)`
-        )
-        // Check that the link is starting from the good node:
-        assertDontThrow(
-          () => equivalentNodes(link.from, diagram, boundaryToNode[boundaryTo]?.from, ruleFrom),
-          `The boundary link ${linkID} in the original diagram starts from a different place/kind of node than its corresponding link ${boundaryToNode?.[boundaryTo]?.from} in the rule`
-        )
-      } else {
-        // The link also ends inside the rewriting region: this link must be present in the bijection.
-        const correspondingLinkID = assertNotUndefined(
-          linkBijectionAB?.[linkID],
-          `The link ${linkID} appears to be in the rewriting region (from/to belongs to nodeBijectionAB) but it does not appear in linkBijectionAB, meaning that we don't know how to map it to its corresponding node in the rule.`
-        )
-        // We also need to check that it starts/ends at the correct place in the final diagram
-        const linkRule = assertNotUndefined(
-          ruleFrom?.linksWithID?.[correspondingLinkID],
-          `The link ${linkID} is supposed to map to the link ${linkBijectionAB?.[linkID]} that does not exist in the rule.`
-        )
-        assertDontThrow(
-          () => equivalentNodes(link.from, diagram, linkRule.from, ruleFrom, nodeBijectionAB),
-          `The link ${linkID} in the original diagram starts from a different place/kind of node than its corresponding link ${correspondingLinkID} in the rule`
-        )
-        assertDontThrow(
-          () => equivalentNodes(link.to, diagram, linkRule.to, ruleFrom, nodeBijectionAB),
-          `The link ${linkID} in the original diagram points to a different place/kind of node than its corresponding link ${correspondingLinkID} in the rule`
-        )
-        // TODO: check parameters, allow undirected links (may partially be done in equivalentNodes)...
-      }
+  // monoBoundaryNameToIDAnchorInD(boundaryName, anchor) paps a boundary name to the name of the corresponding IDAnchor in D via:
+  // boundaryName (obtained from C) = boundaryName (in B) --> nodeID (in B) --(boundaryAnchorsBA)--> nodeID (in A) = nodeID (in D)
+  const _monoBoundaryNameToNodeIDinB : Record<BoundaryName, IDAnchor> = Object.fromEntries(entries(ruleFrom?.nodes).map(([nodeID, node]) => {
+    if (isMonoWireBoundaryNode(node, theory)) {
+      return [assertNotUndefined(getBoundaryName(node, theory), `Node ${nodeID} is supposed to be a mono-wire boundary node bus has no boundary name`), nodeID]
     }
+    return undefined
+  }).filter(x => x !== undefined))
+  const monoBoundaryNameToIDAnchorInD = (boundaryName : BoundaryName, anchor: AnchorName) : IDAnchor => {
+    const idAnchorInB = IDAnchorToFullAnchor(
+      assertNotUndefined(
+        _monoBoundaryNameToNodeIDinB?.[boundaryName],
+        `No node found in the ${ruleFromName} diagram rule for boundary name ${boundaryName}`),
+      anchor)
+    return assertNotUndefined(boundaryAnchorsBA?.[idAnchorInB],
+                              `The boundaryAnchorsBA contains no mapping for ${idAnchorInB}`)
+  }
+
+
+  // All links are either multi-wire boundary links, outside current rewriting region, or listed in the bijection
+  // (here we want to prevent e.g. a wire between two nodes in the rewriting region where this ling is not listed in node/linkBijection)
+  Object.entries((diagram?.linksWithID || {})).forEach(([linkID, link]) => {
+    // If the link is already present in the rewriting rule, nothing to do:
+    if (linkID in linkBijectionAB) {
+      return
+    }
+    // == Check if the link is partially inside the rewriting region and throw an error if it is not a multi-wire boundary link
+    // From node:
+    const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
+    assertTrue(
+      !nodesA.includes(fromNode) || multiWireBoundaryLinksB.includes(nodeBijectionAB[link.from]),
+      `The link ${linkID} is not present in linkBijectionAB, yet its from node ${fromNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire anchor`
+    )
+    // To link:
+    const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link?.to)
+    assertTrue(
+      !nodesA.includes(toNode) || multiWireBoundaryLinksB.includes(nodeBijectionAB[link.to]),
+      `The link ${linkID} is not present in linkBijectionAB, yet its to node ${toNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire anchor`
+    )
   });
-  // TODO: check things related to multiwire etc
-  // We remove the links
+
+  // === After all these checks we can finally apply the changes!
+  // == 1. Remove old stuff
+  // As explained in the doc of ProofStepApplyRule, the semantic is to remove all links and nodes (except mono-wire boundaries):
+  // We remove the old links
   keys(linkBijectionAB).forEach((linkID) => {
     assertNotUndefinedNR(
       diagram?.linksWithID?.[linkID],
@@ -409,16 +458,17 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     delete diagram.linksWithID[linkID]
   })
   // We remove the old nodes
-  nodesA.forEach((nodeID) => {
+  keys(nodeBijectionAB).forEach((nodeID) => {
     assertNotUndefinedNR(
       diagram?.nodes?.[nodeID],
       `Impossible to delete node ${nodeID}, the node does not exist`
     )
     delete diagram.nodes[nodeID]
   })
-  // We add the new nodes
+  // == 2. Add new stuff
+  // We add back the nodes of the new diagram
   entries(ruleTo?.nodes).forEach(([nodeID, node]) => {
-    // We don't add the boundary nodes, they will already be present
+    // We don't add the boundary nodes, they either just help with the identification (multi-wire) or are already present (mono-wire)
     if (isBoundaryNodeID(nodeID, ruleTo)) {
       return
     }
@@ -431,109 +481,97 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       diagram.nodes = {}
     }
     diagram.nodes[newNodeID] = node;
-    // TODO: think about how to set the position of the new node (center of all other nodes?)
+    // TODO: think about how to set the position of the new node (center of all other nodes? relative to the first anchor?…)
   })
+
+  // Deal with multi-wire boundary links by redirecting them
+  const idAnchorToMultiWireBoundaryNameB = idAnchorToMultiWireBoundaryName(ruleFrom, theory)
+  const multiWireBoundaryNameToIdAnchorC : Record<BoundaryName, IDAnchor> = multiWireBoundaryNameToIdAnchor(ruleTo, theory)
+  entries(diagram?.linksWithID).forEach(([linkID, link]) => {
+    // Link already in the transformation
+    if (linkBijectionAB?.[linkID] !== undefined) {
+      return
+    }
+    ([ // Code to deal with link.from is same as link.to, so we avoid code duplication we do this loop
+       [link.from, "from"],
+       [link.to, "to"]
+      // as const is not a type coertion (it is not a "trust me") it just means "try to narrow down the type" so that
+      // "from" is typed as "from" and not as string.
+    ] as const).forEach(([pointedNodeAnchor, fromOrTo]) => {
+      // I call it fromNode, but it may be toNode in the second iteration of the loop.
+      const [ fromNode, fromAnchor ] = fullAnchorToIDAndAnchor(pointedNodeAnchor)
+      // Check if fromNode.fromAnchor is a multi-wire boundary in the rule.
+      const fromNodeB = nodeBijectionAB?.[fromNode]
+      if (fromNodeB !== undefined) {
+        const boundaryNames = idAnchorToMultiWireBoundaryNameB?.[IDAnchorToFullAnchor(fromNodeB, fromAnchor)]
+        if (boundaryNames !== undefined && boundaryNames.length !== 0) {
+          const boundaryName =
+            (boundaryNames.length === 1)
+            ? boundaryNames[0]
+            : assertNotUndefined(
+              (proofStep.ambiguityBoundaryLinksAB || {})?.[linkID][fromOrTo],
+              `The link ${linkID} is coming from a node whose matching in the rule (${fromNodeB}) is attached to multiple multi-wire boundaryNames (${JSON.stringify(boundaryNames)}), hence we don't know which boundary to attribute to this link. Add it to ambiguityBoundaryLinksAB to fix the ambiguity.`
+            );
+          // We redirect the node
+          const [nodeC, anchorC] = fullAnchorToIDAndAnchor(
+            assertNotUndefined(
+              multiWireBoundaryNameToIdAnchorC?.[boundaryName],
+              `No multi-wire boundary with name ${boundaryName} exist in the destination rule. Your rule is not well-defined.`))
+          const nodeD = assertNotUndefined(nodeBijectionCD?.[nodeC],
+                                           `The node ${nodeC} in the ${ruleToName} of the rule does not appear in nodeBijectionC.`)
+          link[fromOrTo] = IDAnchorToFullAnchor(nodeD, anchorC)
+        }
+      }
+    })
+  })
+
   // We add the links of the new rule
   entries(ruleTo?.linksWithID).forEach(([linkID, link]) => {
-    const nLink = nbBoundaryLink(linkID, ruleTo, theory)
+    const nLink = nbMultiWireBoundaryLink(linkID, ruleTo, theory)
     if (nLink > 0) {
-      // Boundary links. We will take care of them later (but still check)
+      // Multi-wire boundary links. TODO: We will take care of them later (but still check)
       return
     }
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
     const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
     const newLinkID = assertNotUndefined(
-      proofStep?.linkBijectionCD[linkID],
+      linkBijectionCD?.[linkID],
       `The link '${linkID}' does not exist in linkBijectionCD, how should we translate it to the new diagram?`
     )
     assertTrue(
       diagram?.linksWithID?.[newLinkID] === undefined,
-      `Collision with the identifier ${newLinkID} in rule and original diagram. Rename the link in linkBijectiontTo to make sure it is unique.`
+      `Collision with the identifier ${newLinkID} in rule and original diagram. Rename the link in linkBijectiontCD to make sure it is unique.`
     )
-    if (nLink > 0) {
-      // Boundary links. We will take care of them later
-      return
-    } else {
-      // We add the regular links not involving the boundary
-      if (diagram?.linksWithID === undefined) {
-        diagram.linksWithID = {}
-      }
-      diagram.linksWithID[newLinkID] = {
-        ...link,
-        from: IDAnchorToFullAnchor(
-          assertNotUndefined(
-            proofStep?.nodeBijectionCD?.[fromNode],
-            `The node ${fromNode} does not exist in the source of nodeBijectionCD`
-          ),
-          fromAnchor
-        ),
-        to: IDAnchorToFullAnchor(
-          assertNotUndefined(
-            proofStep?.nodeBijectionCD?.[link.to],
-            `The node ${toNode} does not exist in the source of nodeBijectionCD`
-          ),
-          toAnchor
-        )
-      };
+    if (diagram?.linksWithID === undefined) {
+      diagram.linksWithID = {}
+    }
+    diagram.linksWithID[newLinkID] = {
+      ...link,
+      from: isMonoWireBoundaryNodeID(fromNode, ruleTo, theory) ?
+            // This is a mono-wire boundary node, we map it back to its original position
+            monoBoundaryNameToIDAnchorInD(getBoundaryNameFromNode(fromNode, ruleTo, theory), fromAnchor)
+          : // This is a regular node
+            IDAnchorToFullAnchor(
+              assertNotUndefined(
+                proofStep?.nodeBijectionCD?.[fromNode],
+                `The node ${fromNode} does not exist in the source of nodeBijectionCD`
+              ),
+              fromAnchor
+            ),
+      to: isMonoWireBoundaryNodeID(toNode, ruleTo, theory) ?
+          // This is a mono-wire boundary node, we map it back to its original position
+          monoBoundaryNameToIDAnchorInD(getBoundaryNameFromNode(toNode, ruleTo, theory), toAnchor)
+        : // This is a regular node
+          IDAnchorToFullAnchor(
+            assertNotUndefined(
+              proofStep?.nodeBijectionCD?.[toNode],
+              `The node ${toNode} does not exist in the source of nodeBijectionCD`
+            ),
+            toAnchor
+          )
     }
   })
-  // === For efficiency reasons, we first map boundary names to full anchor in the final graph
-  const boundaryNameToFullAnchorD : Record<BoundaryName, {
-    /** Name of the node/anchor in the final graph to connect to given a node whose boundary name is the input of this record */
-    fullAnchorD: IDAnchor,
-    /** Specify if the link is entering the rule (true) or leaving the rule (false) */
-    incomingLink: boolean
-  }> = Object.fromEntries(entries(ruleTo?.linksWithID).map(([linkID, link]) => {
-    const n = nbBoundaryLink(linkID, ruleTo, theory)
-    if (n === 0 || n === 3) {
-      // TODO: check what to do for n = 3
-      return undefined
-    }
-    if (n === 1) {
-      const boundaryName = getBoundaryNameFromNode(link.from, ruleTo, theory)
-      const [node, anchor] = fullAnchorToIDAndAnchor(link.to)
-      return [boundaryName, {
-        fullAnchorD: IDAnchorToFullAnchor(
-          nodeBijectionCD[node],
-          anchor
-        ),
-        incomingLink: true,
-      }]
-    } else {
-      const boundaryName = getBoundaryNameFromNode(link.to, ruleTo, theory)
-      const [node, anchor] = fullAnchorToIDAndAnchor(link.from)
-      return [boundaryName, {
-        fullAnchorD: IDAnchorToFullAnchor(
-          nodeBijectionCD[node],
-          anchor
-        ),
-        incomingLink: false,
-      }]
-    }
-  }).filter(x => x !== undefined))
-  // === We add back the boundary links
-  entries(proofStep?.boundaryLinksDR).forEach(([linkID, boundaryLinks]) => {
-    assertNotUndefinedNR(
-      diagram?.linksWithID?.[linkID],
-      `The boundary link ${linkID} specified in boundaryLinksDR does not exist on the starting diagram`
-    )
-    const link = diagram.linksWithID[linkID]
-    const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
-    const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link.to)
-    if (boundaryLinks?.from !== undefined && boundaryLinks?.to !== undefined) {
-      // Both 'from' and 'to' are specified.
-      // TODO
-    } else if (boundaryLinks?.from === undefined && boundaryLinks?.to !== undefined) {
-      // We need to rename the "from"
-      diagram.linksWithID[linkID].from = boundaryNameToFullAnchorD[boundaryLinks.to].fullAnchorD
-    } else if (boundaryLinks?.to === undefined && boundaryLinks.from !== undefined) {
-      // We need to rename the "to"
-      diagram.linksWithID[linkID].to = boundaryNameToFullAnchorD[boundaryLinks.from].fullAnchorD
-    } else {
-      // Neither 'from' nor 'to' are specified
-      throw new ProofDiagError(`boundaryLinksDR does not specify a boundary name for the link entry ${linkID}`)
-    }
-  })
+
   // TODO: check link direction/type/?
   assertDontThrow(() => checkDiagram(diagram, theory, false), `The final diagram is not well formed`)
   return diagram

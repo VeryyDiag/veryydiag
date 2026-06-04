@@ -110,3 +110,13 @@ let {
 - Check if all errors are cached correctly
 - Implement the unique constraint
 - Run prettier and ESLint to have uniform code
+- Implement a language like:
+  ```
+  Diagram {
+    {linkA, linkB}, boundary* = A()
+    myanchor: a* = B({linkA, linkB})
+  }
+  ```
+  to also be able to "code" diagrams with a shorter syntax than YAML/JSON (may also be more LLM friendly as it consumes less tokens) and a CLI interface similar to Coq/Lean etc. To have a concise notation, we may omit anchors named like `in.0`, `in.1`… in the inputs and `out.0`… in the outputs.
+- Implement cherry-picking to import only a theory/diagram/rule/… from a different diagram.
+- Define "well formed" diagram, e.g. to avoid loops in circuits.

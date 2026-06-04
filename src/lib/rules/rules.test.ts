@@ -18,6 +18,10 @@ const boundaryAvailableNode = {
       type: "string",
       default: "1",
     },
+    multipleWiresAllowed: {
+      type: "boolean",
+      default: false,
+    },
   }
 } satisfies AvailableNode // Satisfies = specify a type (so I get errors if I mistype a property)
 // but it also remembers more refined properties so that I can type later
@@ -233,6 +237,9 @@ const diagramAtoAlice = {
         boundaryName: {
           value: "Alice",
         },
+        multipleWiresAllowed: {
+          value: false
+        },
       },
     }
   },
@@ -429,8 +436,6 @@ const proofStepAtoA2 = {
   nodeBijectionAB: {
     myA: "myA",
   },
-  linkBijectionAB: {},
-  boundaryLinksDR: {},
   nodeBijectionCD: {
     myA2: "myA2"
   },
@@ -445,7 +450,6 @@ const proofStepAtoA2ViaPrime = {
     myA: "myAprime",
   },
   linkBijectionAB: {},
-  boundaryLinksDR: {},
   nodeBijectionCD: {
     myA2prime: "myA2"
   },
@@ -460,7 +464,6 @@ const proofStepAtoA2ViaPrimeInverse = {
     myA2: "myA2prime"
   },
   linkBijectionAB: {},
-  boundaryLinksDR: {},
   nodeBijectionCD: {
     myAprime: "myA",
   },
@@ -474,17 +477,17 @@ const proofStepAtoA2WithLinksViaPrime = {
   nodeBijectionAB: {
     myA: "myAprime",
   },
-  linkBijectionAB: {
+  boundaryAnchorsBA: {
+    "aliceBoundary.boundary": "myC.in",
   },
-  boundaryLinksDR: {
-    foo: {
-      to: "Alice",
-    }
+  linkBijectionAB: {
+    foo: "fooPrime"
   },
   nodeBijectionCD: {
     myA2prime: "myA2"
   },
   linkBijectionCD: {
+    bar: "foo"
   },
 } satisfies ProofStepApplyRule
 
@@ -495,18 +498,18 @@ const proofStepAitselftoA2WithLinksViaPrime = {
   nodeBijectionAB: {
     myA: "myAprime",
   },
-  linkBijectionAB: {
-    toAitself: "toAitselfPrime",
+  boundaryAnchorsBA: {
+    "aliceBoundary.boundary": "myC.in",
   },
-  boundaryLinksDR: {
-    foo: {
-      to: "Alice",
-    }
+  linkBijectionAB: {
+    foo: "fooPrime",
+    toAitself: "toAitselfPrime",
   },
   nodeBijectionCD: {
     myA2prime: "myA2"
   },
   linkBijectionCD: {
+    bar: "foo"
   },
 } satisfies ProofStepApplyRule
 
@@ -624,8 +627,14 @@ describe('Test well formed diagrams/rules/…', () => {
     })
 
 
-    test('Trivial diagram with a boundary node', () => {
+    test('Trivial diagram with a mone-wire boundary node', () => {
       expect(checkDiagram(diagramAtoAlice, theoryABC)).toBe(true)
+    })
+
+    test('Trivial diagram with a multi-wire boundary node', () => {
+      expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        draft.nodes.aliceBoundary.params.multipleWiresAllowed.value = true;
+      }), theoryABC)).toBe(true)
     })
 
     test('Boundary nodes should have a single anchor called boundary', () => {
@@ -655,19 +664,36 @@ describe('Test well formed diagrams/rules/…', () => {
       }), theoryABC)).toBe(true)
     })
 
-    test('Boundary nodes should have exactly one connected link', () => {
+    test('Multi-wire boundary nodes should have exactly one connected link', () => {
       // Zero link
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        draft.nodes.aliceBoundary.params.multipleWiresAllowed = true;
         delete draft.linksWithID.foo
       }), theoryABC)).toThrow(ProofDiagError)
       // 2 links
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        draft.nodes.aliceBoundary.params.multipleWiresAllowed = true;
         draft.linksWithID.foo2 = {
           from: "myA.out",
           to: "aliceBoundary.boundary"
         }
       }), theoryABC)).toThrow(ProofDiagError)
     })
+
+    test('Mono-wire boundary nodes may have an arbitrary number of connected link', () => {
+      // Zero link
+      expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        delete draft.linksWithID.foo
+      }), theoryABC)).toBe(true)
+      // 2 links
+      expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
+        draft.linksWithID.foo2 = {
+          from: "myA.out",
+          to: "aliceBoundary.boundary"
+        }
+      }), theoryABC)).toBe(true)
+    })
+
 
   })
 
@@ -769,26 +795,37 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Simple rule with one link', () => {
       expect(proofApplyRule(diagramAtoC,
-                               proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+                            proofStepAtoA2WithLinksViaPrime, theoryABCrules)
       ).toEqual(diagramA2toC)
+    })
 
+    test('Simple rule with one renamed link', () => {
       // Try to rename the output node
       expect(proofApplyRule(diagramAtoC,
-                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
-                                       draft.nodeBijectionCD.myA2prime = "nameIprefer"
-                                     }), theoryABCrules)
+                            editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
+                              draft.nodeBijectionCD.myA2prime = "nameIprefer"
+                            }), theoryABCrules)
       ).toEqual(editCopy(diagramA2toC, (draft:any) => {
         draft.nodes.nameIprefer = draft.nodes.myA2
         delete draft.nodes.myA2
         draft.linksWithID.foo.from = "nameIprefer.out"
       }))
+    })
 
+    test('Simple rule with flipped link (links are undirected)', () => {
+      expect(proofApplyRule(editCopy(diagramAtoC,
+                                     (draft) => {
+                                       const t = draft.linksWithID.foo.to
+                                       const f = draft.linksWithID.foo.from
+                                       draft.linksWithID.foo = {from: f, to: t}}),
+                            proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+      ).toEqual(diagramA2toC)
     })
 
     test('Renaming works', () => {
       // Try to rename the output node
       expect(proofApplyRule(diagramAtoC,
-                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
+                            editCopy(proofStepAtoA2WithLinksViaPrime, (draft) => {
                                  draft.nodeBijectionCD.myA2prime = "nameIprefer"
                                }), theoryABCrules)
       ).toEqual(editCopy(diagramA2toC, (draft:any) => {
@@ -800,9 +837,9 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Simple broken rules with one link', () => {
       expect(() => proofApplyRule(diagramAtoC,
-                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
-                                       draft.nodeBijectionAB.idontexist = "myAprime"
-                                     }), theoryABCrules)
+                                  editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                    draft.nodeBijectionAB.idontexist = "myAprime"
+                                  }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
       expect(() => proofApplyRule(
@@ -813,33 +850,38 @@ describe('Test well formed diagrams/rules/…', () => {
         }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
-      // Bad boundary name (empty)
+      // We just rename the links so that the matching does not work
+      expect(() => proofApplyRule(editCopy(diagramAtoC,
+                                           (draft) => {
+                                             draft.linksWithID.foo.from = draft.linksWithID.foo.to}),
+                                  proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+
+      // Mapping of boundary is important
       expect(() => proofApplyRule(diagramAtoC,
-                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
-                                 draft.boundaryLinksDR.foo = {}
+                                  editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                    draft.boundaryAnchorsBA = {}
                                }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
 
       // Bad boundary name (to)
       expect(() => proofApplyRule(diagramAtoC,
-                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
-                                       draft.boundaryLinksDR.foo.to = "AAAlice"
-                                     }), theoryABCrules)
+                                  editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                    draft.boundaryAnchorsBA = {
+                                      "aliceBoundary.boundary": "idontexist.in",
+                                    }
+                                  }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
       // Bad boundary name (from)
       expect(() => proofApplyRule(diagramAtoC,
-                               editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
-                                 draft.boundaryLinksDR.foo = {from: "AAAlice"}
-                               }), theoryABCrules)
-      ).toThrow(ProofDiagError)
-
-      // Inverse to and from
-      expect(() => proofApplyRule(diagramAtoC,
-                                     editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
-                                       draft.boundaryLinksDR.foo = {from: draft.boundaryLinksDR.foo.to}
-                                     }), theoryABCrules)
+                                  editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                                    draft.boundaryAnchorsBA = {
+                                      "idontexist.boundary": "myC.in",
+                                    }
+                                  }), theoryABCrules)
       ).toThrow(ProofDiagError)
 
     })
@@ -848,14 +890,14 @@ describe('Test well formed diagrams/rules/…', () => {
 
       // Diagram with internal wires not existing in the rule
       expect(() => proofApplyRule(diagramAtoCandA,
-                                     proofStepAtoA2WithLinksViaPrime,
-                                     theoryABCrules)
+                                  proofStepAtoA2WithLinksViaPrime,
+                                  theoryABCrules)
       ).toThrow(ProofDiagError)
 
       // We updated the rule to add this extra internal link, now it works:
       expect(proofApplyRule(diagramAtoCandA,
-                               proofStepAitselftoA2WithLinksViaPrime,
-                               theoryABCrules)
+                            proofStepAitselftoA2WithLinksViaPrime,
+                            theoryABCrules)
       ).toEqual(diagramA2toC)
 
 
