@@ -103,29 +103,34 @@ export class DiagramConfClass {
     return this.diagramConf.proofs[this.getCurrentProofID()]
   }
 
-  getCurrentDiagram = () : Diagram => {
+  getCurrentDiagramAndProofInfo = () : {diagram: Diagram, proofmode: false} | {diagram: Diagram, proofmode: true, currentStep: number, proofStep?: ProofStep, proof: Proof} => {
     const tab = this.diagramConf.currentTab
     const tabKind = tab.tabKind
     if (tabKind === "tabDiagram") {
-      return this.diagramConf.diagrams[this.getCurrentDiagramID()]
+      return {
+        diagram: this.diagramConf.diagrams[this.getCurrentDiagramID()],
+        proofmode: false
+      }
     } else if (tabKind === "tabProof") {
       const proofID = this.getCurrentProofID()
       // We use a proxy so that doing diag.viewport = … changes the viewport property of proofStep
       // Not sure how efficient this will be since everytime we change the proofStep it recomputes all future elements, but let's try
       // (or if inneficient we can maybe save e.g. every second and cache it in the meantime?)
-      const currentProof = this.#currentProof
-      if (currentProof === undefined) {
-        throw new Error(`The current proof is undefined`)
-      }
+      const currentProof = assertNotUndefined(this.#currentProof, `Weird, currentProof is not defined but we are in a proof. Please report a bug`)
       const currentStep = currentProof?.currentStep || 0
       if (currentStep === 0) {
         // For the original diagram, we can directly modify it, no need to proxy
-        return this.derivedProofDiagrams.get(currentStep)
+        return {
+          diagram: this.derivedProofDiagrams.get(currentStep),
+          proofmode: true,
+          currentStep: currentStep,
+          proof: currentProof,
+        }
       } else {
         const diag = this.derivedProofDiagrams.get(currentStep)
+        const proofStep = assertNotUndefined(currentProof?.steps[currentStep-1], `You try to access the step ${currentStep} of the proof, but this does not exist`)
         const proxy = new Proxy(diag, {
           get(obj, prop, receiver) {
-            console.log("Getting proxy property", prop)
             if (prop === "viewport") {
               const step = currentProof.steps[currentStep-1]
               if (step.kind === "group" || step.kind === "groupEnd") {
@@ -140,15 +145,14 @@ export class DiagramConfClass {
               // return step.viewport
               // but we can't otherwise it cries that we change the viewport in a $derived, + it would always create a viewport
               // property while we may not want to do that. So instead, we do it in a more fancy way via a new proxy,
-              // that, when changed, updates the step!
+              // that, when changed, update the step!
               if (step?.viewport !== undefined) {
                 return step.viewport
               } else {
                 return new Proxy(diag?.viewport || { x: 0, y: 0, w: 20, h: 20 }, {
                   set(obj: Viewport, prop, value, receiver) {
-                    let v = {x: obj.x, y: obj.y, w: obj.w, h: obj.h}
-                    Reflect.set(v, prop, v)
-                    step.viewport = v
+                    Reflect.set(obj, prop, value, receiver)
+                    step.viewport = obj
                     return true
                   }
                 })
@@ -157,7 +161,6 @@ export class DiagramConfClass {
             return Reflect.get(obj, prop, receiver)
           },
           set(obj, prop, value, receiver) {
-            console.log("Setting proxy property", prop, " to set it to value ", value)
             if (prop === "viewport") {
               const step = currentProof.steps[currentStep-1]
               if (step.kind === "group" || step.kind === "groupEnd") {
@@ -172,15 +175,25 @@ export class DiagramConfClass {
             }
           }
         })
-        return proxy
+        return {
+          diagram: proxy,
+          proofmode: true,
+          currentStep: currentStep,
+          proof: currentProof,
+          proofStep: proofStep
+        }
       }
     } else {
       assertNever(tabKind)
     }
   }
 
+  getCurrentDiagram = () : Diagram => {
+    return this.getCurrentDiagramAndProofInfo().diagram
+  }
+
   getCurrentTab = () : Tab => {
-    return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
+      return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
   }
 
   getTabObject = (tab: Tab) : Diagram | Proof => {
@@ -409,11 +422,22 @@ export class DiagramConfClass {
 
 
   moveNode = (nodeID: NodeID, newPos: Point) : Error | undefined => {
-    const diag = this.getCurrentDiagram()
-    if (diag?.nodes?.[nodeID] === undefined) {
-      return {message: `No node ${nodeID} to move`}
+    const info = this.getCurrentDiagramAndProofInfo()
+    const diag = info.diagram
+    if (!info.proofmode || info?.proofStep === undefined) {
+      if (diag?.nodes?.[nodeID] === undefined) {
+        return {message: `No node ${nodeID} to move`}
+      }
+      diag.nodes[nodeID].pos = newPos
+    } else {
+      const proofStep = info.proofStep
+      if (proofStep.kind !== "group" && proofStep.kind !== "groupEnd") {
+        if (proofStep?.move === undefined) {
+          proofStep.move = {}
+        }
+        proofStep.move[nodeID] = newPos
+      }
     }
-    diag.nodes[nodeID].pos = newPos
   }
 
   getPositionNode = (nodeID: NodeID) : Point | Error => {
