@@ -40,7 +40,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
       }
     }
   }
-  
+
   function pointermove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (!pointers.has(e.pointerId)) return
@@ -166,7 +166,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   let dragging = false
   const dragThreshold = 3
   let targetNodeID = $state<NodeID | undefined>(undefined)
-  
+
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (e?.target instanceof SVGGraphicsElement) {
@@ -198,7 +198,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   function pointermove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (targetNodeID === undefined) return;
-    
+
     if (!startPointer || !startPos) return
 
     const dx = e.clientX - startPointer.x
@@ -267,6 +267,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
 
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    // Check if we are not in a proof mode
+    const info = diagramConfClass.getCurrentDiagramAndProofInfo()
+    if (info.proofmode && info?.proofStep !== undefined) {
+      return
+    }
     if (e?.target instanceof SVGGraphicsElement) {
       const anchor = e.target.dataset?.proofdiagAnchor
       if (anchor === undefined) return;
@@ -358,7 +363,7 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
 
   let initialPos = {clientX: 0, clientY: 0} // We don't want to mix drag & drop from clicking
   let maxDistance = 0
-  
+
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     initialPos = {clientX: e.clientX, clientY: e.clientY }
@@ -388,7 +393,7 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       }
     }
   }
-  
+
   node.addEventListener("pointerdown", pointerdown)
   node.addEventListener("pointermove", pointermove)
   node.addEventListener("click", click)

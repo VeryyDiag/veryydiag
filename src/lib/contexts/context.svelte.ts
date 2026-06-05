@@ -278,27 +278,43 @@ export class DiagramConfClass {
   }
 
   removeLink = (linkID: LinkID) => {
-    delete this.getCurrentDiagram()?.linksWithID?.[linkID]
+    const info = this.getCurrentDiagramAndProofInfo()
+    if (!info.proofmode || info?.proofStep === undefined) {
+      const diag = info.diagram
+      delete diag?.linksWithID?.[linkID]
+    } else {
+      this.sendNotification("error", "Impossible to remove a link in proof mode (except for the initial diagram)")
+    }
   }
 
   removeNode = (nodeID: NodeID) => {
-    const diag = this.getCurrentDiagram()
-    if (diag?.linksWithID !== undefined) {
-      Object.entries(diag?.linksWithID || {}).forEach(([linkID, link]) => {
-        if (fullAnchorToIDAndAnchor(link.from)[0] === nodeID || fullAnchorToIDAndAnchor(link.to)[0] === nodeID) {
-          if (diag?.linksWithID) {
-            delete diag.linksWithID[linkID]
+    const info = this.getCurrentDiagramAndProofInfo()
+    if (!info.proofmode || info?.proofStep === undefined) {
+      const diag = info.diagram
+      if (diag?.linksWithID !== undefined) {
+        Object.entries(diag?.linksWithID || {}).forEach(([linkID, link]) => {
+          if (fullAnchorToIDAndAnchor(link.from)[0] === nodeID || fullAnchorToIDAndAnchor(link.to)[0] === nodeID) {
+            if (diag?.linksWithID) {
+              delete diag.linksWithID[linkID]
+            }
           }
-        }
-      })
+        })
+      }
+      delete diag.nodes?.[nodeID]
+    } else {
+      this.sendNotification("error", "Impossible to remove a node in proof mode (except for the initial diagram)")
     }
-    delete diag.nodes?.[nodeID]
   }
 
   removeSelection = () => {
-    this.linkSelection.forEach(this.removeLink)
-    this.nodeSelection.forEach(this.removeNode)
-    this.clearSelection()
+    const info = this.getCurrentDiagramAndProofInfo()
+    if (!info.proofmode || info?.proofStep === undefined) {
+      this.linkSelection.forEach(this.removeLink)
+      this.nodeSelection.forEach(this.removeNode)
+      this.clearSelection()
+    } else {
+      this.sendNotification("error", "Impossible to remove the selection in proof mode (except for the initial diagram)")
+    }
   }
 
   isNodeSelected = (nodeID: NodeID) => this.nodeSelection.has(nodeID)
@@ -395,21 +411,26 @@ export class DiagramConfClass {
       }
     }
 
-  addLink = (link: Link) : {message?: string} => {
-    const diag = this.getCurrentDiagram()
-    if (diag?.linksWithID === undefined) {
-      diag.linksWithID = {}
-    }
-    if (link.id !== undefined) {
-      if (diag.linksWithID?.[link.id]) {
-        return {message: `A link with ID ${link.id} already exists`}
-      } else {
-        diag.linksWithID[link.id] = link
+  addLink = (link: Link) => {
+    const info = this.getCurrentDiagramAndProofInfo()
+    const diag = info.diagram
+    if (!info.proofmode || info?.proofStep === undefined) {
+      if (diag?.linksWithID === undefined) {
+        diag.linksWithID = {}
       }
+      if (link.id !== undefined) {
+        if (diag.linksWithID?.[link.id]) {
+          return {message: `A link with ID ${link.id} already exists`}
+        } else {
+          diag.linksWithID[link.id] = link
+        }
+      } else {
+        diag.linksWithID[`:${randomID()}`] = link
+      }
+      return {}
     } else {
-      diag.linksWithID[`:${randomID()}`] = link
+      this.sendNotification("error", "Impossible to add a link in proof mode (except for the initial diagram)")
     }
-    return {}
   }
 
   getLinks = () => {
@@ -450,14 +471,19 @@ export class DiagramConfClass {
 
 
   addNode = (nodeKind: NodeKind, pos: Point, id: NodeID | undefined = undefined) => {
-    if (id === undefined) {
-      id = `:${randomID()}`
+    const info = this.getCurrentDiagramAndProofInfo()
+    const diag = info.diagram
+    if (!info.proofmode || info?.proofStep === undefined) {
+      if (id === undefined) {
+        id = `:${randomID()}`
+      }
+      if (diag.nodes === undefined) {
+        diag.nodes = {}
+      }
+      diag.nodes[id] = {nodeKind, pos}
+    } else {
+      this.sendNotification("error", "Impossible to add a node in proof mode (except for the initial diagram)")
     }
-    const diag = this.getCurrentDiagram()
-    if (diag.nodes === undefined) {
-      diag.nodes = {}
-    }
-    diag.nodes[id] = {nodeKind, pos}
   }
 
   sendNotification = (kind: NotificationKind, message: string) => {
