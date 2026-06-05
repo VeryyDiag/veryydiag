@@ -513,7 +513,9 @@ export type ProofStepApplyRule = {
   /** Same for links */
   linkBijectionCD?: Record<LinkID, LinkID>,
   /** For each final node you want to move, specify the final position */
-  move?: Record<NodeID, Point>
+  move?: Record<NodeID, Point>,
+  /** Allow to change the viewport */
+  viewport?: Viewport,
 }
 
 /** This proof step just specifies that two diagrams are identical except for the position of their nodes */
@@ -524,6 +526,8 @@ export type ProofStepMove = {
   description?: string,
   /** For each node you want to move, specify the final position */
   move?: Record<NodeID, Point>
+  /** Allow to change the viewport */
+  viewport?: Viewport,
 }
 
 /** Specify that the next proof steps (until ProofStepGroupEnd) belong to the same group, e.g. grouping trivial movements together,
@@ -562,6 +566,8 @@ export type Proof = {
   description?: string,
   /** Specifies all the steps in the current proof */
   steps: ProofStep[],
+  /** Step shown in the UI, defaults to 0 = starting diagram, 1 = first step etc */
+  currentStep?: number,
 }
 
 /** Theory contains nodes and rules we can apply on the nodes */

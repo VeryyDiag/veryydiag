@@ -20,8 +20,11 @@
 
   let enabled = $derived(diagramConfClass.isInProofMode())
   let currentProof = $derived(enabled ? diagramConfClass.currentProof() : undefined)
+  let currentProofStep = $derived(currentProof?.currentStep || 0)
 
-  let styleDot = "absolute w-3 h-3 bg-gray-100 rounded-full mt-1.5 -start-1.5 border border-buffer border-gray-200"
+  let styleDot = "absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-buffer"
+  let styleDotDisabled = `${styleDot} bg-gray-100 border-gray-200`
+  let styleDotEnabled = `${styleDot} bg-green-200 border-green-300`
 </script>
 <div class={[
              "absolute right-4 -translate-y-1/2 w-xs min-w-0 flex flex-col items-center transition-all duration-300",
@@ -59,14 +62,22 @@
               onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}>{proofStep?.description || "No description, click to edit me"}</span>
           </p>
         {/snippet}
+        {#snippet dotStep(i: number)}
+          <button
+            class={currentProofStep === i ? styleDotEnabled : styleDotDisabled}
+            onclick={() => diagramConfClass.setProofCurrentStep(i)}
+            title={`Go to step ${i+1}`}
+          ></button>
+        {/snippet}
         <li>
-          <div class={styleDot}></div>
+          {@render dotStep(0)}
+          Starting diagram {currentProofStep}
           {@render addMoveStep(0)}
         </li>
         {#each (currentProof?.steps || []) as proofStep, i}
           {@const kind = proofStep?.kind}
           <li>
-            <div class={styleDot}></div>
+            {@render dotStep(i+1)}
             Diagram is
             {JSON.stringify(diagramConfClass.derivedProofDiagrams.get(i+1))}
             {#if kind === "applyRule"}

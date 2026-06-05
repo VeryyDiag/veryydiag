@@ -3,7 +3,7 @@ import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log } from '$lib/utils';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined } from '$lib/utils';
 import { createReactiveMap2D, MapReduce } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
 import { proofApplyOneStep } from '$lib/rules/rules';
@@ -14,7 +14,7 @@ import { proofApplyOneStep } from '$lib/rules/rules';
  *  Even if diagramConf is a $state (hence reactive), don't modify it yourself outside of this class as it allows us to track
  *  mutations easily, making features like undo/redo stack trivial to implement later.
  *  See also https://svelte.dev/docs/svelte/$state
- */ 
+ */
 export class DiagramConfClass {
   /** Contains the configuration of the current diagram that will be saved to files */
   diagramConf = $state<DiagramConf>(diagramConfByUserToDiagramConf({}))
@@ -46,7 +46,7 @@ export class DiagramConfClass {
     }
   )
   getDiagramConfDerivedParams = () => this.diagramConfDerivedParams
-  
+
   /**
    * While it is possible to get coordinates of anchors via DOM access,
    * it is not super efficient and leads to a small lag when moving a node.
@@ -68,10 +68,10 @@ export class DiagramConfClass {
 
   /** Notifications (information, temporary errors…) */
   notifications = $state<Notification[]>([])
-  
+
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     this.setConfig(conf)
-    this.setSvg(svg)    
+    this.setSvg(svg)
   }
 
   // We should use => to preserve the this in order to be able to do onclick={todo.reset}
@@ -102,21 +102,83 @@ export class DiagramConfClass {
   getCurrentProof = () : Proof => {
     return this.diagramConf.proofs[this.getCurrentProofID()]
   }
-  
+
   getCurrentDiagram = () : Diagram => {
     const tab = this.diagramConf.currentTab
     const tabKind = tab.tabKind
     if (tabKind === "tabDiagram") {
       return this.diagramConf.diagrams[this.getCurrentDiagramID()]
     } else if (tabKind === "tabProof") {
-      // TODO: adapt to actually show the current diagram under edit and not the first diagram of the proof.
       const proofID = this.getCurrentProofID()
-      return this.diagramConf.proofs[proofID].startingDiagram
+      // We use a proxy so that doing diag.viewport = … changes the viewport property of proofStep
+      // Not sure how efficient this will be since everytime we change the proofStep it recomputes all future elements, but let's try
+      // (or if inneficient we can maybe save e.g. every second and cache it in the meantime?)
+      const currentProof = this.#currentProof
+      if (currentProof === undefined) {
+        throw new Error(`The current proof is undefined`)
+      }
+      const currentStep = currentProof?.currentStep || 0
+      if (currentStep === 0) {
+        // For the original diagram, we can directly modify it, no need to proxy
+        return this.derivedProofDiagrams.get(currentStep)
+      } else {
+        const diag = this.derivedProofDiagrams.get(currentStep)
+        const proxy = new Proxy(diag, {
+          get(obj, prop, receiver) {
+            console.log("Getting proxy property", prop)
+            if (prop === "viewport") {
+              const step = currentProof.steps[currentStep-1]
+              if (step.kind === "group" || step.kind === "groupEnd") {
+                // We can't move elements in group start/end
+                return Reflect.get(obj, prop, receiver)
+              }
+              // We init the viewport to the current diagram viewport otherwise it jumps in the view
+              // We would like to do:
+              // if (diag?.viewport !== undefined) {
+              //   step.viewport = diag?.viewport
+              // }
+              // return step.viewport
+              // but we can't otherwise it cries that we change the viewport in a $derived, + it would always create a viewport
+              // property while we may not want to do that. So instead, we do it in a more fancy way via a new proxy,
+              // that, when changed, updates the step!
+              if (step?.viewport !== undefined) {
+                return step.viewport
+              } else {
+                return new Proxy(diag?.viewport || { x: 0, y: 0, w: 20, h: 20 }, {
+                  set(obj: Viewport, prop, value, receiver) {
+                    let v = {x: obj.x, y: obj.y, w: obj.w, h: obj.h}
+                    Reflect.set(v, prop, v)
+                    step.viewport = v
+                    return true
+                  }
+                })
+              }
+            }
+            return Reflect.get(obj, prop, receiver)
+          },
+          set(obj, prop, value, receiver) {
+            console.log("Setting proxy property", prop, " to set it to value ", value)
+            if (prop === "viewport") {
+              const step = currentProof.steps[currentStep-1]
+              if (step.kind === "group" || step.kind === "groupEnd") {
+                // We can't move elements in group start/end
+                return false
+              }
+              step.viewport = value
+              return true
+            }
+            else {
+              return Reflect.set(obj, prop, value, receiver)
+            }
+          }
+        })
+        return proxy
+      }
     } else {
       assertNever(tabKind)
     }
   }
- 
+
   getCurrentTab = () : Tab => {
     return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
   }
@@ -131,7 +193,7 @@ export class DiagramConfClass {
       assertNever(tabKind)
     }
   }
-  
+
   getCurrentTabObject = () : Diagram | Proof => {
     return this.getTabObject(this.getCurrentTab())
   }
@@ -140,7 +202,7 @@ export class DiagramConfClass {
   isInProofMode = () : boolean => {
     return this.getCurrentTab().tabKind === "tabProof"
   }
-  
+
   getCurrentTheoryName = () : string => {
     return this.getCurrentDiagram()?.theory || "main"
   }
@@ -149,11 +211,11 @@ export class DiagramConfClass {
     return this.diagramConf.theories?.[this.getCurrentTheoryName()]
   }
 
-  
+
   getAvailableNode = (nodeKind: NodeKind) => {
     return this.getCurrentTheory()?.availableNodes?.[nodeKind]
   }
-  
+
   setSvg = (svg: SVGGraphicsElement | undefined) => {
     this.svg = svg;
   }
@@ -167,12 +229,14 @@ export class DiagramConfClass {
     }
   }
 
-  getViewport = () => this.getCurrentDiagram()?.viewport || { x: 0, y: 0, w: 20, h: 20 }
+  getViewport = () => {
+     return this.getCurrentDiagram()?.viewport || { x: 0, y: 0, w: 20, h: 20 }
+  }
 
   getDiagramConfUser = () => {
     return diagramConfToDiagramConfByUser($state.snapshot(this.diagramConf))
   }
-  
+
   setAnchor = (nodeID: NodeID, anchor: AnchorName, relativePosition: Point) => {
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
@@ -217,7 +281,7 @@ export class DiagramConfClass {
     }
     delete diag.nodes?.[nodeID]
   }
-      
+
   removeSelection = () => {
     this.linkSelection.forEach(this.removeLink)
     this.nodeSelection.forEach(this.removeNode)
@@ -225,7 +289,7 @@ export class DiagramConfClass {
   }
 
   isNodeSelected = (nodeID: NodeID) => this.nodeSelection.has(nodeID)
-  
+
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
     const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
     if (rel !== undefined) {
@@ -246,8 +310,8 @@ export class DiagramConfClass {
   getXYOfFullAnchor = (fullAnchor: IDAnchor) : Point | Error => {
     return this.getXYOfAnchor(...fullAnchorToIDAndAnchor(fullAnchor))
   }
-  
-  
+
+
   // This turns a "kind" name into a component to mount
   nodeKindToAvailableNode = (kind: NodeKind) : AvailableNode => {
     let res = this.getCurrentTheory()?.availableNodes?.[kind]
@@ -284,7 +348,7 @@ export class DiagramConfClass {
 
   /** Changes the size of the viewport and (optionally) the svg itself. */
   fitViewportToContent = (
-    {scale, minimumWidth, minimumHeight, paddingXPc, paddingYPc, breathe} 
+    {scale, minimumWidth, minimumHeight, paddingXPc, paddingYPc, breathe}
     : {
       /** Set scales to a value (e.g 1) if you also want to resize the width of the svg itself to scale * its actual width. */
       scale?: number,
@@ -343,7 +407,7 @@ export class DiagramConfClass {
     return this.getCurrentDiagram()?.nodes || {}
   }
 
-  
+
   moveNode = (nodeID: NodeID, newPos: Point) : Error | undefined => {
     const diag = this.getCurrentDiagram()
     if (diag?.nodes?.[nodeID] === undefined) {
@@ -606,7 +670,7 @@ export class DiagramConfClass {
   }
 
   currentProof = (proofID: ProofID | undefined = undefined) : Proof => {
-    const actualProofID = proofID || this.getCurrentProofID() 
+    const actualProofID = proofID || this.getCurrentProofID()
     return this.diagramConf.proofs[actualProofID]
   }
 
@@ -631,10 +695,13 @@ export class DiagramConfClass {
     if (proof?.steps === undefined) {
       proof.steps = []
     }
-    proof.steps.splice(position, 0, {kind: "move", move: {}})
+    proof.steps.splice(position, 0, {kind: "move", move: {
+      // "mysecondnode": {x: 45, y: 200+position*10}
+    }})
+    proof.currentStep = position + 1
   }
 
-  
+
   #currentProof : Proof | undefined = $derived.by(() => {
     if (this.isInProofMode()) {
       return this.getCurrentProof();
@@ -645,9 +712,27 @@ export class DiagramConfClass {
   #currentProofSteps : ProofStep[] = $derived(this.#currentProof?.steps || [])
   startingDiagram : Diagram = $derived(this.#currentProof?.startingDiagram || {})
   startingTheory : Theory = $derived(this.startingDiagram?.theory || {})
-  derivedProofDiagrams = $derived(new MapReduce(this.#currentProofSteps, (acc, x, i) => proofApplyOneStep($state.snapshot(acc), x, this.startingTheory), this.startingDiagram))
+  derivedProofDiagrams = $derived(
+    new MapReduce(this.#currentProofSteps,
+                  (acc, x, i) => proofApplyOneStep($state.snapshot(acc), x, this.startingTheory),
+                  this.startingDiagram)
+  )
 
-    
+  setProofCurrentStep = (currentStep: number, proofID: ProofID | undefined = undefined) => {
+    const _proofID = proofID || this.getCurrentProofID()
+    let proof = assertNotUndefined(
+      this.diagramConf?.proofs?.[_proofID],
+      `Can't find proof ${_proofID}`
+    )
+    if (currentStep <= 0) {
+      proof.currentStep = 0
+    } else if (currentStep >= proof.steps.length) {
+      // Don't put a - 1 here, 0 is first diagram, 1 is first step etc
+      proof.currentStep = proof.steps.length
+    } else {
+      proof.currentStep = currentStep
+    }
+  }
 }
 
 // *** Jump to end, not sure how to cleanly avoid this huge class **

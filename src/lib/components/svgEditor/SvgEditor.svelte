@@ -55,7 +55,7 @@
   })
 
   const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
-  $effect(() => {diagramConf; resetViewport()})
+  $effect(() => {if (diagramConfClass.getCurrentDiagram()?.viewport === undefined) { resetViewport() }})
 
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   let errors = $derived(errorsImport ? [errorsImport.message] : [])

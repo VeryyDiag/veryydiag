@@ -182,6 +182,9 @@ export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | 
                          `The nodeID ${nodeID} does not exist in the diagram when applying the proofStep 'move'`)
     diagram.nodes[nodeID].pos = pos
   })
+  if (proofStep?.viewport !== undefined) {
+    diagram.viewport = proofStep.viewport
+  }
   return diagram
 }
 
