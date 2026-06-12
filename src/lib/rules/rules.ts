@@ -1,4 +1,4 @@
-import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName } from "$lib/types/types"
+import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
 import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
@@ -589,25 +589,5 @@ export function proofApplyOneStep(diagramOrig: Diagram, proofStep: ProofStep, th
     return proofApplyMove(diagramOrig, proofStep, dontCopyDiagram)
   } else {
     return diagramOrig
-  }
-}
-
-export function matchSelectionToRule(
-  nodeSelection: NodeID[],
-  linkSelection: LinkID[],
-  inputDiagram: Diagram,
-  ruleDiagram: Diagram
-) : {
-  nodeBijectionAB: Record<NodeID, NodeID>,
-  linkBijectionAB: Record<LinkID, LinkID>,
-  boundaryLinksDR: BoundaryLinks,
-  ambigiousBoundary: BoundaryName[],
-} {
-
-  return {
-    nodeBijectionAB: {},
-    linkBijectionAB: {},
-    boundaryLinksDR: {},
-    ambigiousBoundary: [],
   }
 }

@@ -509,9 +509,9 @@ export type ProofStepApplyRule = {
    *  We can't just take the name in the new rule as we may have name collision.
    *  We also ignore boundary nodes.
    */
-  nodeBijectionCD?: Record<NodeID, NodeID>,
+  nodeBijectionCD?: NodeBijection,
   /** Same for links */
-  linkBijectionCD?: Record<LinkID, LinkID>,
+  linkBijectionCD?: LinkBijection,
   /** For each final node you want to move, specify the final position */
   move?: Record<NodeID, Point>,
   /** Allow to change the viewport */
