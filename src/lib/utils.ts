@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/types';
 import { ProofDiagError } from './types/types';
+import { List, Map, Set as SetIm, Collection } from "immutable"
 
 // This file contains generic utils functions
 
@@ -326,4 +327,66 @@ export function capitalizeFirstLetter(val: string) {
 export function log<A>(x: A, m: string = "Logging ") : A {
   console.log(m, x)
   return x
+}
+
+/** A BiMap is basically an immutable map mapping a string (typically node or link ID)
+ *  to a list of strings (potential candidates when trying to find a matching) where we can
+ *  efficiently do inverse queries to recover for each candidate the list ID with the same candidate.
+ *  This is used to efficiently update the list of candidates in the matching algorithm.
+ */
+export type BiMap<X, Y> = {
+  forward: Map<X, SetIm<Y>>,
+  backward: Map<Y, SetIm<X>>,
+  /* List of items that have already been elected (the size being equal to 1 is
+     not enough as we may have one candidate from the very beginning) */
+  alreadyElected: SetIm<X>,
+}
+
+export function mapListFromEntriesDuplicate<X, Y>(m: List<[X, Y]>) : Map<X, List<Y>>{
+  return m.groupBy(([x, y]) => x)
+          .map(x =>
+            x.map(([a,b]) => b)
+          )
+}
+
+export function mapSetFromEntriesDuplicate<X, Y>(m: List<[X, Y]>) : Map<X, SetIm<Y>>{
+  return mapListFromEntriesDuplicate(m).map(x => SetIm(x))
+}
+
+// I don't use flatten because of https://github.com/immutable-js/immutable-js/issues/1712
+export function shallowFlatten<X>(m: List<Collection<unknown, X>>) : List<X> {
+  const l : List<X> = List()
+  return l.withMutations(l => m.forEach(xs => xs.forEach(x => l.push(x))))
+}
+
+export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>) : BiMap<X, Y> {
+  const l : List<[Y, X]> = shallowFlatten(List(forward).map(([k,vs]) => vs.map((v) : [Y, X] => [v, k])))
+  const backward = mapSetFromEntriesDuplicate(l)
+  return {forward, backward, alreadyElected: SetIm()}
+}
+
+/**
+ * This is morally equivalent to saying bm.set(x, [y]), while making sure that the inverse map still works.
+ * Additionally, we return an error if at the end, an element Y has zero candidates
+ */
+export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X, Y>{
+  const oldCandidates = assertNotUndefined(
+    bm.forward.get(x),
+    `Can't get the value of the element ${x} in the bimap as it does not exist`)
+  const backward = bm.backward.withMutations(backward => {
+    oldCandidates.forEach(cand => backward.update(cand, (xs) => {
+      // We will modify y later
+      if (cand !== y) {
+        assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
+        const newXs = xs.delete(x)
+        if (newXs.isEmpty()) {
+          throw new ProofDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later.`)
+        }
+        return newXs
+      }
+    }))
+    backward.set(y, SetIm([x]))
+  })
+  const forward = bm.forward.set(x, SetIm([y]))
+  return {forward, backward, alreadyElected: bm.alreadyElected.add(x)}
 }

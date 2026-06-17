@@ -2,13 +2,13 @@
 // proof itself, only used to generate them easily. Hence we don't include it in rules.ts
 
 import type { AnchorMap, Diagram, IDAnchor, LinkBijection, LinkID, NodeBijection, NodeID, Node, NodeKind } from "$lib/types/types"
-import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
+import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering, type BiMap, biMapFromMap, biMapElectCandidate } from "$lib/utils"
 import { ProofDiagError, isBoundaryNode } from "$lib/types/types"
-import { List, Map } from "immutable"
+import { List, Map, Set } from "immutable"
 
 
 export type MatchingRule = {
-  nodeBijectionAB: Map<NodeID, NodeID>,
+  nodeBimapBA : BiMap<NodeID, NodeID>,
   boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
   linkBijectionAB: Map<LinkID, LinkID>,
 }
@@ -17,40 +17,39 @@ export type MatchingRule = {
 function matchSelectionToDiagramAux(
   diagram: Diagram,
   ruleDiagram: Diagram,
-  nonBoundaryNodesB : Map<NodeID, Node>,
-  groupsNBNodeKindsS : Map<NodeKind, Map<NodeID, Node>>,
+  nodeBimapBA : BiMap<NodeID, NodeID>,
   // Accumulators in the recursion
-  nodeBijectionAB: Map<NodeID, NodeID>,
   boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
   linkBijectionAB: Map<LinkID, LinkID>,
 ) : MatchingRule {
-  const r = nonBoundaryNodesB.entrySeq().first()
-  if (r === undefined) { // No more nodes to match!!
-    // TODO: deal with links and boundary nodes then
-    return { nodeBijectionAB, boundaryAnchorsBA, linkBijectionAB }
+  // We pick an element to that we will try to assign a value now
+  // For efficiency reason, we pick the one with less candidates to limit branching
+  // (to check: toSeq should turn this into a lazy sorting)
+  const toElect = List(nodeBimapBA.forward.filter((aS, b) => !nodeBimapBA.alreadyElected.has(b))).sortBy(([b, aS]) => aS.size).first()
+  if (toElect === undefined) {
+    // We have finished our loop, we return!
+    return { nodeBimapBA, boundaryAnchorsBA, linkBijectionAB }
   }
-  const [nodeID, node] = r
+  const [nodeIDtoElect, candidates] = toElect
   // Remove the node since it is already attributed
-  const newNonBoundaryNodesB = nonBoundaryNodesB.delete(nodeID)
-  const allCandidatesS = assertNotUndefined(
-    groupsNBNodeKindsS.get(node.nodeKind),
-    `The node ${nodeID} of the diagram has no more matches in the selection (weird, this should have be caught earlier, please report a bug)`).entrySeq()
-  const n = allCandidatesS.count()
-  for (const [nodeIDS, nodeS] of allCandidatesS) {
+  for (const nodeIDScandidate of candidates) {
     try {
-
-      const newGroupsNBNodeKindsS = n <= 1
-                                  ? groupsNBNodeKindsS.delete(node.nodeKind)
-                                  : groupsNBNodeKindsS.deleteIn([node.nodeKind, nodeIDS])
-      return matchSelectionToDiagramAux(diagram, ruleDiagram, newNonBoundaryNodesB, newGroupsNBNodeKindsS,
-                                        nodeBijectionAB.set(nodeIDS, nodeID),
-                                        boundaryAnchorsBA,
-                                        linkBijectionAB
+      return matchSelectionToDiagramAux(
+        diagram,
+        ruleDiagram,
+        biMapElectCandidate(nodeBimapBA, nodeIDtoElect, nodeIDScandidate),
+        // Accumulators in the recursion
+        boundaryAnchorsBA,
+        linkBijectionAB,
       )
-    } catch {}
+    } catch (e) {
+      console.log(`Failed to assign ${nodeIDScandidate} to ${nodeIDtoElect} (${e})`)
+    }
   }
   throw new ProofDiagError(`We found no way to match the selection to the diagram`)
 }
+
+
 
 export function matchSelectionToDiagram(
   nodeSelection: NodeID[],
@@ -62,6 +61,7 @@ export function matchSelectionToDiagram(
   boundaryAnchorsBA: AnchorMap,
   linkBijectionAB: LinkBijection,
 } {
+
   // We maintain this list , to avoid to search for no reason, we check if the remaining nodes to map are compatible
   const nonBoundaryNodesB : Map<NodeID, Node> = Map(ruleDiagram?.nodes || {}).filter((node, nodeID) => !isBoundaryNode(node))
 
@@ -79,20 +79,29 @@ export function matchSelectionToDiagram(
   if (!nodeKindVsNumberB.equals(nodeKindVsNumberS)) {
     throw new ProofDiagError(`Impossible to match the selection to the rule as it must contain for each nodeKind the same number of elements and here we have: selection = ${nodeKindVsNumberS.toString()} != ${nodeKindVsNumberB.toString()} = rule`)
   }
+  // Create a bimap
+  const nodeBimapBA : BiMap<NodeID, NodeID> = biMapFromMap(
+    // TODO EFFICIENCY: to be more efficient, we can do a pre-selection here, e.g. by filtering with the
+    // number of links per anchor etc. This way, we can certainly cut many branches in the exploration.
+    // But anyway, most of the time rules just have a few nodes with the same kind so we don't expect this to
+    // be a bottleneck for now.
+    nonBoundaryNodesB.map((node) => Set(groupsNBNodeKindsS.get(node.nodeKind)?.keys()))
+  )
 
   const r = matchSelectionToDiagramAux(
     diagram,
     ruleDiagram,
-    nonBoundaryNodesB,
-    groupsNBNodeKindsS,
+    nodeBimapBA,
     // Accumulators
-    Map(),
     Map(),
     Map(),
   )
   return {
     // Maps from immutable.js back to js object
-    nodeBijectionAB: r.nodeBijectionAB.toObject(),
+    nodeBijectionAB: r.nodeBimapBA.backward.mapEntries(([a, bs]) => {
+      assertTrue(bs.size === 1, `Weird, we expect at the end all matched elements to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
+      return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]
+    }).toObject(),
     boundaryAnchorsBA: r.boundaryAnchorsBA.toObject(),
     linkBijectionAB: r.linkBijectionAB.toObject(),
   }
