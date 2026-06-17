@@ -75,7 +75,7 @@ export type AvailableNode = {
    * They are typically automatically derived from the SVG file when importing it, but we also
    * add them here to avoid XML parsing when verifying the proof and have a self-contained Yaml
    * file that we may certify using other tools that may not allow easy XML parsing (Rocq…).
-   * It also provide some robustness, as we can use it to detect when the SVG file changed.
+   * It also provides some robustness, as we can use it to detect when the SVG file changed.
    */
   anchors?: Record<AnchorName, AnchorProps>,
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …

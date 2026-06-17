@@ -1,54 +1,170 @@
 // Functions in this file are not part of the "core" of ProofDiag since they are not involved when verifying the
 // proof itself, only used to generate them easily. Hence we don't include it in rules.ts
 
-import type { AnchorMap, Diagram, IDAnchor, LinkBijection, LinkID, NodeBijection, NodeID, Node, NodeKind } from "$lib/types/types"
-import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering, type BiMap, biMapFromMap, biMapElectCandidate } from "$lib/utils"
-import { ProofDiagError, isBoundaryNode } from "$lib/types/types"
+import type { AnchorMap, Diagram, IDAnchor, LinkBijection, LinkID, NodeBijection, NodeID, Node, NodeKind, Theory } from "$lib/types/types"
+import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering, type BiMap, biMapFromMap, biMapElectCandidate, biMapIntersectCandidates, mapSetFromEntriesDuplicate, biMapGetUnique} from "$lib/utils"
+import { ProofDiagError, isBoundaryNode, nbMultiWireBoundaryLink } from "$lib/types/types"
 import { List, Map, Set } from "immutable"
 
 
 export type MatchingRule = {
   nodeBimapBA : BiMap<NodeID, NodeID>,
+  linkBimapBA : BiMap<LinkID, LinkID>,
   boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
-  linkBijectionAB: Map<LinkID, LinkID>,
+}
+
+function matchSelectionToDiagramLinkAux(
+  depth: number, // Only for debug and print logs
+  diagram: Diagram,
+  ruleDiagram: Diagram,
+  theory: Theory,
+  nodeBimapBA : BiMap<NodeID, NodeID>,
+  linkBimapBA : BiMap<LinkID, LinkID>,
+  linksInA : Map<IDAnchor, Set<LinkID>>,
+  linksInB : Map<IDAnchor, Set<LinkID>>,
+  // Accumulators in the recursion
+  boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
+) : MatchingRule {
+  const toElect = List(linkBimapBA.forward.filter((aS, b) => !linkBimapBA.alreadyElected.has(b))).sortBy(([b, aS]) => aS.size).first()
+  if (toElect === undefined) {
+    // We have finished to attribute all links (and nodes), it's over (TODO: deal with boundary nodes etc)
+    return { nodeBimapBA, boundaryAnchorsBA, linkBimapBA}
+  }
+  const [linkIDtoElect, candidates] = toElect
+  const linkToElect = assertNotUndefined(ruleDiagram?.linksWithID?.[linkIDtoElect],
+                                         `Weird, this should never occur, please report a bug`)
+  const [electFromID, electFromAnchor] = fullAnchorToIDAndAnchor(linkToElect.from)
+  const [electToID, electToAnchor] = fullAnchorToIDAndAnchor(linkToElect.to)
+  // Remove the link since it is already attributed
+  for (const linkIDScandidate of candidates) {
+    try {
+      // First, we check if our candidate is obviously wrong (bad input/output)
+      const linkScandidate = assertNotUndefined(diagram?.linksWithID?.[linkIDScandidate],
+                                                `Weird, this should never occur, please report a bug`)
+      const [candFromID, candFromAnchor] = fullAnchorToIDAndAnchor(linkScandidate.from)
+      const [candToID, candToAnchor] = fullAnchorToIDAndAnchor(linkScandidate.to)
+      if (!Set([candFromAnchor, candToAnchor]).equals(Set([electFromAnchor, electToAnchor]))) {
+        throw new ProofDiagError(`Different anchors`)
+      }
+      const electFromIDTranslated = biMapGetUnique(nodeBimapBA, electFromID)
+      const electToIDTranslated = biMapGetUnique(nodeBimapBA, electToID)
+      const setA = Set([candFromID, candToID])
+      const setB = Set([electFromIDTranslated, electToIDTranslated])
+      if (!setA.equals(setB)) {
+        throw new ProofDiagError(`Different starting/ending points (${setA.toString()} != ${setB.toString()})`)
+      }
+      // TODO: check parameters etc
+      const newLinkBimapBA = biMapElectCandidate(linkBimapBA, linkIDtoElect, linkIDScandidate)
+      return matchSelectionToDiagramLinkAux(
+        depth + 1,
+        diagram,
+        ruleDiagram,
+        theory,
+        nodeBimapBA,
+        newLinkBimapBA,
+        linksInA,
+        linksInB,
+        // Accumulators in the recursion
+        boundaryAnchorsBA,
+      )
+    } catch (e) {
+      console.log(`${" ".repeat(depth)}Failed to assign the link ${linkIDtoElect} --> ${linkIDScandidate} (${e})`)
+    }
+  }
+  throw new ProofDiagError(`We found no way to match the links in the diagram`)
 }
 
 // Attributes the nodes first
 function matchSelectionToDiagramAux(
+  depth: number, // To print logs and debug only
   diagram: Diagram,
   ruleDiagram: Diagram,
+  theory: Theory,
   nodeBimapBA : BiMap<NodeID, NodeID>,
+  linkBimapBA : BiMap<LinkID, LinkID>,
+  linksInA : Map<IDAnchor, Set<LinkID>>,
+  linksInB : Map<IDAnchor, Set<LinkID>>,
   // Accumulators in the recursion
   boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
-  linkBijectionAB: Map<LinkID, LinkID>,
 ) : MatchingRule {
-  // We pick an element to that we will try to assign a value now
-  // For efficiency reason, we pick the one with less candidates to limit branching
-  // (to check: toSeq should turn this into a lazy sorting)
+    // We pick an element to that we will try to assign a value now
+    // For efficiency reason, we pick the one with less candidates to limit branching
+    // (to check: toSeq should turn this into a lazy sorting)
   const toElect = List(nodeBimapBA.forward.filter((aS, b) => !nodeBimapBA.alreadyElected.has(b))).sortBy(([b, aS]) => aS.size).first()
   if (toElect === undefined) {
-    // We have finished our loop, we return!
-    return { nodeBimapBA, boundaryAnchorsBA, linkBijectionAB }
+    // We have finished to attribute all nodes, we deal with links now!
+    return matchSelectionToDiagramLinkAux(depth + 1, diagram, ruleDiagram, theory, nodeBimapBA, linkBimapBA, linksInA, linksInB, boundaryAnchorsBA)
   }
   const [nodeIDtoElect, candidates] = toElect
+  const nodeToElect = assertNotUndefined(ruleDiagram?.nodes?.[nodeIDtoElect],
+                                         `Weird, this should never occur, please report a bug`)
   // Remove the node since it is already attributed
   for (const nodeIDScandidate of candidates) {
     try {
+      // We elect our new candidate
+      let newNodeBimapBA = biMapElectCandidate(nodeBimapBA, nodeIDtoElect, nodeIDScandidate)
+      // To optimize the search tree, we try to restrict further the candidates for nodes
+      // For this, for each anchor, we look for all the neighbours of nodeToElect and its candidate,
+      // and we restrict by saying that each neighbour in B must have for candidate one of the neighbours in B.
+      keys(nodeToElect?.anchors).forEach(anchor => {
+        // First, we get the neighbours of the node in B
+        const IDAnchor = IDAnchorToFullAnchor(nodeIDtoElect, anchor)
+        const linkIDsB : Set<LinkID> = linksInB.get(IDAnchor, Set())
+        const linksB = linkIDsB.map(linkID => assertNotUndefined(ruleDiagram?.linksWithID?.[linkID], `Weird, report a bug`))
+        const neighboursB : Set<NodeID> = linksB.map(link => {
+          const neighbourIDAnchors = [link.from, link.to].filter(x => x !== IDAnchor)
+          if (neighbourIDAnchors.length !== 1) {
+            // If it is zero, it is a self loop: don't care, 2 should never occur
+            return undefined
+          }
+          const neighbourIDAnchor = neighbourIDAnchors[0]
+          const [neighbourID, neighbourAnchor] = fullAnchorToIDAndAnchor(neighbourIDAnchor)
+          if (neighbourID === nodeIDtoElect) {
+            return undefined
+          }
+          return neighbourID
+        }).filter(x => x !== undefined)
+        // Same for its candidate in A
+        const IDAnchorA = IDAnchorToFullAnchor(nodeIDScandidate, anchor)
+        const linkIDsA : Set<LinkID> = linksInA.get(IDAnchorA, Set())
+        const linksA = linkIDsA.map(linkID => assertNotUndefined(diagram?.linksWithID?.[linkID], `Weird, report a bug`))
+        const neighboursA : Set<NodeID> = linksA.map(link => {
+          const neighbourIDAnchors = [link.from, link.to].filter(x => x !== IDAnchorA)
+          // If it is zero, it is a self loop: don't care, 2 should never occur
+          if (neighbourIDAnchors.length !== 1) {
+            return undefined
+          }
+          const neighbourIDAnchor = neighbourIDAnchors[0]
+          const [neighbourID, neighbourAnchor] = fullAnchorToIDAndAnchor(neighbourIDAnchor)
+          if (neighbourID === nodeIDtoElect) {
+            return undefined
+          }
+          return neighbourID
+        }).filter(x => x !== undefined)
+        // We restrict each neighbour in B by saying that their candidate must be the neighbours in A:
+        neighboursB.forEach(neighbourB => {
+          newNodeBimapBA = biMapIntersectCandidates(newNodeBimapBA, neighbourB, neighboursA)
+        })
+      })
+
       return matchSelectionToDiagramAux(
+        depth + 1,
         diagram,
         ruleDiagram,
-        biMapElectCandidate(nodeBimapBA, nodeIDtoElect, nodeIDScandidate),
+        theory,
+        newNodeBimapBA,
+        linkBimapBA,
+        linksInA,
+        linksInB,
         // Accumulators in the recursion
         boundaryAnchorsBA,
-        linkBijectionAB,
       )
     } catch (e) {
-      console.log(`Failed to assign ${nodeIDScandidate} to ${nodeIDtoElect} (${e})`)
+      console.log(`${" ".repeat(depth)}Failed to assign the node ${nodeIDScandidate} --> ${nodeIDtoElect} (${e})`)
     }
   }
   throw new ProofDiagError(`We found no way to match the selection to the diagram`)
 }
-
 
 
 export function matchSelectionToDiagram(
@@ -56,11 +172,13 @@ export function matchSelectionToDiagram(
   linkSelection: LinkID[],
   diagram: Diagram,
   ruleDiagram: Diagram,
+  theory: Theory,
 ) : {
   nodeBijectionAB: NodeBijection,
   boundaryAnchorsBA: AnchorMap,
   linkBijectionAB: LinkBijection,
 } {
+  const linkSelectionIm = Set(linkSelection)
 
   // We maintain this list , to avoid to search for no reason, we check if the remaining nodes to map are compatible
   const nonBoundaryNodesB : Map<NodeID, Node> = Map(ruleDiagram?.nodes || {}).filter((node, nodeID) => !isBoundaryNode(node))
@@ -79,7 +197,9 @@ export function matchSelectionToDiagram(
   if (!nodeKindVsNumberB.equals(nodeKindVsNumberS)) {
     throw new ProofDiagError(`Impossible to match the selection to the rule as it must contain for each nodeKind the same number of elements and here we have: selection = ${nodeKindVsNumberS.toString()} != ${nodeKindVsNumberB.toString()} = rule`)
   }
-  // Create a bimap
+  // Create a node bimap, matching nodes in B to their candidates in A
+  // The algorithm will then slowly restrict these candidates until finding one that
+  // actually works.
   const nodeBimapBA : BiMap<NodeID, NodeID> = biMapFromMap(
     // TODO EFFICIENCY: to be more efficient, we can do a pre-selection here, e.g. by filtering with the
     // number of links per anchor etc. This way, we can certainly cut many branches in the exploration.
@@ -88,12 +208,43 @@ export function matchSelectionToDiagram(
     nonBoundaryNodesB.map((node) => Set(groupsNBNodeKindsS.get(node.nodeKind)?.keys()))
   )
 
+  // Same for links
+  const linkBimapBA : BiMap<LinkID, LinkID> = biMapFromMap(
+    // TODO: we should also see how to deal with users that don't select all links,
+    // notably mono-boundary links. Maybe if it fails restart by selecting automatically
+    // all the neighboring links?
+    Map(ruleDiagram?.linksWithID || {})
+      .filter((link, linkID) => nbMultiWireBoundaryLink(linkID, ruleDiagram, theory) === 0)
+      .mapEntries(([linkID, link]) =>
+        // TODO EFFICIENCY: to be more efficient, we can do a pre-selection here,
+        // e.g. by filtering links with the same kinds of from/to anchors etc.
+        // But I'm not sure if this will bring a huge improvement since anyway
+        // that arrives basically at the leaves, so I don't think it creates much branching.
+        [linkID, linkSelectionIm]
+      )
+  )
+
+  // It will help here to be able to quickly identify which link leaves/enter
+  // from which node/anchor.
+  const linksInB : Map<IDAnchor, Set<LinkID>> = mapSetFromEntriesDuplicate(
+    List(entries(ruleDiagram?.linksWithID)
+      .map(([linkID, link]) : [IDAnchor, LinkID][] =>
+        [[link.from, linkID], [link.to, linkID]]).flat(1)))
+  const linksInA : Map<IDAnchor, Set<LinkID>> = mapSetFromEntriesDuplicate(
+    List(entries(diagram?.linksWithID)
+      .map(([linkID, link]) : [IDAnchor, LinkID][] =>
+        [[link.from, linkID], [link.to, linkID]]).flat(1)))
+
   const r = matchSelectionToDiagramAux(
+    0,
     diagram,
     ruleDiagram,
+    theory,
     nodeBimapBA,
+    linkBimapBA,
+    linksInA, // Helpers to avoid recomputing the same thing again and again
+    linksInB, // Helpers to avoid recomputing the same thing again and again
     // Accumulators
-    Map(),
     Map(),
   )
   return {
@@ -103,6 +254,9 @@ export function matchSelectionToDiagram(
       return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]
     }).toObject(),
     boundaryAnchorsBA: r.boundaryAnchorsBA.toObject(),
-    linkBijectionAB: r.linkBijectionAB.toObject(),
+    linkBijectionAB: r.linkBimapBA.backward.mapEntries(([a, bs]) => {
+      assertTrue(bs.size === 1, `Weird, we expect at the end all matched elements to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
+      return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]
+    }).toObject(),
   }
 }

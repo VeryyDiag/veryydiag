@@ -9,7 +9,7 @@ import { editCopy } from '$lib/utils'
 
 // Here are some practical constants that we use regularly in our tests
 
-const boundaryAvailableNode = {
+export const boundaryAvailableNode = {
   anchors: {
     boundary: {}
   },
@@ -28,7 +28,7 @@ const boundaryAvailableNode = {
 // boundaryAvailableNode.anchors.boundary
 // without getting warning about this being possibly undefinied.
 
-const theoryA = {
+export const theoryA = {
   // Theory
   availableNodes: {
     A: {}
@@ -36,7 +36,7 @@ const theoryA = {
 } satisfies Theory;
 
 
-const theoryABC = {
+export const theoryABC = {
   // Theory
   availableNodes: {
     A: {
@@ -70,7 +70,7 @@ const theoryABC = {
   },
 } satisfies Theory;
 
-const theoryABCparam = {
+export const theoryABCparam = {
   // Theory
   availableNodes: {
     A: {
@@ -116,7 +116,7 @@ const theoryABCparam = {
   },
 } satisfies Theory;
 
-const diagramA = {
+export const diagramA = {
   nodes: {
     myA: {
       nodeKind: "A"
@@ -124,7 +124,7 @@ const diagramA = {
   },
 } satisfies Diagram
 
-const diagramAprime = {
+export const diagramAprime = {
   nodes: {
     myAprime: {
       nodeKind: "A"
@@ -132,7 +132,7 @@ const diagramAprime = {
   },
 } satisfies Diagram
 
-const diagramA2 = {
+export const diagramA2 = {
   nodes: {
     myA2: {
       nodeKind: "A2"
@@ -140,7 +140,7 @@ const diagramA2 = {
   },
 } satisfies Diagram
 
-const diagramA2prime = {
+export const diagramA2prime = {
   nodes: {
     myA2prime: {
       nodeKind: "A2"
@@ -148,7 +148,7 @@ const diagramA2prime = {
   },
 } satisfies Diagram
 
-const diagramB = {
+export const diagramB = {
   nodes: {
     myB: {
       nodeKind: "B"
@@ -156,7 +156,7 @@ const diagramB = {
   },
 } satisfies Diagram
 
-const diagramB2 = {
+export const diagramB2 = {
   nodes: {
     myB2: {
       nodeKind: "B2"
@@ -164,7 +164,18 @@ const diagramB2 = {
   },
 } satisfies Diagram
 
-const diagramBparam = {
+export const diagramAB = {
+  nodes: {
+    myA: {
+      nodeKind: "A"
+    },
+    myB: {
+      nodeKind: "B"
+    },
+  },
+} satisfies Diagram
+
+export const diagramBparam = {
   nodes: {
     myB: {
       nodeKind: "B",
@@ -177,7 +188,7 @@ const diagramBparam = {
   },
 } satisfies Diagram
 
-const diagramC = {
+export const diagramC = {
   nodes: {
     myC: {
       nodeKind: "C"
@@ -185,7 +196,7 @@ const diagramC = {
   },
 } satisfies Diagram
 
-const diagramAtoC = {
+export const diagramAtoC = {
   nodes: {
     myA: diagramA.nodes.myA,
     myC: diagramC.nodes.myC,
@@ -198,7 +209,20 @@ const diagramAtoC = {
   },
 } satisfies Diagram
 
-const diagramAtoCandA = {
+export const diagramAprimetoCprime = {
+  nodes: {
+    myAprime: diagramA.nodes.myA,
+    myCprime: diagramC.nodes.myC,
+  },
+  linksWithID: {
+    fooPrime: {
+      from: "myAprime.out",
+      to: "myCprime.in"
+    },
+  },
+} satisfies Diagram
+
+export const diagramAtoCandA = {
   nodes: {
     myA: diagramA.nodes.myA,
     myC: diagramC.nodes.myC,
@@ -215,7 +239,7 @@ const diagramAtoCandA = {
   },
 } satisfies Diagram
 
-const diagramA2toC = {
+export const diagramA2toC = {
   nodes: {
     myA2: diagramA2.nodes.myA2,
     myC: diagramC.nodes.myC,
@@ -228,7 +252,7 @@ const diagramA2toC = {
   },
 } satisfies Diagram
 
-const diagramAtoAlice = {
+export const diagramAtoAlice = {
   nodes: {
     myA: diagramA.nodes.myA,
     aliceBoundary: {
@@ -251,7 +275,7 @@ const diagramAtoAlice = {
   },
 } satisfies Diagram
 
-const diagramAprimetoAlice = {
+export const diagramAprimetoAlice = {
   nodes: {
     myAprime: diagramAprime.nodes.myAprime,
     aliceBoundary: {
@@ -271,7 +295,7 @@ const diagramAprimetoAlice = {
   },
 } satisfies Diagram
 
-const diagramAprimetoAliceAndHerself = {
+export const diagramAprimetoAliceAndHerself = {
   nodes: {
     myAprime: diagramAprime.nodes.myAprime,
     aliceBoundary: {
@@ -296,7 +320,7 @@ const diagramAprimetoAliceAndHerself = {
 } satisfies Diagram
 
 
-const diagramA2toAlice = {
+export const diagramA2toAlice = {
   nodes: {
     myA2: diagramA2.nodes.myA2,
     myAliceBoundary: {
@@ -316,7 +340,7 @@ const diagramA2toAlice = {
   },
 } satisfies Diagram
 
-const diagramA2primetoAlice = {
+export const diagramA2primetoAlice = {
   nodes: {
     myA2prime: diagramA2prime.nodes.myA2prime,
     aliceBoundary: {
@@ -339,7 +363,7 @@ const diagramA2primetoAlice = {
 
 
 
-const diagramBtoAliceAndBob = {
+export const diagramBtoAliceAndBob = {
   nodes: {
     myB: diagramB.nodes.myB,
     aliceBoundary: {
@@ -371,7 +395,7 @@ const diagramBtoAliceAndBob = {
   },
 } satisfies Diagram
 
-const diagramB2toAliceAndBob = {
+export const diagramB2toAliceAndBob = {
   nodes: {
     myB2: diagramB2.nodes.myB2,
     aliceBoundary: {
@@ -406,7 +430,7 @@ const diagramB2toAliceAndBob = {
 } satisfies Diagram
 
 // Rules to apply
-const theoryABCrules = {
+export const theoryABCrules = {
   // Theory
   availableNodes: theoryABC.availableNodes,
   rules: {
@@ -429,7 +453,7 @@ const theoryABCrules = {
   }
 } satisfies Theory;
 
-const proofStepAtoA2 = {
+export const proofStepAtoA2 = {
   kind: "applyRule",
   ruleName: "AtoA2",
   direction: "lr",
@@ -442,7 +466,7 @@ const proofStepAtoA2 = {
   linkBijectionCD: {},
 } satisfies ProofStepApplyRule
 
-const proofStepAtoA2ViaPrime = {
+export const proofStepAtoA2ViaPrime = {
   kind: "applyRule",
   ruleName: "AprimetoA2prime",
   direction: "lr",
@@ -456,7 +480,7 @@ const proofStepAtoA2ViaPrime = {
   linkBijectionCD: {},
 } satisfies ProofStepApplyRule
 
-const proofStepAtoA2ViaPrimeInverse = {
+export const proofStepAtoA2ViaPrimeInverse = {
   kind: "applyRule",
   ruleName: "AprimetoA2prime",
   direction: "rl",
@@ -470,7 +494,7 @@ const proofStepAtoA2ViaPrimeInverse = {
   linkBijectionCD: {},
 } satisfies ProofStepApplyRule
 
-const proofStepAtoA2WithLinksViaPrime = {
+export const proofStepAtoA2WithLinksViaPrime = {
   kind: "applyRule",
   ruleName: "AprimetoA2primeWithLinks",
   direction: "lr",
@@ -491,7 +515,7 @@ const proofStepAtoA2WithLinksViaPrime = {
   },
 } satisfies ProofStepApplyRule
 
-const proofStepAitselftoA2WithLinksViaPrime = {
+export const proofStepAitselftoA2WithLinksViaPrime = {
   kind: "applyRule",
   ruleName: "AitselfprimetoA2primeWithLinks",
   direction: "lr",

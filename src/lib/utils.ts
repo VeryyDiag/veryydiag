@@ -358,6 +358,16 @@ export function shallowFlatten<X>(m: List<Collection<unknown, X>>) : List<X> {
   const l : List<X> = List()
   return l.withMutations(l => m.forEach(xs => xs.forEach(x => l.push(x))))
 }
+//
+// export function flattenLevel2<X>(m: List<List<Collection<unknown, X>>>) : List<X> {
+//   const l : List<X> = List()
+//   return l.withMutations(l =>
+//     m.forEach(xss =>
+//       xss.forEach(xs =>
+//         xs.forEach(x =>
+//           x => l.push(x)))))
+// }
+
 
 export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>) : BiMap<X, Y> {
   const l : List<[Y, X]> = shallowFlatten(List(forward).map(([k,vs]) => vs.map((v) : [Y, X] => [v, k])))
@@ -367,7 +377,8 @@ export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>) : BiMap<X, Y> {
 
 /**
  * This is morally equivalent to saying bm.set(x, [y]), while making sure that the inverse map still works.
- * Additionally, we return an error if at the end, an element Y has zero candidates
+ * Additionally, we return an error if at the end, an element Y has zero candidates,
+ * and we also update the alreadyElected item.
  */
 export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X, Y>{
   const oldCandidates = assertNotUndefined(
@@ -389,4 +400,40 @@ export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X
   })
   const forward = bm.forward.set(x, SetIm([y]))
   return {forward, backward, alreadyElected: bm.alreadyElected.add(x)}
+}
+
+/** If, during the matching, you know that some candidates are  */
+export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<Y>) : BiMap<X, Y>{
+  const oldCandidates = assertNotUndefined(
+    bm.forward.get(x),
+    `Can't get the value of the element ${x} in the bimap as it does not exist`
+  )
+  const newCandidates = oldCandidates.intersect(ys)
+  assertTrue(!newCandidates.isEmpty(),
+             `After applying an intersection, no candidates are left for ${x}`
+  )
+  const forward = bm.forward.set(x, oldCandidates.intersect(ys))
+  // We update 'backward' by saying that all other candidates should not anymore be linked with x
+  const excludedCandidates = oldCandidates.subtract(ys)
+  const backward = bm.backward.withMutations(backward => {
+    excludedCandidates.forEach(cand => backward.update(cand, (xs) => {
+      assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
+      const newXs = xs.delete(x)
+      if (newXs.isEmpty()) {
+        throw new ProofDiagError(`When trying to assign ${x} -> ${ys.toString()} during an intersection operation, the element '${cand}' in Y becomes impossible to match later.`)
+      }
+      return newXs
+    }))
+  })
+  return {forward, backward, alreadyElected: bm.alreadyElected}
+}
+
+/** Get an element from the bimap and checks that it exists and is unique (only one candidate) */
+export function biMapGetUnique<X, Y>(bm: BiMap<X, Y>, x: X) : Y {
+  const candidates = assertNotUndefined(
+    bm.forward.get(x),
+    `Can't get the value of the element ${x} in the bimap as it does not exist`
+  )
+  assertTrue(candidates.size === 1, `Weird, we expect exactly one candidate`)
+  return assertNotUndefined(candidates.first(), `Impossible, report a bug`)
 }
