@@ -96,6 +96,15 @@ export function getParam(node: Node, theory: Theory, paramName: ParamName) : Par
   }
 }
 
+export function getAnchorsNode(node: Node, theory: Theory) : Record<AnchorName, AnchorProps> | undefined {
+  return theory?.availableNodes?.[node.nodeKind]?.anchors
+}
+
+export function getAnchorsNodeID(nodeID: NodeID, diagram: Diagram, theory: Theory) : Record<AnchorName, AnchorProps> | undefined  {
+  return getAnchorsNode(nodeFromNodeID(nodeID, diagram), theory)
+}
+
+
 // TODO: actually we always specify a nodeKind and don't care about most props of Available nodes
 // as we always fetch them from the theory itself.
 // So remove them from the definition of Node.

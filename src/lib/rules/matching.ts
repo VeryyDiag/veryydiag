@@ -3,14 +3,17 @@
 
 import type { AnchorMap, Diagram, IDAnchor, LinkBijection, LinkID, NodeBijection, NodeID, Node, NodeKind, Theory } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering, type BiMap, biMapFromMap, biMapElectCandidate, biMapIntersectCandidates, mapSetFromEntriesDuplicate, biMapGetUnique} from "$lib/utils"
-import { ProofDiagError, isBoundaryNode, nbMultiWireBoundaryLink } from "$lib/types/types"
+import { ProofDiagError, getAnchorsNode, isBoundaryNode, isBoundaryNodeID, isMonoWireBoundaryNode, isMonoWireBoundaryNodeID, nbMultiWireBoundaryLink } from "$lib/types/types"
 import { List, Map, Set } from "immutable"
 
+function log(depth: number, msg: string) {
+  console.log(`${" ".repeat(depth)}${msg}`)
+}
 
 export type MatchingRule = {
   nodeBimapBA : BiMap<NodeID, NodeID>,
   linkBimapBA : BiMap<LinkID, LinkID>,
-  boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
+  monoAnchorsBimapBA : BiMap<IDAnchor, IDAnchor>,
 }
 
 function matchSelectionToDiagramLinkAux(
@@ -20,21 +23,22 @@ function matchSelectionToDiagramLinkAux(
   theory: Theory,
   nodeBimapBA : BiMap<NodeID, NodeID>,
   linkBimapBA : BiMap<LinkID, LinkID>,
+  monoAnchorsBimapBA : BiMap<IDAnchor, IDAnchor>,
   linksInA : Map<IDAnchor, Set<LinkID>>,
   linksInB : Map<IDAnchor, Set<LinkID>>,
-  // Accumulators in the recursion
-  boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
 ) : MatchingRule {
   const toElect = List(linkBimapBA.forward.filter((aS, b) => !linkBimapBA.alreadyElected.has(b))).sortBy(([b, aS]) => aS.size).first()
   if (toElect === undefined) {
     // We have finished to attribute all links (and nodes), it's over (TODO: deal with boundary nodes etc)
-    return { nodeBimapBA, boundaryAnchorsBA, linkBimapBA}
+    return { nodeBimapBA, monoAnchorsBimapBA, linkBimapBA}
   }
   const [linkIDtoElect, candidates] = toElect
   const linkToElect = assertNotUndefined(ruleDiagram?.linksWithID?.[linkIDtoElect],
                                          `Weird, this should never occur, please report a bug`)
   const [electFromID, electFromAnchor] = fullAnchorToIDAndAnchor(linkToElect.from)
   const [electToID, electToAnchor] = fullAnchorToIDAndAnchor(linkToElect.to)
+  const electFromIsMonoWireBoundary = isMonoWireBoundaryNodeID(electFromID, ruleDiagram, theory)
+  const electToIsMonoWireBoundary = isMonoWireBoundaryNodeID(electToID, ruleDiagram, theory)
   // Remove the link since it is already attributed
   for (const linkIDScandidate of candidates) {
     try {
@@ -43,32 +47,86 @@ function matchSelectionToDiagramLinkAux(
                                                 `Weird, this should never occur, please report a bug`)
       const [candFromID, candFromAnchor] = fullAnchorToIDAndAnchor(linkScandidate.from)
       const [candToID, candToAnchor] = fullAnchorToIDAndAnchor(linkScandidate.to)
-      if (!Set([candFromAnchor, candToAnchor]).equals(Set([electFromAnchor, electToAnchor]))) {
-        throw new ProofDiagError(`Different anchors`)
-      }
-      const electFromIDTranslated = biMapGetUnique(nodeBimapBA, electFromID)
-      const electToIDTranslated = biMapGetUnique(nodeBimapBA, electToID)
-      const setA = Set([candFromID, candToID])
-      const setB = Set([electFromIDTranslated, electToIDTranslated])
-      if (!setA.equals(setB)) {
+      const electFromIDAnchorTranslated = electFromIsMonoWireBoundary ? undefined
+                                        : IDAnchorToFullAnchor(
+                                          biMapGetUnique(nodeBimapBA, electFromID),
+                                          electFromAnchor
+                                        )
+      const electToIDAnchorTranslated = electToIsMonoWireBoundary ? undefined
+                                      : IDAnchorToFullAnchor(
+                                        biMapGetUnique(nodeBimapBA, electToID),
+                                        electToAnchor
+                                      )
+      const setA = Set([linkScandidate.from, linkScandidate.to]
+        .filter(x => x !== undefined))
+      const setB = Set([electFromIDAnchorTranslated, electToIDAnchorTranslated]
+        .filter(x => x !== undefined))
+      if (!setA.isSuperset(setB)) {
         throw new ProofDiagError(`Different starting/ending points (${setA.toString()} != ${setB.toString()})`)
       }
-      // TODO: check parameters etc
-      const newLinkBimapBA = biMapElectCandidate(linkBimapBA, linkIDtoElect, linkIDScandidate)
-      return matchSelectionToDiagramLinkAux(
-        depth + 1,
-        diagram,
-        ruleDiagram,
-        theory,
-        nodeBimapBA,
-        newLinkBimapBA,
-        linksInA,
-        linksInB,
-        // Accumulators in the recursion
-        boundaryAnchorsBA,
-      )
+      // In some cases (two mono-wire boundary nodes) we need to try multiple assignments
+      let newMonoAnchorsBimapBAToTry : BiMap<IDAnchor, IDAnchor>[] = []
+      // Deal with mono-wire boundary links
+      if (electFromIsMonoWireBoundary && electToIsMonoWireBoundary) {
+        // We have here two possible matches… try both of them
+        // First we try to assign both ends like if it both links were in the same direction:
+        newMonoAnchorsBimapBAToTry.push(
+          biMapElectCandidate(
+            biMapElectCandidate(
+              monoAnchorsBimapBA,
+              linkToElect.from,
+              linkScandidate.from
+            ),
+            linkToElect.to,
+            linkScandidate.to
+          )
+        )
+        // Then we try to assign both ends like if it both links were in the different direction:
+        newMonoAnchorsBimapBAToTry.push(
+          biMapElectCandidate(
+            biMapElectCandidate(
+              monoAnchorsBimapBA,
+              linkToElect.from,
+              linkScandidate.to
+            ),
+            linkToElect.to,
+            linkScandidate.from
+          )
+        )
+      } else if (electFromIsMonoWireBoundary) {
+        const linkSameDirection = linkScandidate.to === electToIDAnchorTranslated
+        newMonoAnchorsBimapBAToTry.push(biMapElectCandidate(
+          monoAnchorsBimapBA,
+          linkToElect.from,
+          linkSameDirection ? linkScandidate.from : linkScandidate.to
+        ))
+      } else if (electToIsMonoWireBoundary) {
+        const linkSameDirection = linkScandidate.from === electFromIDAnchorTranslated
+        newMonoAnchorsBimapBAToTry.push(biMapElectCandidate(
+          monoAnchorsBimapBA,
+          linkToElect.to,
+          linkSameDirection ? linkScandidate.to : linkScandidate.from
+        ))
+      } else {
+        newMonoAnchorsBimapBAToTry.push(monoAnchorsBimapBA)
+      }
+      for (const newMonoAnchorsBimapBA of newMonoAnchorsBimapBAToTry) {
+        // TODO: check parameters etc
+        const newLinkBimapBA = biMapElectCandidate(linkBimapBA, linkIDtoElect, linkIDScandidate)
+        return matchSelectionToDiagramLinkAux(
+          depth + 1,
+          diagram,
+          ruleDiagram,
+          theory,
+          nodeBimapBA,
+          newLinkBimapBA,
+          newMonoAnchorsBimapBA,
+          linksInA,
+          linksInB,
+        )
+      }
     } catch (e) {
-      console.log(`${" ".repeat(depth)}Failed to assign the link ${linkIDtoElect} --> ${linkIDScandidate} (${e})`)
+      log(depth, `Failed to assign the link ${linkIDtoElect} --> ${linkIDScandidate} (${e})`)
     }
   }
   throw new ProofDiagError(`We found no way to match the links in the diagram`)
@@ -82,18 +140,17 @@ function matchSelectionToDiagramAux(
   theory: Theory,
   nodeBimapBA : BiMap<NodeID, NodeID>,
   linkBimapBA : BiMap<LinkID, LinkID>,
+  monoAnchorsBimapBA : BiMap<IDAnchor, IDAnchor>,
   linksInA : Map<IDAnchor, Set<LinkID>>,
   linksInB : Map<IDAnchor, Set<LinkID>>,
-  // Accumulators in the recursion
-  boundaryAnchorsBA: Map<IDAnchor, IDAnchor>,
 ) : MatchingRule {
-    // We pick an element to that we will try to assign a value now
-    // For efficiency reason, we pick the one with less candidates to limit branching
-    // (to check: toSeq should turn this into a lazy sorting)
+  // We pick an element to that we will try to assign a value now
+  // For efficiency reason, we pick the one with less candidates to limit branching
+  // (to check: toSeq should turn this into a lazy sorting)
   const toElect = List(nodeBimapBA.forward.filter((aS, b) => !nodeBimapBA.alreadyElected.has(b))).sortBy(([b, aS]) => aS.size).first()
   if (toElect === undefined) {
     // We have finished to attribute all nodes, we deal with links now!
-    return matchSelectionToDiagramLinkAux(depth + 1, diagram, ruleDiagram, theory, nodeBimapBA, linkBimapBA, linksInA, linksInB, boundaryAnchorsBA)
+    return matchSelectionToDiagramLinkAux(depth + 1, diagram, ruleDiagram, theory, nodeBimapBA, linkBimapBA, monoAnchorsBimapBA, linksInA, linksInB)
   }
   const [nodeIDtoElect, candidates] = toElect
   const nodeToElect = assertNotUndefined(ruleDiagram?.nodes?.[nodeIDtoElect],
@@ -106,7 +163,7 @@ function matchSelectionToDiagramAux(
       // To optimize the search tree, we try to restrict further the candidates for nodes
       // For this, for each anchor, we look for all the neighbours of nodeToElect and its candidate,
       // and we restrict by saying that each neighbour in B must have for candidate one of the neighbours in B.
-      keys(nodeToElect?.anchors).forEach(anchor => {
+      keys(getAnchorsNode(nodeToElect, theory) || {}).forEach(anchor => {
         // First, we get the neighbours of the node in B
         const IDAnchor = IDAnchorToFullAnchor(nodeIDtoElect, anchor)
         const linkIDsB : Set<LinkID> = linksInB.get(IDAnchor, Set())
@@ -120,6 +177,10 @@ function matchSelectionToDiagramAux(
           const neighbourIDAnchor = neighbourIDAnchors[0]
           const [neighbourID, neighbourAnchor] = fullAnchorToIDAndAnchor(neighbourIDAnchor)
           if (neighbourID === nodeIDtoElect) {
+            return undefined
+          }
+          // We ignore mono-wire boundary
+          if (isBoundaryNodeID(neighbourID, ruleDiagram)) {
             return undefined
           }
           return neighbourID
@@ -154,13 +215,12 @@ function matchSelectionToDiagramAux(
         theory,
         newNodeBimapBA,
         linkBimapBA,
+        monoAnchorsBimapBA,
         linksInA,
         linksInB,
-        // Accumulators in the recursion
-        boundaryAnchorsBA,
       )
     } catch (e) {
-      console.log(`${" ".repeat(depth)}Failed to assign the node ${nodeIDScandidate} --> ${nodeIDtoElect} (${e})`)
+      log(depth,`Failed to assign the node ${nodeIDScandidate} --> ${nodeIDtoElect} (${e})`)
     }
   }
   throw new ProofDiagError(`We found no way to match the selection to the diagram`)
@@ -208,6 +268,21 @@ export function matchSelectionToDiagram(
     nonBoundaryNodesB.map((node) => Set(groupsNBNodeKindsS.get(node.nodeKind)?.keys()))
   )
 
+  // Same for mono-boundary links, but first we collect all possible candidates
+  // TODO: here it assumes that all mono-wire boundary nodes are connected to at least one link (or this would not work)
+  // Is there interesting cases where this might not be the case ?
+  const monoAnchorsCandidates = Set(linkSelection).flatMap(linkID => {
+    const link = assertNotUndefined(diagram?.linksWithID?.[linkID], `Selected link ${linkID} do not belong to the diagram`)
+    return [link.from, link.to]
+  })
+  const monoAnchorsBimapBA : BiMap<IDAnchor, IDAnchor> = biMapFromMap(
+    Map(ruleDiagram?.nodes || {}).filter((node, nodeID) => isMonoWireBoundaryNode(node, theory)).flatMap((node, nodeID) : [IDAnchor, Set<IDAnchor>][] => {
+      const anchors = keys(getAnchorsNode(node, theory))
+      return anchors.map(anchor => [IDAnchorToFullAnchor(nodeID, anchor), monoAnchorsCandidates])
+    }),
+    false, // We put more candidates in Y than elements in X
+  )
+
   // Same for links
   const linkBimapBA : BiMap<LinkID, LinkID> = biMapFromMap(
     // TODO: we should also see how to deal with users that don't select all links,
@@ -242,10 +317,9 @@ export function matchSelectionToDiagram(
     theory,
     nodeBimapBA,
     linkBimapBA,
+    monoAnchorsBimapBA,
     linksInA, // Helpers to avoid recomputing the same thing again and again
     linksInB, // Helpers to avoid recomputing the same thing again and again
-    // Accumulators
-    Map(),
   )
   return {
     // Maps from immutable.js back to js object
@@ -253,7 +327,10 @@ export function matchSelectionToDiagram(
       assertTrue(bs.size === 1, `Weird, we expect at the end all matched elements to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
       return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]
     }).toObject(),
-    boundaryAnchorsBA: r.boundaryAnchorsBA.toObject(),
+    boundaryAnchorsBA: r.monoAnchorsBimapBA.forward.mapEntries(([b, as]) => {
+      assertTrue(as.size === 1, `Weird, we expect at the end all matched links in monoAnchorsBimapBA to have only one element but elements corresponding to ${b} have ${as.size} elements (${as.toString()}), please report a bug`)
+      return [b, assertNotUndefined(as.first(), `Should never occur, please report a bug`)]
+    }).toObject(),
     linkBijectionAB: r.linkBimapBA.backward.mapEntries(([a, bs]) => {
       assertTrue(bs.size === 1, `Weird, we expect at the end all matched elements to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
       return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]

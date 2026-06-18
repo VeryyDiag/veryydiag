@@ -69,4 +69,13 @@ describe('Test matching selection to diagram', () => {
       })
   })
 
+  test('Simple graph with one mono-wire link', () => {
+    expect(matchSelectionToDiagram(["myA"], [ "foo" ], rulesTest.diagramAtoC, rulesTest.diagramAtoAlice, rulesTest.theoryABC))
+      .toEqual({
+        nodeBijectionAB: {myA: "myA"},
+        boundaryAnchorsBA: {"aliceBoundary.boundary": "myC.in"},
+        linkBijectionAB: {foo: "foo"},
+      })
+  })
+
 })

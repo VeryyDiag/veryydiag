@@ -104,6 +104,7 @@ let {
 
 ## TODO
 
+- Redefine the Node type so that it is distinct from AvailableNode
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3
 - Write more tests (and fix existing ones)
