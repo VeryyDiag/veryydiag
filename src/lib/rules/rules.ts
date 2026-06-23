@@ -6,13 +6,14 @@ import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, 
 export function checkTheory(theory: Theory) : true {
   // Check if the parameter specifications are properly defined
   entries(theory?.availableNodes).forEach(([nodeID, node]) => {
-    entries(node?.paramSpecs).forEach(([paramName, paramSpecs]) => {
+    entries(node?.parsedSVG?.paramSpecs).forEach(([paramName, paramSpecs]) => {
       // The type should be valid
       paramAvailableTypes.includes(paramSpecs?.type)
       // A default entry exists for each parameter
       assertNotUndefinedNR(paramSpecs?.default, `The parameter specification of ${paramName} should provide a default value`)
       // The default value has the proper type
-      checkParamType(paramSpecs.type, paramSpecs.default)
+      assertDontThrow(() => checkParamType(paramSpecs.type, paramSpecs.default),
+                      `The parameter specification '${paramName}' defined in the theory, with type ${paramSpecs.type} and default value ${paramSpecs.default} is invalid`)
       if (paramSpecs?.unique !== undefined) {
         assertTrue(typeof paramSpecs.unique === "boolean", `The 'unique' property of the parameter specification ${paramName} should be either the boolean true or false (currently: ${paramSpecs.unique})`)
       }
@@ -52,7 +53,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
       `The source node ${nodeFrom} does not exist in the link ${linkID}`
     )
     assertNotUndefinedNR(
-      theory?.availableNodes?.[diagram?.nodes?.[nodeFrom]?.nodeKind]?.anchors?.[anchorFrom],
+      theory?.availableNodes?.[diagram?.nodes?.[nodeFrom]?.nodeKind]?.parsedSVG?.anchors?.[anchorFrom],
       `The anchor ${anchorFrom} in the source node ${nodeFrom} does not exist in the link ${linkID}`
     )
     const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(
@@ -65,7 +66,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
       `The destination node ${nodeTo} does not exist in the link ${linkID}`
     )
     assertNotUndefinedNR(
-      theory?.availableNodes?.[diagram?.nodes?.[nodeTo]?.nodeKind]?.anchors?.[anchorTo],
+      theory?.availableNodes?.[diagram?.nodes?.[nodeTo]?.nodeKind]?.parsedSVG?.anchors?.[anchorTo],
       `The anchor ${anchorTo} in the source node ${nodeTo} does not exist in the link ${linkID}`
     )
     // Check if multi-wire boundary nodes are not connected to single-boundary nodes
@@ -86,9 +87,9 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
   })
   // In diagrams, boundary nodes should have a single anchor called 'boundary'
   if (theory?.availableNodes?.boundary !== undefined) {
-    assertNotUndefinedNR(theory.availableNodes.boundary?.anchors, `The 'boundary' node kind has no anchor while we expect exactly one anchor with name 'boundary'`)
-    assertTrue(listsAreUniqueAndIdenticalSets(keys(theory.availableNodes.boundary.anchors), ["boundary"]),
-               `The 'boundary' node kind should have a single anchor called 'boundary' while it has the following anchors: ${JSON.stringify(keys(theory.availableNodes.boundary.anchors))}`)
+    assertNotUndefinedNR(theory.availableNodes.boundary?.parsedSVG?.anchors, `The 'boundary' node kind has no anchor while we expect exactly one anchor with name 'boundary'`)
+    assertTrue(listsAreUniqueAndIdenticalSets(keys(theory.availableNodes.boundary.parsedSVG.anchors), ["boundary"]),
+               `The 'boundary' node kind should have a single anchor called 'boundary' while it has the following anchors: ${JSON.stringify(keys(theory.availableNodes.boundary.parsedSVG.anchors))}`)
   }
   // In diagrams, each multi-wire boundary nodes should have exactly one connected wire
   assertDontThrow(
@@ -129,7 +130,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
   entries(diagram?.nodes).forEach(([nodeID, node]) => {
     entries(node?.params).forEach(([paramName, param]) => {
       const paramSpecs = assertNotUndefined(
-        theory?.availableNodes?.[node?.nodeKind]?.paramSpecs?.[paramName],
+        theory?.availableNodes?.[node?.nodeKind]?.parsedSVG?.paramSpecs?.[paramName],
         `The parameter ${paramName} specified in ${nodeID} does not exist in the paramSpecs of the theory`
       )
       assertNotUndefined(param?.value, `The parameter ${paramName} should specify its value via a 'value' field. Have you forgotten this field?`)
@@ -197,7 +198,7 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
   // TODO: more precise error messages (which element is wrong)
   // ========== First we check if the proofStep is well formed ==========
   assertDontThrow(() => checkTheory(theory), `The theory is not well formed`)
-  const rule = assertNotUndefined(theory.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist`)
+  const rule = assertNotUndefined(theory?.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist (theory: ${JSON.stringify(theory)})`)
   assertTrue((["lr", "rl"]).includes(proofStep.direction), `The proofStep direction should either be lr or rl, not ${proofStep.direction} `)
   assertNotUndefinedNR(rule?.lhs, `The rule ${proofStep.ruleName} has an undefined lhs`)
   assertNotUndefinedNR(rule?.rhs, `The rule ${proofStep.ruleName} has an undefined rhs`)
@@ -253,8 +254,8 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       `The node ${nodeID} specified in the input of boundaryAnchorsBA does not exist in the ${proofStep.direction === "lr" ? "LHS" : "RHS"} diagram of the rule which contains ${JSON.stringify(keys(ruleFrom?.nodes))}`)
     const nodeKind = assertNotUndefined(ruleFrom?.nodes?.[nodeID]?.nodeKind, `The node ${nodeID} has no nodeKind`)
     assertNotUndefined(
-      keys(theory?.availableNodes?.[nodeKind]?.anchors).includes(anchor),
-      `We can't find the anchor ${anchor} for the node ${nodeID} (with nodeKind ${ruleFrom?.nodes?.[nodeID]?.nodeKind}) specified in the input of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKind]?.anchors))}`)
+      keys(theory?.availableNodes?.[nodeKind]?.parsedSVG?.anchors).includes(anchor),
+      `We can't find the anchor ${anchor} for the node ${nodeID} (with nodeKind ${ruleFrom?.nodes?.[nodeID]?.nodeKind}) specified in the input of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKind]?.parsedSVG?.anchors))}`)
     assertTrue(
       isMonoWireBoundaryNode(node, theory),
       `The node ${nodeID} specified in the input of boundaryAnchorsBA is not a mono-wire boundary node.`
@@ -266,8 +267,8 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       `The node ${nodeIDA} specified in the input of boundaryAnchorsBA does not exist in the original diagram which contains ${JSON.stringify(keys(diagram?.nodes))}`)
     const nodeKindA = assertNotUndefined(nodeA?.nodeKind, `Missing nodeKind on node ${nodeIDA}`)
     assertNotUndefined(
-      keys(theory?.availableNodes?.[nodeKindA]?.anchors).includes(anchorA),
-      `We can't find the anchor ${anchorA} for the node ${nodeIDA} (with nodeKind ${nodeKindA}) specified in the output of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKindA]?.anchors))}`)
+      keys(theory?.availableNodes?.[nodeKindA]?.parsedSVG?.anchors).includes(anchorA),
+      `We can't find the anchor ${anchorA} for the node ${nodeIDA} (with nodeKind ${nodeKindA}) specified in the output of boundaryAnchorsBA. Available anchors = ${JSON.stringify(keys(theory?.availableNodes?.[nodeKindA]?.parsedSVG?.anchors))}`)
 
   })
   // === … Nodes in the nodeBijectionCD exist in the rule diagram C
@@ -288,7 +289,7 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       keys(nodeBijectionCD),
       keys(ruleTo?.nodes).filter(nodeID => !isBoundaryNodeID(nodeID, ruleTo))
     ),
-    `Some nodes exist in the ending rule but do not exist in the input of nodeBijectionCD`
+    `Some nodes exist in the ending rule but do not exist in the input of nodeBijectionCD ${JSON.stringify(nodeBijectionCD)}`
   )
   // ====== Links
   // TODO: check if boundaryAnchorsBA only contains node that are mono-boundary.

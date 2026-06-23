@@ -8,3 +8,7 @@ export const dividerStyle = "w-px h-10 bg-gray-300 mx-1"
 export const styleSelected = (selected: boolean) => (selected ? "bg-blue-100/50 hover:bg-blue-100" : "bg-white hover:bg-gray-100")
 
 export const styleTitleInTheoryPanel = "text-center mb-3 text-lg font-normal text-body"
+export const styleTitle2InTheoryPanel = "text-left mb-3 text-lg font-normal text-body"
+
+// Horizontal rule: <hr class={hr}>
+export const hr = "h-px my-2 bg-black/20 border-0"

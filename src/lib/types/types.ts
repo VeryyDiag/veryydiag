@@ -1,11 +1,12 @@
 // File containing most of the types and some helper to translate from one type to another
 
-import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean } from '$lib/utils';
+import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
+import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger } from '$lib/utils';
 
 
 export class ProofDiagError extends Error {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
     this.name = "Error"
   }
 }
@@ -31,10 +32,15 @@ export type Point = {
  */
 export type ParamName = string
 /** Parameter specification */
-export const paramAvailableTypes = ["integer", "string", "boolean"]
+export const paramAvailableTypes = ["integer", "string", "boolean"] as const // as const needed, otherwise it types as string[]
+export type paramAvailableTypesTS = typeof paramAvailableTypes[number]
 export type paramAvailableTypesJS = number | string | boolean
+/** Check if a string has the appropriate type (either integer/string/boolean) */
+export function isParamAvailableType(type: string): type is paramAvailableTypesTS {
+  return paramAvailableTypes.some(t => t === type)
+}
 export type ParamSpec = {
-  type: typeof paramAvailableTypes[number],
+  type: paramAvailableTypesTS,
   default: paramAvailableTypesJS
   /** If unique is true, we forbid diagrams with the same value appearing twice (used mostly to uniquely
    *  identify diagram outputs). If not specified, assumed to be false.
@@ -57,6 +63,20 @@ export function checkParamType(paramType: paramAvailableTypesJS, value: ParamSpe
   return true
 }
 
+//export function castParamType(paramType: paramAvailableTypesTS, value: ParamValue) {
+export function castParamType(paramType: "string" | "boolean" | "integer", value: ParamValue) {
+    switch (paramType) {
+      case "string":
+        return toString(value);
+    case "boolean":
+      return toBoolean(value)
+    case "integer":
+      return toInteger(value)
+    default:
+      assertNever(paramType, `Parameter ${paramType} is not supported (maybe report a bug if it should).`)
+  }
+}
+
 /** Parameter instantiation */
 export type Param = {
   value: ParamValue
@@ -67,9 +87,18 @@ export type AnchorProps = {
 
 export type ParamSpecs = Record<ParamName, ParamSpec>
 export type Params = Record<ParamName, Param>
-export type AvailableNode = {
-  svgString?: string, // You can either specify the SVG directly in the YML file…
-  svgName?: string, // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
+
+/** Parsing a SVG everytime we need it is a bit cumbersome, hard to do in some languages (Rocq/lean…),
+ *  make us dependent on a resource that may not be available anymore in the future (e.g. if the SVG is
+ *  a pictures URI etc), or in some cases we may not even want to add a SVG (test files, CLI usage…)
+ *  in the first place. On the other hand, we don't want to duplicate information and like the idea to
+ *  have everything contained in a single file, so we extract these informations when importing the file
+ *  or updating the SVG we re-extract these info from the SVG file.
+ *  This is done by the function 'parseSVG' at the end of this page.
+ */
+export type ParsedSVG = {
+  /** Parameters that characterize the node. They are typically extracted from the svg itself. */
+  paramSpecs?: ParamSpecs,
   /**
    * Anchors provided by the node.
    * They are typically automatically derived from the SVG file when importing it, but we also
@@ -78,11 +107,13 @@ export type AvailableNode = {
    * It also provides some robustness, as we can use it to detect when the SVG file changed.
    */
   anchors?: Record<AnchorName, AnchorProps>,
+}
+
+export type AvailableNode = {
+  svgString?: string, // You can either specify the SVG directly in the YML file…
+  svgName?: string, // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
-  /** Parameters that characterize the node. They are often extracted from the svg itself,
-   *  but we can override them here, e.g. to make it easier to parse
-   */
-  paramSpecs?: ParamSpecs,
+  parsedSVG?: ParsedSVG,
   params?: Params,
   /** Value given to the parameters */
   // TODO: … or specify the URL of a SVG file
@@ -92,12 +123,12 @@ export function getParam(node: Node, theory: Theory, paramName: ParamName) : Par
   if (node?.params?.[paramName] !== undefined) {
     return node.params[paramName].value
   } else {
-    return theory?.availableNodes?.[node?.nodeKind]?.paramSpecs?.[paramName]?.default
+    return theory?.availableNodes?.[node?.nodeKind]?.parsedSVG?.paramSpecs?.[paramName]?.default
   }
 }
 
 export function getAnchorsNode(node: Node, theory: Theory) : Record<AnchorName, AnchorProps> | undefined {
-  return theory?.availableNodes?.[node.nodeKind]?.anchors
+  return theory?.availableNodes?.[node.nodeKind]?.parsedSVG?.anchors
 }
 
 export function getAnchorsNodeID(nodeID: NodeID, diagram: Diagram, theory: Theory) : Record<AnchorName, AnchorProps> | undefined  {
@@ -227,7 +258,7 @@ export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory)
 }
 
 /** Returns the identity of multi-wire boundary links, 0 = not a boundary link, 1 = from is boundary, not to,
- * 2 = to is boundary, not from, 3 = both are boundary nodes.
+ * 2 = to is boundary, not from, 3 = both are boundary nodes (should be illegal).
  */
 export function nbMultiWireBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
   const nodeFromFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
@@ -600,6 +631,12 @@ export type Diagram = {
   svgSize?: SvgSize,
   /** List of nodes/rewritting rules to use. If not specified, defaults to "main" */
   theory?: TheoryID,
+  /** If this diagram is computed, e.g. based on the application of a rule, it may contain an error
+   *  (e.g. if the rule was not applied correctly). We don't use a new kind like Diagram | Error
+   *  since all the code would basically have this complicated kind. Yet, all our core function throw errors
+   *  instead of returning a diagram with an error field.
+   */
+  error?: string,
 }
 
 /** Tabs are used to list diagrams/proofs and maybe later plugin-generated tabs etc */
@@ -664,7 +701,9 @@ export type DiagramConfByUser = {
 export type NotificationKind = "error" | "info" | "warning"
 export type Notification = {
   kind: NotificationKind,
-  message: string
+  message: string,
+  buttons: [string, () => void][],
+  codeFormatted?: boolean, // If set to true, show inside <code><pre>… (we don't use @html for security reasons)
 }
 
 // ========== Conversion between types ==========
@@ -675,6 +714,8 @@ export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : Diagr
 }
 
 export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
+  console.log("REPARSING diagramConfByUserToDiagramConf", JSON.stringify(diagramConfByUser))
+  console.trace("Hey")
   if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
     throw new ProofDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
   }
@@ -788,6 +829,16 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     }
   })
 
+  // Parse the svg files once for all
+  entries(cleanedConfig?.theories).forEach(([theoryID, theory]) => {
+    entries(theory?.availableNodes).forEach(([nodeKind, availableNode]) => {
+      // Problem: $derived not usable in .ts, needs .svelte.ts, but then js mapping is bad and gives bad debugging
+      // experience. Anyway, I don't think it's really needed to have a reactive element here.
+      // availableNode.parsedSVG = $derived(availableNodeToParsedSVG(availableNode))
+      availableNode.parsedSVG = availableNodeToParsedSVG(availableNode)
+    })
+  })
+
   // Check if all nodes have available theories
   return cleanedConfig
 }
@@ -814,9 +865,9 @@ export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
     if (def === null) {
       throw new ProofDiagError(`No 'def' field was provided for the param '${name}'`)
     }
-    if (!(paramAvailableTypes.includes(type))) {
-      throw new ProofDiagError(`In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`)
-    }
+    assertTrue(isParamAvailableType(type),
+               `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
+    )
     if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
       throw new ProofDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
     }
@@ -835,4 +886,93 @@ export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
       }
     ]
   }))
+}
+
+/**
+ * To have a single source of trust for the nodes, all the node data are stored inside the SVG file (go to the
+   XML editor in inkscape to modify them). More precisely we store:
+ * - anchors: anchor are places where links can be connected. They are added via the attribute
+   data-proofdiag-anchor="name of your anchor", for instance via:
+   <circle … data-proofdiag-anchor="out.0"/>
+ * - parameters: they can tune the node, for instance to derive multiple variants of a node. We use them notably
+ *   in the boundary nodes to identify links accross equalities by adding them a name, and an option like
+ *   to specify if multi-wire nodes are allowed or not. Parameters can be numbers, texts or booleans and are added
+ *   in a <metadata> group as a children of the <svg> component. For instance consider:
+ *   <svg …>
+ *     <metadata>
+ *       <proofdiag:newparam
+ *          name="boundaryName"
+ *          unique="true"
+ *          default="1"
+ *          type="string" />
+ *       <proofdiag:newparam
+ *          name="namenb"
+ *          default="42"
+ *          type="integer" />
+ *       <proofdiag:newparam
+ *          name="multipleWiresAllowed"
+ *          default="true"
+ *          type="boolean" />
+ *      </metadata>
+ *    … rest of your drawing …
+ *   </svg>
+ */
+export function parseSVG(svg: string): ParsedSVG {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(svg, "image/svg+xml")
+  // Not possible to use CSS selectors because of the (mandatory) namespace…
+  // We can only select elements irrespective of their namespace via CSS selectors.
+  // https://stackoverflow.com/a/23047888/4987648
+  const allElements = doc.getElementsByTagNameNS("proofdiag", "newparam")
+  const paramSpecs = Object.fromEntries([...allElements].map(elt => {
+    const name = elt.getAttribute("name")
+    const type = elt.getAttribute("type")
+    const def = elt.getAttribute("default")
+    const unique = elt.getAttribute("unique")
+    if (name === null) {
+      throw new ProofDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
+    }
+    if (type === null) {
+      throw new ProofDiagError(`No 'type' field was provided for the param '${name}'`)
+    }
+    if (def === null) {
+      throw new ProofDiagError(`No 'def' field was provided for the param '${name}'`)
+    }
+    if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
+      throw new ProofDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
+    }
+    if (type === "boolean" && !["true", "false"].includes(def)) {
+      throw new ProofDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
+    }
+    if (unique !== null && !["true", "false"].includes(unique)) {
+      throw new ProofDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
+    }
+    assertTrue(isParamAvailableType(type),
+               `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
+    )
+    return [
+      name,
+      {
+        ...(unique !== null && unique === "true" && {unique: true}),
+        type,
+        default: castParamType(type, def),
+      }
+    ]
+  }))
+  const anchorElements = doc.querySelectorAll<SVGElement>('[data-proofdiag-anchor]')
+  const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.proofdiagAnchor, {}]))
+  console.log("When parsing the SVG, we found the anchors", anchors)
+  return {paramSpecs, anchors}
+}
+
+export function availableNodeToParsedSVG(availableNode: AvailableNode) : ParsedSVG | undefined {
+  if (availableNode?.svgString !== undefined) {
+    return parseSVG(availableNode.svgString)
+  } else if (availableNode.svgName !== undefined) {
+    const str = officialSvgNameToSvgString(availableNode.svgName)
+    if (str !== undefined) {
+      return parseSVG(str)
+    }
+  }
+  return undefined
 }

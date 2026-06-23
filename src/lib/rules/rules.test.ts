@@ -10,18 +10,20 @@ import { editCopy } from '$lib/utils'
 // Here are some practical constants that we use regularly in our tests
 
 export const boundaryAvailableNode = {
-  anchors: {
-    boundary: {}
-  },
-  paramSpecs: {
-    boundaryName: {
-      type: "string",
-      default: "1",
+  parsedSVG: {
+    anchors: {
+      boundary: {}
     },
-    multipleWiresAllowed: {
-      type: "boolean",
-      default: false,
-    },
+    paramSpecs: {
+      boundaryName: {
+        type: "string",
+        default: "1",
+      },
+      multipleWiresAllowed: {
+        type: "boolean",
+        default: false,
+      },
+    }
   }
 } satisfies AvailableNode // Satisfies = specify a type (so I get errors if I mistype a property)
 // but it also remembers more refined properties so that I can type later
@@ -40,30 +42,40 @@ export const theoryABC = {
   // Theory
   availableNodes: {
     A: {
-      anchors: {
-        out: {}
+      parsedSVG: {
+        anchors: {
+          out: {}
+        }
       }
     },
     A2: {
-      anchors: {
-        out: {}
+      parsedSVG: {
+        anchors: {
+          out: {}
+        }
       }
     },
     B: {
-      anchors: {
-        in: {},
-        out: {}
+      parsedSVG: {
+        anchors: {
+          in: {},
+          out: {}
+        }
       }
     },
     B2: {
-      anchors: {
-        in: {},
-        out: {}
+      parsedSVG: {
+        anchors: {
+          in: {},
+          out: {}
+        }
       }
     },
     C: {
-      anchors: {
-        in: {}
+      parsedSVG: {
+        anchors: {
+          in: {}
+        }
       }
     },
     boundary: boundaryAvailableNode
@@ -74,42 +86,52 @@ export const theoryABCparam = {
   // Theory
   availableNodes: {
     A: {
-      anchors: {
-        out: {}
+      parsedSVG: {
+        anchors: {
+          out: {}
+        }
       }
     },
     A2: {
-      anchors: {
-        out: {}
+      parsedSVG: {
+        anchors: {
+          out: {}
+        }
       }
     },
     B: {
-      anchors: {
-        in: {},
-        out: {}
-      },
-      paramSpecs: {
-        gateName: {
-          type: "string",
-          default: "XOR"
-        }
-      },
+      parsedSVG: {
+        anchors: {
+          in: {},
+          out: {}
+        },
+        paramSpecs: {
+          gateName: {
+            type: "string",
+            default: "XOR"
+          }
+        },
+      }
     },
     B2: {
-      anchors: {
-        in: {},
-        out: {}
-      },
-      paramSpecs: {
-        gateName: {
-          type: "string",
-          default: "XOR"
+      parsedSVG: {
+        anchors: {
+          in: {},
+          out: {}
+        },
+        paramSpecs: {
+          gateName: {
+            type: "string",
+            default: "XOR"
+          }
         }
       },
     },
     C: {
-      anchors: {
-        in: {}
+      parsedSVG: {
+        anchors: {
+          in: {}
+        }
       }
     },
     boundary: boundaryAvailableNode
@@ -663,7 +685,7 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Boundary nodes should have a single anchor called boundary', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft: any) => {
-        draft.availableNodes.boundary.anchors.shouldNotBeHere = {}
+        draft.availableNodes.boundary.parsedSVG.anchors.shouldNotBeHere = {}
       }))).toThrow(ProofDiagError)
     })
 

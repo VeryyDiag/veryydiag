@@ -78,4 +78,63 @@ describe('Test matching selection to diagram', () => {
       })
   })
 
+  test('Simple graph with one mono-wire link, renamed', () => {
+    expect(matchSelectionToDiagram(["myA"], [ "foo" ], rulesTest.diagramAtoC, rulesTest.diagramAprimetoAlice, rulesTest.theoryABC))
+      .toEqual({
+        nodeBijectionAB: {myA: "myAprime"},
+        boundaryAnchorsBA: {"aliceBoundary.boundary": "myC.in"},
+        linkBijectionAB: {foo: "fooPrime"},
+      })
+  })
+
+  test('Simple graph with one mono-wire link, link in different direction', () => {
+    expect(matchSelectionToDiagram(["myA"], [ "foo" ], editCopy(rulesTest.diagramAtoC, (draft) => {
+      draft.linksWithID.foo = {...draft.linksWithID.foo, from: draft.linksWithID.foo.to, to: draft.linksWithID.foo.from}
+    }), rulesTest.diagramAtoAlice, rulesTest.theoryABC))
+      .toEqual({
+        nodeBijectionAB: {myA: "myA"},
+        boundaryAnchorsBA: {"aliceBoundary.boundary": "myC.in"},
+        linkBijectionAB: {foo: "foo"},
+      })
+
+    // Same but renamed
+    expect(matchSelectionToDiagram(["myA"], [ "foo" ], editCopy(rulesTest.diagramAtoC, (draft) => {
+      draft.linksWithID.foo = {...draft.linksWithID.foo, from: draft.linksWithID.foo.to, to: draft.linksWithID.foo.from}
+    }), rulesTest.diagramAprimetoAlice, rulesTest.theoryABC))
+      .toEqual({
+        nodeBijectionAB: {myA: "myAprime"},
+        boundaryAnchorsBA: {"aliceBoundary.boundary": "myC.in"},
+        linkBijectionAB: {foo: "fooPrime"},
+      })
+
+
+    // Same, but inverse direction in the rule
+    expect(matchSelectionToDiagram(["myA"],
+                                   [ "foo" ],
+                                   rulesTest.diagramAtoC,
+                                   editCopy(rulesTest.diagramAtoAlice,
+                                            (draft) => {
+                                              draft.linksWithID.foo = {
+                                                ...draft.linksWithID.foo,
+                                                from: draft.linksWithID.foo.to,
+                                                to: draft.linksWithID.foo.from
+                                              }
+                                            }
+                                   ),
+                                   rulesTest.theoryABC))
+      .toEqual({
+        nodeBijectionAB: {myA: "myA"},
+        boundaryAnchorsBA: {"aliceBoundary.boundary": "myC.in"},
+        linkBijectionAB: {foo: "foo"},
+      })
+  })
+
+  test('Fails if an extra link is present', () => {
+    expect(() => matchSelectionToDiagram(["myA"], [ "foo" ], editCopy(rulesTest.diagramAtoC, (draft: any) => {
+      draft.linksWithID.Ishouldnotbehere = draft.linksWithID.foo
+    }), rulesTest.diagramAprimetoAlice, rulesTest.theoryABC))
+      .toThrow(ProofDiagError)
+  })
+
+
 })

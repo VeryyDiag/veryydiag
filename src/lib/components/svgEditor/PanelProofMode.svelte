@@ -15,7 +15,7 @@
   // Same code as in PanelDetails, to know if we will see it or not
   let linkSelection = $derived(diagramConfClass.getLinkSelection())
   let nodeSelection = $derived(diagramConfClass.getNodeSelection())
-  let nbSelectedItems = $derived(linkSelection.size + nodeSelection.size)
+  let nbSelectedItems = $derived(linkSelection.length + nodeSelection.length)
   let panelDetailsReallyEnabled = $derived(panelDetailsEnabled && nbSelectedItems >= 1)
 
   let enabled = $derived(diagramConfClass.isInProofMode())
@@ -76,10 +76,16 @@
         </li>
         {#each (currentProof?.steps || []) as proofStep, i}
           {@const kind = proofStep?.kind}
+          {@const error = diagramConfClass.derivedProofDiagrams.get(i+1)?.error}
           <li>
             {@render dotStep(i+1)}
             Diagram is
             {JSON.stringify(diagramConfClass.derivedProofDiagrams.get(i+1))}
+            {#if error !== undefined}
+              <div class="p-1 border border-red-100 rounded-md bg-red-100 red-500">
+                <b>Error:</b> {error}
+              </div>
+            {/if}
             {#if kind === "applyRule"}
               Apply rule {proofStep?.ruleName}
               {@render description(i, proofStep)}

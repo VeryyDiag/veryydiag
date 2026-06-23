@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { DiagramConfByUser, Error } from "$lib/types/types"
+  import type { DiagramConf, DiagramConfByUser, Error } from "$lib/types/types"
   import Node from "$lib/components/Nodes/Node.svelte"
   import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
@@ -17,6 +17,7 @@
   import PanelToolbar from "./PanelToolbar.svelte";
   import PanelDetails from "./PanelDetails.svelte";
   import PanelProofMode from "./PanelProofMode.svelte";
+  import { untrack } from "svelte";
 
   /**
    * Interactive SVG editor component
@@ -24,7 +25,9 @@
 
   interface SvgEditorProps {
     /** My diagramConf config */
-    diagramConf: DiagramConfByUser;
+    diagramConf?: DiagramConfByUser;
+    /** Set to replace diagramConf so that you don't need to reparse it (saves time) */
+    diagramConfParsed?: DiagramConf | undefined;
     /** Enable some extra information when debugging */
     debug?: boolean;
     /**
@@ -35,29 +38,39 @@
   }
   let {
     diagramConf = {},
+    diagramConfParsed = undefined,
     debug = false,
     onlySvg = undefined,
   } : SvgEditorProps = $props();
 
+  $inspect(diagramConfParsed)
+
   let diagramConfClass : DiagramConfClass = new DiagramConfClass();
   setContextDiagram(diagramConfClass)
 
+  let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   let allErrors = $state<ErrorsMap>({})
   setContextErrors(allErrors)
 
   let errorsImport = $state<Error | undefined>(undefined)
   $effect(() => {
+    $inspect.trace(`Why am I recomputed in ${uid}`);
+    debugger
     try {
-      errorsImport = diagramConfClass.setConfig(diagramConf)
+      if (diagramConfParsed !== undefined) {
+        errorsImport = diagramConfClass.setConfigDontReparse(diagramConfParsed)
+      } else {
+        errorsImport = diagramConfClass.setConfig(diagramConf)
+      }
     } catch (err) {
       errorsImport = {message: `Error while importing the configuration (${err})`}
     }
   })
 
+
   const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
   $effect(() => {if (diagramConfClass.getCurrentDiagram()?.viewport === undefined) { resetViewport() }})
 
-  let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
   let errors = $derived(errorsImport ? [errorsImport.message] : [])
   registerErrors(uid, () => errors)
 
@@ -83,21 +96,23 @@
 
 {#snippet svg(width: string | number, height: string | number)}
   <svg bind:this={svgRef}
-       width={width}
-       height={height}
-       overflow="hidden"
-       viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
-       xmlns="http://www.w3.org/2000/svg"
-       use:panzoom={onlySvg ? undefined : diagramConfClass}
-       use:drawLink={diagramConfClass}
-       use:selectElement={onlySvg ? undefined : diagramConfClass}
-       use:drag={onlySvg ? undefined : diagramConfClass}
-       use:removeSelection={onlySvg ? undefined : diagramConfClass}
-       style="touch-action: none;"
-       data-proofdiag-app="true"
-       data-proofdiag-main-svg={onlySvg ? undefined : "true"}
-       role="toolbar"
-       tabindex="0" >
+    width={width}
+    height={height}
+    overflow="hidden"
+    viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
+    xmlns="http://www.w3.org/2000/svg"
+    use:panzoom={onlySvg ? undefined : diagramConfClass}
+    use:drawLink={diagramConfClass}
+    use:selectElement={onlySvg ? undefined : diagramConfClass}
+    use:drag={onlySvg ? undefined : diagramConfClass}
+    use:removeSelection={onlySvg ? undefined : diagramConfClass}
+    use:selectAll={onlySvg ? undefined : diagramConfClass}
+    style="touch-action: none;"
+    data-proofdiag-app="true"
+    data-proofdiag-main-svg={onlySvg ? undefined : "true"}
+    data-proofdiag-uid={uid}
+    role="toolbar"
+    tabindex="0" >
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
     <filter id="selected" x="-450%" y="-450%" width="1000%" height="1000%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -108,6 +123,10 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
+      <circle r="10000%" fill="red"/>
+    {/if}
+
     {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link]}
       <Link {...link} id={linkID}  />
     {/each}

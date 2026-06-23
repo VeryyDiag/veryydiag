@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContextDiagram } from "$lib/contexts/context.svelte";
-  import type { NodeKind, AvailableNode } from "$lib/types/types";
+  import type { NodeKind, AvailableNode, DiagramConf } from "$lib/types/types";
   import SvgEditor from "./SvgEditor.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
 
@@ -11,14 +11,25 @@
     node
   }: {nodeKind: NodeKind, node: AvailableNode} = $props()
 
-  let subDiagramConf = $derived.by(() => ({
-    diagramNodes: {
-      myfirstnode: {nodeKind: nodeKind, pos: {x: 0, y: 0}},
+  let subDiagramConf = $derived.by<DiagramConf>(() => ({
+    diagrams: {
+      main: {
+        nodes: {
+          myfirstnode: {nodeKind: nodeKind, pos: {x: 0, y: 0}},
+        }
+      }
     },
-    availableNodes: {
-      [nodeKind]: node,
-    }
-  }))  
+    theories: {
+      main: {
+        availableNodes: {
+          [nodeKind]: node,
+        }
+      }
+    },
+    tabs: [{tabKind: "tabDiagram", diagramID: "main"}],
+    currentTab: {tabKind: "tabDiagram", diagramID: "main"},
+    proofs: {},
+  }))
 </script>
 
 <div class="text-sm mb-3 text-gray-600">
@@ -36,6 +47,6 @@
       >{nodeKind}</span>
   </p>
   <div class="m-2" data-proofdiag-available-node={nodeKind} draggable="true">
-    <SvgEditor onlySvg={1.3} diagramConf={subDiagramConf}/>
+    <SvgEditor onlySvg={1.3} diagramConfParsed={subDiagramConf}/>
   </div>
 </div>

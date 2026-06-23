@@ -81,21 +81,6 @@
     <!-- <div class="h-10 border-l border-dashed border-gray-300 mx-1"></div> -->
     <!-- <div class="w-px h-5 bg-gradient-to-b from-transparent via-gray-500 to-transparent mx-1"></div> -->
 
-
-    <!-- Reframe button -->
-    <button id="reframeBtn"
-            class={[styleButton, styleButtonDisabled]}
-            onclick={resetViewport}
-            title="Reset view"
-    >
-      <!-- Icon: fit / reset view -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-           fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
-      </svg>
-    </button>
-
     <!-- Load button -->
     <button id="reframeBtn"
             title="Load diagram proof"
@@ -115,6 +100,29 @@
       <!-- Icon: fit / reset view -->
       <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
     </button>
+
+
+    <!-- Reframe button -->
+    <button class={[styleButton, styleButtonDisabled]}
+            onclick={resetViewport}
+            title="Reset view"
+    >
+      <!-- Icon: fit / reset view -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+      </svg>
+    </button>
+
+    <!-- Select All -->
+    <button class={[styleButton, styleButtonDisabled]}
+      onclick={diagramConfClass.selectAll}
+      title="Select all nodes and links"
+    >
+      <Icon icon="fluent:select-all-on-16-regular" width="25" height="25"/>
+    </button>
+
 
     <!-- ========== Divider for mode-specific tools ========== -->
     <div class={dividerStyle}></div>

@@ -55,7 +55,7 @@ export function assertDontThrow<T>(f: () => T, m: string): T {
   try {
     return f()
   } catch (e) {
-    throw new ProofDiagError(`${m}: (${e})`)
+    throw new ProofDiagError(`${m}: (${e})`, { cause: e })
   }
 }
 
@@ -94,13 +94,28 @@ export function toString(x: ParamValue) : string {
   }
 }
 
+export function toInteger(x: ParamValue) : number {
+  if (typeof x === 'string' ) {
+    const xn = Number(x)
+    assertTrue(Number.isInteger(xn),
+               `${xn} is not integer`)
+    return xn
+  } else if (typeof x === 'number') {
+    assertTrue(Number.isInteger(x),
+               `${x} is not integer`)
+    return x
+  } else {
+    throw new ProofDiagError(`The type "${typeof x}" is not string, number or boolean.`)
+  }
+}
+
 export function recordIsBijection(x: Record<string,string>,
-                            { filterLeft = (x) => true,
-                              filterRight = (x) => true,
-                            } : {
-                              filterLeft?: ((x: string) => boolean),
-                              filterRight?: ((x: string) => boolean),
-                            } = {}) : boolean {
+                                  { filterLeft = (x) => true,
+                                    filterRight = (x) => true,
+                                  } : {
+                                    filterLeft?: ((x: string) => boolean),
+                                    filterRight?: ((x: string) => boolean),
+                                  } = {}) : boolean {
   return (new Set(Object.keys(x).filter(filterLeft))).size === (new Set(Object.values(x).filter(filterRight))).size
 }
 

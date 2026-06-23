@@ -10,7 +10,7 @@
 	import { styleTitleInTheoryPanel } from './commonStyles.svelte';
   let diagramConfClass = getContextDiagram()
 
-  
+
   let isDraggingSVG = $state(false)
   async function handleSVGFiles(files: FileList) {
     Array.from(files).forEach(async (file) => {
@@ -33,33 +33,47 @@
     <div class="flex flex-nowrap w-max gap-2">
       {#each allDefaultSvgNames as svgName}
         <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}>
-          <SvgEditor onlySvg={1.3} diagramConf={{
-                                               diagramNodes: {
-                                                 myfirstnode: {nodeKind: svgName, pos: {x: 0, y: 0}},
-                                               },
-                                               availableNodes: {
-                                                 [svgName]: {
-                                                   svgName: svgName
-                                                 },
-                                               }}}/>
+          <SvgEditor onlySvg={1.3}
+            diagramConfParsed={{
+                          diagrams: {
+                            main: {
+                              nodes: {
+                                myfirstnode: {nodeKind: svgName, pos: {x: 0, y: 0}},
+                              },
+                            }
+                          },
+                          theories: {
+                            main: {
+                              availableNodes: {
+                                [svgName]: {
+                                  svgName: svgName
+                                },
+                              }
+                            }
+                          },
+                          proofs: {},
+                          tabs: [{ tabKind: "tabDiagram", diagramID: "main" }],
+                          currentTab: { tabKind: "tabDiagram", diagramID: "main" },
+                        }}
+          />
         </div>
       {/each}
     </div>
   </div>
 </div>
 <div class={`text-sm mb-3 text-gray-600 w-full min-h-30 ${isDraggingSVG ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border flex flex-col`}
-     role="region"
-     data-proofdiag-dropzone="true"
-     aria-label="File upload dropzone"
-     ondragenter={() => isDraggingSVG = true}
+  role="region"
+  data-proofdiag-dropzone="true"
+  aria-label="File upload dropzone"
+  ondragenter={() => isDraggingSVG = true}
   ondragover={(e) => e.preventDefault()}
   ondragleave={(e) => {
-              if (!(e?.target as HTMLElement)?.dataset?.proofdiagDropzone && !(e?.target as HTMLElement)?.closest("data-proofdiag-dropzone")) {
-                isDraggingSVG = false;
-              }}}
+                if (!(e?.target as HTMLElement)?.dataset?.proofdiagDropzone && !(e?.target as HTMLElement)?.closest("data-proofdiag-dropzone")) {
+                  isDraggingSVG = false;
+                }}}
   ondrop={async (e) => {
-         e.preventDefault();
-         isDraggingSVG = false;
+           e.preventDefault();
+           isDraggingSVG = false;
 
          const files = e.dataTransfer?.files;
          if (files?.length) {

@@ -385,9 +385,9 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       const parentLinkID = getParentLink(e.target)?.dataset?.proofdiagLink
       const parentNodeID = getParentNode(e.target)?.dataset?.proofdiagNode
       if (parentLinkID) {
-        diagramConfClass.toogleLinkSelection(parentLinkID)
+        diagramConfClass.toggleLinkSelection(parentLinkID)
       } else if (parentNodeID) {
-        diagramConfClass.toogleNodeSelection(parentNodeID)
+        diagramConfClass.toggleNodeSelection(parentNodeID)
       } else if (e.target === node) {
         diagramConfClass.clearSelection()
       }
@@ -522,4 +522,25 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
       node.removeEventListener("paste", onPaste);
     }
   };
+}
+
+export function selectAll(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+
+  function keydown(e: KeyboardEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (e.key === "a" && e.ctrlKey) {
+      diagramConfClass.selectAll()
+      e.preventDefault() // Otherwise ctrl-A select also all texts
+    }
+  }
+
+  node.addEventListener('keydown', keydown)
+
+  return {
+    destroy() {
+      node.removeEventListener("keydown", keydown)
+    }
+  }
+
 }

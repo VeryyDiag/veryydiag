@@ -1,12 +1,13 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep } from "$lib/types/types";
-import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError, availableNodeToParsedSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined } from '$lib/utils';
-import { createReactiveMap2D, MapReduce } from '$lib/svelteRelatedUtils.svelte';
+import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
+import { MapReduce } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
-import { proofApplyOneStep } from '$lib/rules/rules';
+import { proofApplyOneStep, proofApplyRule } from '$lib/rules/rules';
+import { proofStepApplyRuleFromSelection } from '$lib/rules/matching';
 
 // Configuration
 
@@ -17,35 +18,13 @@ import { proofApplyOneStep } from '$lib/rules/rules';
  */
 export class DiagramConfClass {
   /** Contains the configuration of the current diagram that will be saved to files */
-  diagramConf = $state<DiagramConf>(diagramConfByUserToDiagramConf({}))
-
-  /** Some informations are contained in the SVG file. To avoid duplicating it while allowing easier
-   *  parsing, we derive them.
-   */
-  diagramConfDerivedParams = createReactiveMap2D<Record<TheoryID, Theory>, ParamSpecs>(
-    () => this.diagramConf.theories,
-    {
-      getOuterKeys: x => Object.keys(x),
-      getInnerKeys: (theories, k) => Object.keys(theories?.[k]?.availableNodes || {}),
-      transform: (theories, k1, k2) => {
-        const node = theories?.[k1]?.availableNodes?.[k2]
-        if (node?.paramSpecs !== undefined) {
-          return node.paramSpecs
-        } else if (node?.svgString !== undefined) {
-          return extractNodeParamSpecsFromSVG(node.svgString)
-        } else if (node?.svgName !== undefined) {
-          const str = officialSvgNameToSvgString(node.svgName)
-          if (str !== undefined) {
-            return extractNodeParamSpecsFromSVG(str)
-          } else {
-            throw new ProofDiagError(`The node ${node.svgName} has no matching SVG`)
-          }
-        }
-        return {}
-      },
-    }
-  )
-  getDiagramConfDerivedParams = () => this.diagramConfDerivedParams
+  diagramConf = $state<DiagramConf>({
+    diagrams: { main: {}},
+    proofs: {},
+    tabs: [{tabKind: "tabDiagram", diagramID: "main"}],
+    currentTab: {tabKind: "tabDiagram", diagramID: "main"},
+    theories: {}
+  })
 
   /**
    * While it is possible to get coordinates of anchors via DOM access,
@@ -62,15 +41,21 @@ export class DiagramConfClass {
   /** When drawing links, we add them here before they are completed. Unde */
   currentlyCreatedLink = $state<undefined | { from: IDAnchor, to: Point }>(undefined)
 
-  /** Selection */
-  linkSelection = new SvelteSet<LinkID>()
-  nodeSelection = new SvelteSet<NodeID>()
+  /** Selection. We use lists and not sets because the order of selection may help to solve ambiguity in
+   *  rule application.
+   */
+  linkSelection : LinkID[]= $state([])
+  nodeSelection : NodeID[] = $state([])
 
   /** Notifications (information, temporary errors…) */
   notifications = $state<Notification[]>([])
 
+  dontShowAgainWarningNotProofMode = false
+
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
-    this.setConfig(conf)
+    if (keys(conf).length !== 0) {
+      this.setConfig(conf)
+    }
     this.setSvg(svg)
   }
 
@@ -234,8 +219,20 @@ export class DiagramConfClass {
   }
 
   setConfig = (conf: DiagramConfByUser) : Error | undefined => {
+    console.log("Calling setConfig")
     try {
       this.diagramConf = diagramConfByUserToDiagramConf(conf)
+      return undefined
+    } catch (error) {
+      return {message: `Error while setting the configuration: ${error}`}
+    }
+  }
+
+  setConfigDontReparse = (conf: DiagramConf) : Error | undefined => {
+    console.log("Calling setConfigDontReparse")
+    console.trace("Calling setConfigDontReparse")
+    try {
+      this.diagramConf = conf
       return undefined
     } catch (error) {
       return {message: `Error while setting the configuration: ${error}`}
@@ -254,27 +251,53 @@ export class DiagramConfClass {
     this.relativeAnchorPos[`${nodeID}.${anchor}`] = relativePosition
   }
 
-  isLinkSelected = (linkID: LinkID) => this.linkSelection.has(linkID)
+  isLinkSelected = (linkID: LinkID) => this.linkSelection.includes(linkID)
 
-  toogleLinkSelection = (linkID: LinkID) => {
-    if (this.linkSelection.has(linkID)) {
-      this.linkSelection.delete(linkID)
+  toggleLinkSelection = (linkID: LinkID) => {
+    if (this.linkSelection.includes(linkID)) {
+      this.linkSelection = this.linkSelection.filter(x => x !== linkID)
     } else {
-      this.linkSelection.add(linkID)
+      this.linkSelection.push(linkID)
     }
   }
 
-  toogleNodeSelection = (nodeID: NodeID) => {
-    if (this.nodeSelection.has(nodeID)) {
-      this.nodeSelection.delete(nodeID)
-    } else {
-      this.nodeSelection.add(nodeID)
+  removeLinkSelection = (linkID: LinkID) => {
+    if (this.linkSelection.includes(linkID)) {
+      this.linkSelection = this.linkSelection.filter(x => x !== linkID)
     }
   }
+
+  addLinkSelection = (linkID: LinkID) => {
+    if (!this.linkSelection.includes(linkID)) {
+      this.linkSelection.push(linkID)
+    }
+  }
+
+
+  toggleNodeSelection = (nodeID: NodeID) => {
+    if (this.nodeSelection.includes(nodeID)) {
+      this.nodeSelection = this.nodeSelection.filter(x => x !== nodeID)
+    } else {
+      this.nodeSelection.push(nodeID)
+    }
+  }
+
+  removeNodeSelection = (nodeID: NodeID) => {
+    if (this.nodeSelection.includes(nodeID)) {
+      this.nodeSelection = this.nodeSelection.filter(x => x !== nodeID)
+    }
+  }
+
+  addNodeSelection = (nodeID: NodeID) => {
+    if (!this.nodeSelection.includes(nodeID)) {
+      this.nodeSelection.push(nodeID)
+    }
+  }
+
 
   clearSelection = () => {
-    this.linkSelection.clear()
-    this.nodeSelection.clear()
+    this.linkSelection = []
+    this.nodeSelection = []
   }
 
   removeLink = (linkID: LinkID) => {
@@ -282,6 +305,7 @@ export class DiagramConfClass {
     if (!info.proofmode || info?.proofStep === undefined) {
       const diag = info.diagram
       delete diag?.linksWithID?.[linkID]
+      this.removeLinkSelection(linkID)
     } else {
       this.sendNotification("error", "Impossible to remove a link in proof mode (except for the initial diagram)")
     }
@@ -301,6 +325,7 @@ export class DiagramConfClass {
         })
       }
       delete diag.nodes?.[nodeID]
+      this.removeNodeSelection(nodeID)
     } else {
       this.sendNotification("error", "Impossible to remove a node in proof mode (except for the initial diagram)")
     }
@@ -317,7 +342,14 @@ export class DiagramConfClass {
     }
   }
 
-  isNodeSelected = (nodeID: NodeID) => this.nodeSelection.has(nodeID)
+  /** Triggers when pressing ctrl-A */
+  selectAll = () => {
+    const diag = this.getCurrentDiagram()
+    this.nodeSelection = keys(diag?.nodes)
+    this.linkSelection = keys(diag?.linksWithID)
+  }
+
+  isNodeSelected = (nodeID: NodeID) => this.nodeSelection.includes(nodeID)
 
   getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
     const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
@@ -486,8 +518,24 @@ export class DiagramConfClass {
     }
   }
 
-  sendNotification = (kind: NotificationKind, message: string) => {
-    this.notifications.push({kind, message})
+  sendNotification = (kind: NotificationKind, message: string,
+                      {
+                        buttons = [],
+                        codeFormatted = false,
+                      } : {
+                        buttons?: [string, () => void][],
+                        codeFormatted?: boolean
+                      } = {},
+  ) => {
+    this.notifications.push({kind, message, buttons, codeFormatted})
+  }
+
+  tryOrSendNotificationError(f: () => void) {
+    try {
+      f()
+    } catch (e) {
+      this.sendNotification("error", `${e}`)
+    }
   }
 
   removeNotification = (notif: Notification) => {
@@ -498,7 +546,7 @@ export class DiagramConfClass {
     const id : DiagramID = diagID || randomID()
     this.diagramConf.diagrams[id] = {
       ...({
-        name: "Click to edit",
+        name: "Click to edit", // This can be overwritten by editing diag.name:
         nodes: {},
         linksWithID: {},
         theory: theory || this.getCurrentTheoryName(),
@@ -584,6 +632,7 @@ export class DiagramConfClass {
     while (this.diagramConf?.theories[id]?.availableNodes?.[`${newNodeKind}${nb == 0 ? "" : nb}`] !== undefined) {
       nb++
     }
+    availableNode.parsedSVG = availableNodeToParsedSVG(availableNode)
     this.diagramConf.theories[id].availableNodes[`${newNodeKind}${nb == 0 ? "" : nb}`] = availableNode
   }
 
@@ -610,6 +659,61 @@ export class DiagramConfClass {
       })
     })
     return true
+  }
+
+  renameNodeID = (oldNodeID: NodeID, newNodeID: NodeID, diagramID: DiagramID | undefined = undefined) => {
+    const diagID = diagramID || this.getCurrentDiagramID()
+    if (oldNodeID === newNodeID) {
+      return true
+    }
+    const diagram = assertNotUndefined(this.diagramConf?.diagrams?.[diagID],
+                                       `The diagram id ${diagID} does not exist`)
+    assertTrue(diagram?.nodes?.[newNodeID] === undefined,
+               `A node with id ${newNodeID} already exists in the diagram`)
+    // Helps typescript
+    assertNotUndefinedNR(diagram.nodes, `The diagram contains no node`)
+    const node = assertNotUndefined(diagram.nodes?.[oldNodeID],
+                                    `The node ${oldNodeID} does not exist in the diagram`)
+    diagram.nodes[newNodeID] = node
+    delete diagram.nodes[oldNodeID]
+    // We also rename the node in the links
+    diagram.linksWithID = Object.fromEntries(entries(diagram.linksWithID).map(([linkID, link]) => {
+      const [nodeFromID, nodeFromAnchor] = fullAnchorToIDAndAnchor(link.from)
+      const [nodeToID, nodeToAnchor] = fullAnchorToIDAndAnchor(link.to)
+      const newNodeFromID = nodeFromID === oldNodeID ? newNodeID : nodeFromID
+      const newNodeToID = nodeToID === oldNodeID ? newNodeID : nodeToID
+      return [linkID, {...link,
+                       from: IDAnchorToFullAnchor(
+                         newNodeFromID,
+                         nodeFromAnchor
+                       ),
+                       to: IDAnchorToFullAnchor(
+                         newNodeToID,
+                         nodeToAnchor
+                       ),
+      }]
+    }))
+    // We also update the selection
+    this.nodeSelection = this.nodeSelection.map(nodeID => nodeID === oldNodeID ? newNodeID : nodeID)
+  }
+
+  renameLinkID = (oldLinkID: LinkID, newLinkID: LinkID, diagramID: DiagramID | undefined = undefined) => {
+    const diagID = diagramID || this.getCurrentDiagramID()
+    if (oldLinkID === newLinkID) {
+      return true
+    }
+    const diagram = assertNotUndefined(this.diagramConf?.diagrams?.[diagID],
+                                       `The diagram id ${diagID} does not exist`)
+    assertTrue(diagram?.linksWithID?.[newLinkID] === undefined,
+               `A link with id ${newLinkID} already exists in the diagram`)
+    // Helps typescript
+    assertNotUndefinedNR(diagram.linksWithID, `The diagram contains no link`)
+    const link = assertNotUndefined(diagram.linksWithID?.[oldLinkID],
+                                    `The link ${oldLinkID} does not exist in the diagram`)
+    diagram.linksWithID[newLinkID] = link
+    delete diagram.linksWithID[oldLinkID]
+    // We also update the selection
+    this.linkSelection = this.linkSelection.map(linkID => linkID === oldLinkID ? newLinkID : linkID)
   }
 
   createRule = (ruleName: RuleName | undefined = undefined, rule: Rule = {}, theoryID: TheoryID | undefined = undefined,) => {
@@ -682,6 +786,11 @@ export class DiagramConfClass {
     return this.nodeSelection
   }
 
+  getParamSpecs = (theoryID: TheoryID, nodeKind: NodeKind) : ParamSpecs | undefined => {
+    return this.diagramConf?.theories?.[theoryID]?.availableNodes
+    ?.[nodeKind]?.parsedSVG?.paramSpecs
+  }
+
   changeNodeParam = (nodeID: NodeID, paramName: ParamName, newValue: string | boolean | number, diagID: DiagramID | undefined = undefined) => {
     const id = diagID || this.getCurrentDiagramID()
     const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
@@ -689,7 +798,7 @@ export class DiagramConfClass {
       throw new ProofDiagError(`Node ${nodeID} does not exist in diagram ${id}`)
     }
     const currentTheory = this.diagramConf?.diagrams?.[id]?.theory || "main"
-    if (this.diagramConfDerivedParams?.[currentTheory]?.[node.nodeKind]?.[paramName] === undefined) {
+    if (this.getParamSpecs(currentTheory, node.nodeKind)?.[paramName] === undefined) {
       throw new ProofDiagError(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
     }
     if (node?.params === undefined) {
@@ -740,17 +849,20 @@ export class DiagramConfClass {
     step.description = description;
   }
 
-  insertMoveStep = (position : number, proofID: ProofID | undefined = undefined) => {
+  insertProofStep = (position : number, proofStep: ProofStep, proofID: ProofID | undefined = undefined) => {
     const proof = this.currentProof(proofID);
     if (proof?.steps === undefined) {
       proof.steps = []
     }
-    proof.steps.splice(position, 0, {kind: "move", move: {
-      // "mysecondnode": {x: 45, y: 200+position*10}
-    }})
+    proof.steps.splice(position, 0, proofStep)
     proof.currentStep = position + 1
   }
 
+  insertMoveStep = (position : number, proofID: ProofID | undefined = undefined) => {
+    this.insertProofStep(position, {kind: "move", move: {
+      // "mysecondnode": {x: 45, y: 200+position*10}
+    }}, proofID)
+  }
 
   #currentProof : Proof | undefined = $derived.by(() => {
     if (this.isInProofMode()) {
@@ -759,12 +871,23 @@ export class DiagramConfClass {
       return undefined
     }
   })
-  #currentProofSteps : ProofStep[] = $derived(this.#currentProof?.steps || [])
-  startingDiagram : Diagram = $derived(this.#currentProof?.startingDiagram || {})
-  startingTheory : Theory = $derived(this.startingDiagram?.theory || {})
+  #currentProofSteps = $derived<ProofStep[]>(this.#currentProof?.steps || [])
+  startingDiagram = $derived<Diagram>(this.#currentProof?.startingDiagram || {})
   derivedProofDiagrams = $derived(
     new MapReduce(this.#currentProofSteps,
-                  (acc, x, i) => proofApplyOneStep($state.snapshot(acc), x, this.startingTheory),
+                  (acc, x, i) => {
+                    if (acc?.error !== undefined) {
+                      return { error: `This rule cannot be computed since an error occured earlier in the proof history.`}
+                    }
+                    try {
+                      const theory = assertNotUndefined(
+                        this.diagramConf.theories?.[this.startingDiagram?.theory || "main"],
+                        `The theory ${this.startingDiagram?.theory || "main"} does not exist`)
+                      return proofApplyOneStep($state.snapshot(acc), x, theory)
+                    } catch (e) {
+                      return { error: `Error when applying the ${i+1}-th proof step (${e}).` }
+                    }
+                  },
                   this.startingDiagram)
   )
 
@@ -781,6 +904,80 @@ export class DiagramConfClass {
       proof.currentStep = proof.steps.length
     } else {
       proof.currentStep = currentStep
+    }
+  }
+
+  applyRule = (ruleName: string, direction: "rl" | "lr") => {
+    let proofStep : ProofStep | undefined = undefined
+    const diagAndProofInfo = this.getCurrentDiagramAndProofInfo()
+    const diagram = diagAndProofInfo.diagram
+    const theory = this.getCurrentTheory()
+    console.log("theory", theory)
+    try {
+      proofStep = proofStepApplyRuleFromSelection(
+        this.nodeSelection,
+        this.linkSelection,
+        diagram,
+        ruleName,
+        direction,
+        theory
+      )
+    } catch (e) {
+      this.sendNotification("error", `Error when matching the selection to the rule (${e})`,
+                            {
+                              buttons: [["Show details of failed matching", () => {
+                                let str = "" // Accumulate the logs here
+                                try {
+                                  // The logs may be huge so we don't always compute them
+                                  // unless asked by the user, that's why we recompute
+                                  // the whole matching here
+                                  proofStepApplyRuleFromSelection(
+                                    this.nodeSelection,
+                                    this.linkSelection,
+                                    diagram,
+                                    ruleName,
+                                    direction,
+                                    theory,
+                                    (msg) => {str = `${str}\n${msg}`}
+                                  )
+                                } catch (e) {
+                                  this.sendNotification("error", `Error when applying the rule (${e}).\nDetails:\n${str}`, {codeFormatted: true})
+                                }
+                              }]],
+                              codeFormatted: true,
+                            }
+      )
+    }
+    if (proofStep === undefined) {
+      return
+    }
+    if (!diagAndProofInfo.proofmode) {
+      if (!this.dontShowAgainWarningNotProofMode) {
+        this.sendNotification("warning", "You are NOT in proof mode, hence even if can apply a rule on a diagram, this is a destructive operation (the previous diagram is lost) and you won't have access to the rewritting sequence. If you want to start a proof, click instead on the 'start proof mode' icon in the top toolbar.",
+                              {
+                                buttons: [["Don't show again",
+                                           () => this.dontShowAgainWarningNotProofMode = true]]
+                              }
+        )
+      }
+      try {
+        this.diagramConf.diagrams[this.getCurrentDiagramID()] = proofApplyRule($state.snapshot(diagram), proofStep, theory)
+      } catch (e) {
+        this.sendNotification("error", `Error when applying the rule (${e})`,
+                              {
+                                buttons: [["Show details of proofStep", () => {
+                                  this.sendNotification("error", `Error when applying the rule with the proofStep:\n${JSON.stringify(proofStep)}:\n\n${e}`, {codeFormatted: true})
+                                }]],
+                                codeFormatted: true,
+                              })
+      }
+    } else {
+      // We are in proof mode
+      try {
+        this.insertProofStep(diagAndProofInfo.currentStep, proofStep)
+      } catch (e) {
+        this.sendNotification("error", "${e}")
+      }
     }
   }
 }

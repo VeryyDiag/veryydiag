@@ -12,12 +12,12 @@
   import {flushSync} from "svelte"
 
   let { downloadPanel = $bindable() } = $props()
-  
+
   let diagramConfClass = getContextDiagram()
 
   let copy = $state(false)
   let useYaml = $state(false)
-  
+
   async function downloadSVG({asInView, copy} : {asInView: boolean, copy:boolean}) {
     let svgRef = diagramConfClass.getSVG()
     let str = ""
@@ -39,7 +39,7 @@
         target: container,
         props: {
           onlySvg: 1,
-          diagramConf: diagramConfClass.getDiagramConfUser()
+          diagramConfParsed: diagramConfClass.getConfig()
       }})
       flushSync(); // Make sure that effects are ran, not sure if it makes a difference when mounted in the dom?
       // Wait for the javascript code that creates the svg file to mount
@@ -68,7 +68,7 @@
       const str = stringify(diagramConfClass.getDiagramConfUser())
       if (copy) {
         navigator.clipboard.writeText(str)
-      } else {        
+      } else {
            downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.proofdiag")
       }
     }
@@ -84,7 +84,7 @@
       aria-label="Close download panel"
       onclick={() => downloadPanel = false}
       >
-      <Icon icon="material-symbols:close-rounded" width="20" height="20" />          
+      <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
     <h1 class="text-center text-lg font-normal text-body">Download</h1>
     <p class="text-center">Copy instead of download: <Toogle bind:enabled={copy} /> Use yaml: <Toogle bind:enabled={useYaml} /></p>
@@ -92,4 +92,4 @@
     <Button onclick={() => downloadSVG({asInView: false, copy: copy})}>{copy ? "Copy" : "Download"} whole SVG</Button>
     <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended if plan to manually edit" : "json variant, recommended if no plan to manually edit"})</Button>
   </div>
-{/if} 
+{/if}
