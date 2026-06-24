@@ -756,7 +756,16 @@ export class DiagramConfClass {
     }
     this.diagramConf.theories[id].rules[newRuleName] = this.diagramConf.theories[id].rules[oldRuleName]
     delete this.diagramConf.theories[id].rules[oldRuleName];
-    // TODO: We need to also rename all references to this… once it is implemented!
+    // We rename the references in the proofs
+    this.diagramConf.proofs = Object.fromEntries(entries(this.diagramConf?.proofs).map(([proofID, proof]) => {
+      return [proofID, {...proof, steps: proof.steps.map(step => {
+        if (step.kind === "applyRule") {
+          return {...step, ruleName: step.ruleName === oldRuleName ? newRuleName : step.ruleName}
+        } else {
+          return step
+        }
+      })}]
+    }))
     return true
   }
 

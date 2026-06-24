@@ -198,7 +198,7 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
   // TODO: more precise error messages (which element is wrong)
   // ========== First we check if the proofStep is well formed ==========
   assertDontThrow(() => checkTheory(theory), `The theory is not well formed`)
-  const rule = assertNotUndefined(theory?.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist (theory: ${JSON.stringify(theory)})`)
+  const rule = assertNotUndefined(theory?.rules?.[proofStep.ruleName], `The rule ${proofStep.ruleName} does not exist`)
   assertTrue((["lr", "rl"]).includes(proofStep.direction), `The proofStep direction should either be lr or rl, not ${proofStep.direction} `)
   assertNotUndefinedNR(rule?.lhs, `The rule ${proofStep.ruleName} has an undefined lhs`)
   assertNotUndefinedNR(rule?.rhs, `The rule ${proofStep.ruleName} has an undefined rhs`)

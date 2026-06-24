@@ -43,8 +43,6 @@
     onlySvg = undefined,
   } : SvgEditorProps = $props();
 
-  $inspect(diagramConfParsed)
-
   let diagramConfClass : DiagramConfClass = new DiagramConfClass();
   setContextDiagram(diagramConfClass)
 
@@ -54,7 +52,6 @@
 
   let errorsImport = $state<Error | undefined>(undefined)
   $effect(() => {
-    $inspect.trace(`Why am I recomputed in ${uid}`);
     try {
       if (diagramConfParsed !== undefined) {
         console.log("In my effect of ${uid}, I will call ${setConfigDontReparse}")
@@ -80,7 +77,6 @@
   })
 
   $effect(() => {
-    $inspect.trace(`Reseting viewport in ${uid}`);
     if (onlySvg !== undefined) {
       resetViewport()
     }

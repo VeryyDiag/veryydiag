@@ -79,8 +79,6 @@
           {@const error = diagramConfClass.derivedProofDiagrams.get(i+1)?.error}
           <li>
             {@render dotStep(i+1)}
-            Diagram is
-            {JSON.stringify(diagramConfClass.derivedProofDiagrams.get(i+1))}
             {#if error !== undefined}
               <div class="p-1 border border-red-100 rounded-md bg-red-100 red-500">
                 <b>Error:</b> {error}

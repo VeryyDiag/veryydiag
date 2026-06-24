@@ -5,6 +5,7 @@
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import Button from "../reusable/Button.svelte";
   import { untrack } from "svelte";
+  import ContentEditable from "../reusable/ContentEditable.svelte";
   let diagramConfClass = getContextDiagram()
 
   let {
@@ -54,15 +55,13 @@
 <div class="text-base mb-3 text-gray-600">
   <p>
     <Icon icon="ph:arrow-bend-down-right-bold" width="15" height="15" class="inline align-baseline mr-1"/>
-    <span contenteditable spellcheck="false" role="button" tabindex="0"
-          onblur={(e) => {
-                 const res = diagramConfClass.renameRule(ruleName, (e.target as HTMLElement).innerText)
-                 // If the name already exists, reset to old value
-                 if (!res) {
-                   (e.target as HTMLElement).innerText = ruleName
-                 }}}
-      onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
-      >{ruleName}</span>
+    <ContentEditable onedit={(s, htmlElt) => {
+                              const res = diagramConfClass.renameRule(ruleName, s)
+                              // If the name already exists, reset to old value
+                              if (!res) {
+                                htmlElt.innerText = ruleName
+                              }}}
+      >{ruleName}</ContentEditable>
   </p>
   <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
     <div class="flex flex-nowrap items-center w-max gap-2">
