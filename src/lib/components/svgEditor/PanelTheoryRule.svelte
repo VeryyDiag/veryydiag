@@ -4,7 +4,7 @@
   import SvgEditor from "./SvgEditor.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import Button from "../reusable/Button.svelte";
-
+  import { untrack } from "svelte";
   let diagramConfClass = getContextDiagram()
 
   let {
@@ -24,7 +24,7 @@
         tabs: [{ tabKind: "tabDiagram", diagramID: "main" }],
         currentTab: { tabKind: "tabDiagram", diagramID: "main" },
         theories: {
-          [`${diagramConfClass.getCurrentTheoryName()}`]:  diagramConfClass.getCurrentTheory()
+          [`${diagramConfClass.getCurrentTheoryName()}`]: diagramConfClass.getCurrentTheory()
         },
       }
     }
@@ -42,7 +42,8 @@
         tabs: [{ tabKind: "tabDiagram", diagramID: "main" }],
         currentTab: { tabKind: "tabDiagram", diagramID: "main" },
         theories: {
-          [`${diagramConfClass.getCurrentTheoryName()}`]:  diagramConfClass.getCurrentTheory()
+          // Issue: we can't
+          [`${diagramConfClass.getCurrentTheoryName()}`]: diagramConfClass.getCurrentTheory()
         },
       }
     }

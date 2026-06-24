@@ -27,8 +27,8 @@ export class MapReduce<A, B> {
         this.m[i] = () => this.initialValue
       }
       else {
-        const foo = $derived(this.f(this.get(i - 1), this.l[i-1], i-1))
-        this.m[i] = () => foo
+        const tmpVarMapReduce = $derived(this.f(this.get(i - 1), this.l[i-1], i-1))
+        this.m[i] = () => tmpVarMapReduce
       }
     }
     return this.m[i]()

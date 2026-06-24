@@ -202,7 +202,18 @@ export class DiagramConfClass {
   }
 
   getCurrentTheoryName = () : string => {
-    return this.getCurrentDiagram()?.theory || "main"
+    if (!this.isInProofMode) {
+      return this.getCurrentDiagram()?.theory || "main"
+    } else {
+      // We don't want to rely on getCurrentDiagram in proof mode since this would rely on infinite loop:
+      // For instance, the diagrams in the rule panel are re-generated when their theory is changed,
+      // but this.getCurrentDiagram() gets a diagram that changes whenever the rules change,
+      // so if the theory is obtained via this.getCurrentDiagram() we have an infinite loop
+      // (debug with $inspect.trace() at the beginning of the effect + untrack elements one by one until you
+      // find the problematic dependency).
+      // Here, the starting diagram is independent of the rules, so we avoid the infinite loop
+      return this.startingDiagram?.theory || "main"
+    }
   }
 
   getCurrentTheory = () : Theory => {
