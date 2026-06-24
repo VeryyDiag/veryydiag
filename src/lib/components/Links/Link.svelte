@@ -35,9 +35,16 @@
 </script>
 {#if fromX !== undefined && fromY !== undefined && toX !== undefined && toY !== undefined}
   <g filter={selected ? "url(#selected)" : ""}>
-    <!-- Circle are only used to have correct bounding box for filter effects to work -->
-    <circle cx={fromX} cy={fromY} r={cm(0.05/2)} visibility="hidden" />
-    <circle cx={toX} cy={toY} r={cm(0.05/2)} visibility="hidden" />
-    <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="black" data-proofdiag-link={id} stroke-width={cm(0.05)} stroke-linecap="round" />
+    {#if from !== to}
+      <!-- Circle are only used to have correct bounding box for filter effects to work -->
+      <circle cx={fromX} cy={fromY} r={cm(0.05/2)} visibility="hidden" />
+      <circle cx={toX} cy={toY} r={cm(0.05/2)} visibility="hidden" />
+      <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="black" data-proofdiag-link={id} stroke-width={cm(0.05)} stroke-linecap="round" />
+    {:else}
+      <!-- Self-loop -->
+      <circle cx={fromX} cy={fromY} r={cm(0.05/2)} visibility="hidden" />
+      <circle cx={toX} cy={toY} r={cm(0.05/2)} visibility="hidden" />
+      <path d="M {fromX} {fromY} c {cm(1)} {cm(1)}, {cm(1)} {cm(-1)}, 0 0 " stroke="black" fill="transparent" data-proofdiag-link={id} stroke-width={cm(0.05)} stroke-linecap="round" />
+    {/if}
   </g>
 {/if}

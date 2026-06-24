@@ -103,7 +103,7 @@
         {/each}
       </ol>
       <p class="text-muted mb-3">
-        To continue the proof, select the nodes and links you want to rewrite (including boundary links), and click on the left panel in the "Rules" tab on the rule you want to apply. You can also Click on the <Button class="text-sm" tiny><Icon icon="mdi:plus" width="20" height="20"/>Move step</Button> buttons above to insert a step that is just moving the nodes.
+        To continue the proof, select the nodes and links you want to rewrite (including mono-wire boundary links, but excluding multi-wire boundary links), and click on the left panel in the "Rules" tab on the rule you want to apply. You can also Click on the <Button class="text-sm" tiny><Icon icon="mdi:plus" width="20" height="20"/>Move step</Button> buttons above to insert a step that is just moving the nodes.
       </p>
     </div>
 </div>

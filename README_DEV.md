@@ -104,6 +104,15 @@ let {
 
 ## TODO
 
+### Small bugs/features to correct/add quickly
+
+- For now if you edit a rule with a mono-wire boundary, the parameter of the boundary is shown as multi-wire but the svg shows mono-wire, and we need to toggle in/out the parameter. Weird.
+- For now just clicking an anchor creates an invisible self-looping link. Add a minimal distance to travel so that a self link is added.
+- Display self-looping link. For now they only appear when doing ctrl-a and checking the link in the description.
+- For now we can't move nodes in an applyRule proof step.
+
+### More substantial changes
+
 - Redefine the Node type so that it is distinct from AvailableNode
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3
