@@ -552,3 +552,45 @@ export function selectAll(node: SVGSVGElement, diagramConfClass: DiagramConfClas
   }
 
 }
+
+export function undo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+
+  function keydown(e: KeyboardEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (e.key === "z" && e.ctrlKey) {
+      diagramConfClass.undo()
+      e.preventDefault() // Otherwise ctrl-A select also all texts
+    }
+  }
+
+  node.addEventListener('keydown', keydown)
+
+  return {
+    destroy() {
+      node.removeEventListener("keydown", keydown)
+    }
+  }
+
+}
+
+export function redo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+
+  function keydown(e: KeyboardEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (e.key === "y" && e.ctrlKey) {
+      diagramConfClass.redo()
+      e.preventDefault() // Otherwise ctrl-A select also all texts
+    }
+  }
+
+  node.addEventListener('keydown', keydown)
+
+  return {
+    destroy() {
+      node.removeEventListener("keydown", keydown)
+    }
+  }
+
+}

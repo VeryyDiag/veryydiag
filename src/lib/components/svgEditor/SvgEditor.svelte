@@ -3,7 +3,7 @@
   import Node from "$lib/components/Nodes/Node.svelte"
   import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
@@ -103,6 +103,8 @@
     use:drag={onlySvg ? undefined : diagramConfClass}
     use:removeSelection={onlySvg ? undefined : diagramConfClass}
     use:selectAll={onlySvg ? undefined : diagramConfClass}
+    use:undo={onlySvg ? undefined : diagramConfClass}
+    use:redo={onlySvg ? undefined : diagramConfClass}
     style="touch-action: none;"
     data-proofdiag-app="true"
     data-proofdiag-main-svg={onlySvg ? undefined : "true"}
