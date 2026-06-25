@@ -14,6 +14,7 @@
   async function handleFile(file: File) {
     try {
       const content = await file.text();
+      diagramConfClass.undoSnapshot();
       diagramConfClass.setConfig(parse(content));
       diagramConfClass.sendNotification("info", "The file was loaded with success.");
       loadFilePanel = false;
@@ -31,7 +32,7 @@
       aria-label="Close load file panel"
       onclick={() => loadFilePanel = false}
       >
-      <Icon icon="material-symbols:close-rounded" width="20" height="20" />          
+      <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
     <h1 class="text-center text-lg font-normal text-body">Download</h1>
     <div class={`w-full h-70 ${isDragging ? 'bg-blue-100 border-blue-400' : 'bg-gray-100'} rounded-xl  p-1 flex items-center justify-center text-center border-dashed border`}
@@ -72,4 +73,4 @@
       </div>
     </div>
   </div>
-{/if} 
+{/if}

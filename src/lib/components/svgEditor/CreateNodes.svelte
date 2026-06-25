@@ -32,7 +32,7 @@
   <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
     <div class="flex flex-nowrap w-max gap-2">
       {#each allDefaultSvgNames as svgName}
-        <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}>
+        <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}}>
           <SvgEditor onlySvg={1.3}
             diagramConfParsed={{
                           diagrams: {

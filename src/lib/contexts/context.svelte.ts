@@ -52,6 +52,48 @@ export class DiagramConfClass {
 
   dontShowAgainWarningNotProofMode = false
 
+  /** Undo/redo stack. When you perform a new action, do push on the undoStack, if you undo, pop from undo and push to redo. */
+  undoStack : (() => void)[] = $state([])
+  redoStack : (() => void)[] = $state([])
+
+  /** This takes a snapshot of the current state and saves to the undo stack. We don't call it in the functions in this file (we may want to call
+   *  them inside other functions without taking a snapshot), hence this is the role of each UI function to call undoSnapshot() before
+   *  doing any action the user may want to undo latter. */
+  undoSnapshot = (where = this.undoStack, cleanRedo = true) => {
+    const oldDiagramConf = $state.snapshot(this.diagramConf)
+    const oldRelativeAnchorPos = $state.snapshot(this.relativeAnchorPos)
+    const oldLinkSelection = $state.snapshot(this.linkSelection)
+    const oldNodeSelection = $state.snapshot(this.nodeSelection)
+    where.push(() => {
+      this.diagramConf = oldDiagramConf
+      this.relativeAnchorPos = oldRelativeAnchorPos
+      this.linkSelection = oldLinkSelection
+      this.nodeSelection = oldNodeSelection
+    })
+    if (cleanRedo) {
+      this.redoStack = []
+    }
+  }
+
+  undo = () => {
+    // We take a snapshot of the current state to put on the redo stack
+    this.undoSnapshot(this.redoStack, false)
+    // We remove the last undo element on the undo stack
+    const f = this.undoStack.pop()
+    // We get back to there
+    if (f !== undefined) {
+      f()
+    }
+  }
+
+  redo = () => {
+    this.undoSnapshot(this.undoStack, false)
+    const f = this.redoStack.pop()
+    if (f !== undefined) {
+      f()
+    }
+  }
+
   constructor(conf: DiagramConfByUser = {}, svg: SVGGraphicsElement | undefined = undefined) {
     if (keys(conf).length !== 0) {
       this.setConfig(conf)
@@ -230,7 +272,6 @@ export class DiagramConfClass {
   }
 
   setConfig = (conf: DiagramConfByUser) : Error | undefined => {
-    console.log("Calling setConfig")
     try {
       this.diagramConf = diagramConfByUserToDiagramConf(conf)
       return undefined
@@ -240,8 +281,6 @@ export class DiagramConfClass {
   }
 
   setConfigDontReparse = (conf: DiagramConf) : Error | undefined => {
-    console.log("Calling setConfigDontReparse")
-    console.trace("Calling setConfigDontReparse")
     try {
       this.diagramConf = conf
       return undefined

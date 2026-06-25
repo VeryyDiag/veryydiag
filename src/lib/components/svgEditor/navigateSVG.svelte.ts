@@ -224,6 +224,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
       return
     }
 
+    diagramConfClass.undoSnapshot()
     diagramConfClass.moveNode(targetNodeID, {x: startPos.x + from.x - to.x, y: startPos.y + from.y - to.y})
   }
 
@@ -332,7 +333,7 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
           }
-
+          diagramConfClass.undoSnapshot()
           diagramConfClass.addLink({from, to: IDAnchorToFullAnchor(nodeName, anchor)});
           return
         }
@@ -385,10 +386,13 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       const parentLinkID = getParentLink(e.target)?.dataset?.proofdiagLink
       const parentNodeID = getParentNode(e.target)?.dataset?.proofdiagNode
       if (parentLinkID) {
+        diagramConfClass.undoSnapshot()
         diagramConfClass.toggleLinkSelection(parentLinkID)
       } else if (parentNodeID) {
+        diagramConfClass.undoSnapshot()
         diagramConfClass.toggleNodeSelection(parentNodeID)
       } else if (e.target === node) {
+        diagramConfClass.undoSnapshot()
         diagramConfClass.clearSelection()
       }
     }
@@ -413,6 +417,7 @@ export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramCo
   function keydown(e: KeyboardEvent) {
     if (diagramConfClass === undefined) {return}
     if (["Delete", "Backspace"].includes(e.key)) {
+      diagramConfClass.undoSnapshot()
       diagramConfClass.removeSelection()
     }
   }
@@ -450,6 +455,7 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
         if (svg && e.dataTransfer.getData("proofdiag/available-node-kind")) {
           const pos = clientToSVGCoordInCm(svg, e.clientX, e.clientY)
           if (pos !== undefined) {
+            diagramConfClass.undoSnapshot()
             diagramConfClass.addNode(e.dataTransfer.getData("proofdiag/available-node-kind"), pos)
           }
         }
@@ -475,6 +481,7 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
   async function handleFile(file: File) {
     try {
       const content = await file.text();
+      diagramConfClass.undoSnapshot()
       diagramConfClass.setConfig(parse(content));
       diagramConfClass.sendNotification("info", "The file was loaded with success.");
     } catch (error) {
@@ -484,6 +491,7 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
 
   async function handleText(text: string) {
     try {
+      diagramConfClass.undoSnapshot()
       diagramConfClass.setConfig(parse(text));
       diagramConfClass.sendNotification("info", "Content pasted successfully.");
     } catch (error) {

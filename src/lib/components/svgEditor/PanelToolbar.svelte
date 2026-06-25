@@ -27,7 +27,7 @@
 
   <!-- Tabs for diagrams -->
   <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current tab" onclick={() => diagramConfClass.removeTab()}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current tab" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeTab()}}>
       <Icon icon="mdi:minus" width="20" height="20"/>
     </button>
     {#each diagramConfClass.getConfig()?.tabs as tab}
@@ -46,7 +46,7 @@
         {diagramConfClass.getTabObject(tab).name || "No name"}
       </span>
     {/each}
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Add new diagram" onclick={() => diagramConfClass.addDiagram()}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Add new diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addDiagram()}}>
       <Icon icon="mdi:plus" width="20" height="20"/>
     </button>
   </div>
@@ -69,7 +69,7 @@
     <button
       class={[styleButton, styleButtonDisabled]}
       title="Start the proof mode"
-      onclick={() => diagramConfClass.addProof()}
+      onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addProof()}}
     >
 
       <Icon icon="streamline:triangle-arrow-roadmap-remix" color="black" width="25" height="25" />
@@ -104,7 +104,7 @@
 
     <!-- Reframe button -->
     <button class={[styleButton, styleButtonDisabled]}
-            onclick={resetViewport}
+            onclick={() => {diagramConfClass.undoSnapshot(); resetViewport}}
             title="Reset view"
     >
       <!-- Icon: fit / reset view -->
@@ -123,6 +123,23 @@
       <Icon icon="fluent:select-all-on-16-regular" width="25" height="25"/>
     </button>
 
+    <!-- Undo -->
+    <button class={[styleButton, styleButtonDisabled]}
+      onclick={diagramConfClass.undo}
+      title="Undo"
+    >
+      <Icon icon="material-symbols:undo" width="25" height="25"
+        class={diagramConfClass.undoStack.length > 0 ? "" : "text-gray-300"} />
+    </button>
+
+    <!-- Redo -->
+    <button class={[styleButton, styleButtonDisabled]}
+      onclick={diagramConfClass.redo}
+      title="Redo"
+    >
+      <Icon icon="material-symbols:redo" width="25" height="25"
+        class={diagramConfClass.redoStack.length > 0 ? "" : "text-gray-300"} />
+    </button>
 
     <!-- ========== Divider for mode-specific tools ========== -->
     <div class={dividerStyle}></div>
@@ -135,7 +152,7 @@
             !addPanelCollapsed && styleButtonEnabled
             ]}
       onclick={() => {addPanelCollapsed = !addPanelCollapsed}}
-      title="Add node"
+      title="Show/hide pannel to create nodes/rules"
       >
       <Icon icon="mdi:plus" width="25" height="25"/>
     </button>
@@ -154,10 +171,8 @@
 
     <!-- Remove tool -->
     <button
-      class={[
-            styleButton, styleButtonDisabled
-            ]}
-      onclick={() => {diagramConfClass.removeSelection()}}
+      class={[ styleButton, styleButtonDisabled ]}
+      onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeSelection()}}
       title="Delete selection (click to select)"
       >
       <Icon icon="mdi:trash-outline" width="25" height="25" />

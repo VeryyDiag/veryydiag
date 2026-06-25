@@ -4,7 +4,7 @@
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import CreateNodes from './CreateNodes.svelte'
   import AvailableNode from "./AvailableNode.svelte";
-  import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte" 
+  import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte"
 	import Button from '../reusable/Button.svelte';
 	import PanelTheoryRule from './PanelTheoryRule.svelte';
 
@@ -13,7 +13,7 @@
   let { addPanelCollapsed = $bindable() } = $props()
 
   let isEditingRules = $state(false)
-    
+
 </script>
 <div class={[
             "absolute left-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center transition-all duration-300",
@@ -21,25 +21,25 @@
             ]}>
   <!-- Tabs for theories -->
   <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => diagramConfClass.removeTheory()}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeTheory()}}>
       <Icon icon="mdi:minus" width="20" height="20"/>
     </button>
     {#each Object.entries(diagramConfClass.getConfig()?.theories) as [theoryID, theory] (theoryID)}
       {@const currentTheory = theoryID === diagramConfClass.getCurrentDiagram().theory}
       <span contenteditable={currentTheory} role="button" tabindex="0"
-            class={[
-                  "px-2 py-1 border-r border-gray-100 text-sm",
-                  styleSelected(currentTheory)
-                  ]}
-            title={currentTheory ? "Click to edit the name of the current theory" : "Click to modify the theory of the current diagram"}
-            onclick={(e) => {if (!currentTheory) {diagramConfClass.changeTheory(theoryID); (e.target as HTMLElement).blur()}}}
+        class={[
+                "px-2 py-1 border-r border-gray-100 text-sm",
+                styleSelected(currentTheory)
+                ]}
+        title={currentTheory ? "Click to edit the name of the current theory" : "Click to modify the theory of the current diagram"}
+        onclick={(e) => {if (!currentTheory) {diagramConfClass.undoSnapshot(); diagramConfClass.changeTheory(theoryID); (e.target as HTMLElement).blur()}}}
         onblur={(e) => {if (currentTheory) {diagramConfClass.getConfig().theories[theoryID].theoryName = (e.target as HTMLElement).innerText}}}
         onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
         >
         {diagramConfClass.getConfig()?.theories[theoryID]?.theoryName || "No name"}
       </span>
     {/each}
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => diagramConfClass.addTheory()}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addTheory()}}>
       <Icon icon="mdi:plus" width="20" height="20"/>
     </button>
   </div>
@@ -79,7 +79,7 @@
             <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
           {/each}
         </ul>
-        
+
         <CreateNodes />
       {:else}
         <!-- ========== Rules ========== -->
@@ -93,7 +93,7 @@
         </ul>
         <h1 class={styleTitleInTheoryPanel}>Create rule</h1>
         <p class="text-center w-full">
-          <Button onclick={() => diagramConfClass.createRule()}>
+          <Button onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.createRule()}}>
             <Icon icon="mdi:plus" width="20" height="20" class="mr-2" />
             New rule
           </Button>

@@ -39,8 +39,8 @@
           <hr class={hr}>
           <ul class="list-disc px-5">
             <li>Node ID: <ContentEditable
-                           onedit={(s) => diagramConfClass.tryOrSendNotificationError(
-                             () => diagramConfClass.renameNodeID(nodeID, s))}
+                           onedit={(s) => {diagramConfClass.undoSnapshot(); diagramConfClass.tryOrSendNotificationError(
+                             () => diagramConfClass.renameNodeID(nodeID, s))}}
               >{nodeID}</ContentEditable></li>
             <li>
               Node Kind: <code>{node?.nodeKind}</code>
@@ -64,13 +64,13 @@
               </ul>
             </li>
           </ul>
-          <Button title="Select only this node" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.clearSelection(); diagramConfClass.addNodeSelection(nodeID)}}>
+          <Button title="Select only this node" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addNodeSelection(nodeID)}}>
             <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
           </Button>
-          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.removeNodeSelection(nodeID)}}>
+          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNodeSelection(nodeID)}}>
             <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
           </Button>
-          <Button title="Remove" tiny={true} class="text-sm" onclick={() => diagramConfClass.removeNode(nodeID)}>
+          <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNode(nodeID)}}>
             <Icon icon="mdi:trash-outline" width="18" height="18" />
           </Button>
         {/each}
@@ -87,13 +87,13 @@
             <li>From: <code>{link?.from}</code></li>
             <li>To: <code>{link?.to}</code></li>
           </ul>
-          <Button title="Select only this link" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.clearSelection(); diagramConfClass.addLinkSelection(linkID)}}>
+          <Button title="Select only this link" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addLinkSelection(linkID)}}>
             <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
           </Button>
-          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.removeLinkSelection(linkID)}}>
+          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLinkSelection(linkID)}}>
             <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
           </Button>
-          <Button title="Remove" tiny={true} class="text-sm" onclick={() => diagramConfClass.removeLink(linkID)}>
+          <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLink(linkID)}}>
             <Icon icon="mdi:trash-outline" width="18" height="18" />
           </Button>
         {/each}

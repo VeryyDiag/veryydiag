@@ -56,6 +56,7 @@
   <p>
     <Icon icon="ph:arrow-bend-down-right-bold" width="15" height="15" class="inline align-baseline mr-1"/>
     <ContentEditable onedit={(s, htmlElt) => {
+                              diagramConfClass.undoSnapshot()
                               const res = diagramConfClass.renameRule(ruleName, s)
                               // If the name already exists, reset to old value
                               if (!res) {
@@ -89,29 +90,29 @@
     </div>
   </div>
   <div class="text-center">
-    <Button tiny={true} title="Set lhs based on current diagram" onclick={() => diagramConfClass.setRuleLhs(ruleName)}>
+    <Button tiny={true} title="Set lhs based on current diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.setRuleLhs(ruleName)}}>
       <!-- <Icon icon="teenyicons:left-solid" width="15" height="15" /> -->
       Set lhs
     </Button>
-    <Button tiny={true} title="Set rhs based on current diagram" onclick={() => diagramConfClass.setRuleRhs(ruleName)}>
+    <Button tiny={true} title="Set rhs based on current diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.setRuleRhs(ruleName)}}>
       <!-- <Icon icon="teenyicons:right-solid" width="15" height="15" /> -->
       Set rhs
     </Button>
-    <Button tiny={true} title="Edit lhs in a new diagram" onclick={() => diagramConfClass.addDiagram(undefined, {...$state.snapshot(rule?.lhs), name: `LHS ${ruleName}`}, undefined)}>
+    <Button tiny={true} title="Edit lhs in a new diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addDiagram(undefined, {...$state.snapshot(rule?.lhs), name: `LHS ${ruleName}`}, undefined)}}>
       Edit LHS
     </Button>
-    <Button tiny={true} title="Edit rhs in a new diagram" onclick={() => diagramConfClass.addDiagram(undefined, {...$state.snapshot(rule?.rhs), name: `RHS ${ruleName}`}, undefined)}>
+    <Button tiny={true} title="Edit rhs in a new diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addDiagram(undefined, {...$state.snapshot(rule?.rhs), name: `RHS ${ruleName}`}, undefined)}}>
       Edit RHS
     </Button>
-    <Button tiny={true} title="Delete rule" onclick={() => diagramConfClass.deleteRule(ruleName)}>
+    <Button tiny={true} title="Delete rule" onclick={() => {diagramConfClass.undoSnapshot(); console.log("undo"); diagramConfClass.deleteRule(ruleName)}}>
       <!-- <Icon icon="mdi:trash-outline" width="15" height="15" /> -->
       Delete
     </Button>
-    <Button tiny={true} title="Apply rule (left to right)" onclick={() => diagramConfClass.applyRule(ruleName, "lr")}>
+    <Button tiny={true} title="Apply rule (left to right)" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.applyRule(ruleName, "lr")}}>
       <!-- <Icon icon="mdi:trash-outline" width="15" height="15" /> -->
       Apply <Icon icon="material-symbols:arrow-right-alt-rounded" width="20" height="20" class="inline align-baseline ml-1" />
     </Button>
-    <Button tiny={true} title="Apply rule (right to left)" onclick={() => diagramConfClass.applyRule(ruleName, "rl")}>
+    <Button tiny={true} title="Apply rule (right to left)" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.applyRule(ruleName, "rl")}}>
       <!-- <Icon icon="mdi:trash-outline" width="15" height="15" /> -->
       Apply <Icon icon="material-symbols:arrow-left-alt-rounded" width="20" height="20" class="inline align-baseline ml-1" />
     </Button>

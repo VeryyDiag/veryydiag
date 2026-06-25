@@ -54,7 +54,6 @@
   $effect(() => {
     try {
       if (diagramConfParsed !== undefined) {
-        console.log("In my effect of ${uid}, I will call ${setConfigDontReparse}")
         errorsImport = diagramConfClass.setConfigDontReparse(diagramConfParsed)
       } else {
         errorsImport = diagramConfClass.setConfig(diagramConf)

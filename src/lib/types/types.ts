@@ -714,8 +714,6 @@ export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : Diagr
 }
 
 export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
-  console.log("REPARSING diagramConfByUserToDiagramConf", JSON.stringify(diagramConfByUser))
-  console.trace("Hey")
   if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
     throw new ProofDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
   }
@@ -961,7 +959,6 @@ export function parseSVG(svg: string): ParsedSVG {
   }))
   const anchorElements = doc.querySelectorAll<SVGElement>('[data-proofdiag-anchor]')
   const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.proofdiagAnchor, {}]))
-  console.log("When parsing the SVG, we found the anchors", anchors)
   return {paramSpecs, anchors}
 }
 
