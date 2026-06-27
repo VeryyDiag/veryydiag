@@ -27,11 +27,10 @@ diagrams:
       h: 4.931939278832129
 proofs: {}
 tabs:
-  - tabKind: tabDiagram
+  - &a1
+    tabKind: tabDiagram
     diagramID: main
-currentTab:
-  tabKind: tabDiagram
-  diagramID: main
+currentTab: *a1
 theories:
   main:
     theoryName: Main theory
@@ -81,17 +80,20 @@ theories:
                 y: -0.08779660572608305
               params:
                 multipleWiresAllowed:
-                  value: false
+                  value: true
           linksWithID:
             b-to-bob:
               from: b.out.0
               to: bob.boundary
           theory: main
           viewport:
-            x: 0.6788541584892689
-            y: -0.6820057679934944
-            w: 2.216063167246677
-            h: 2.216063167246677
+            x: 0.0025838216145833335
+            y: -0.14997590700785318
+            w: 1.9420812718073528
+            h: 1.0066516526540121
+          svgSize:
+            w: 73.40149688720703pt
+            h: 38.04667663574219pt
         rhs:
           name: RHS My rule (click me to edit)
           nodes:
@@ -112,7 +114,7 @@ theories:
                 y: -0.08779660572608305
               params:
                 multipleWiresAllowed:
-                  value: false
+                  value: true
           linksWithID:
             c1-to-c0:
               from: c1.out.0
@@ -122,7 +124,10 @@ theories:
               to: charlie.boundary
           theory: main
           viewport:
-            x: -0.3695888257605855
-            y: -2.94149009304412
-            w: 7.357588823428846
-            h: 7.357588823428846
+            x: -0.004381192525227865
+            y: -0.14997932602961858
+            w: 1.949046285947164
+            h: 1.864017964998881
+          svgSize:
+            w: 73.66474151611328pt
+            h: 70.4510726928711pt

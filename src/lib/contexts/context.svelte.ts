@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError, availableNodeToParsedSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
@@ -848,6 +848,15 @@ export class DiagramConfClass {
   getParamSpecs = (theoryID: TheoryID, nodeKind: NodeKind) : ParamSpecs | undefined => {
     return this.diagramConf?.theories?.[theoryID]?.availableNodes
     ?.[nodeKind]?.parsedSVG?.paramSpecs
+  }
+
+  getParamFromNode = (node: Node, theoryID: TheoryID, paramName: ParamName) : paramAvailableTypesJS | undefined => {
+    const v = node?.params?.[paramName]?.value
+    if (v === undefined) {
+      return this.getParamSpecs(theoryID, node.nodeKind)?.[paramName]?.default
+    } else {
+      return v
+    }
   }
 
   changeNodeParam = (nodeID: NodeID, paramName: ParamName, newValue: string | boolean | number, diagID: DiagramID | undefined = undefined) => {

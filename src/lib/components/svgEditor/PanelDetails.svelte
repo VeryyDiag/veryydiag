@@ -33,37 +33,41 @@
       <h1 class={styleTitleInTheoryPanel}>Details</h1>
       {#if nbSelectedItems >= 1}
         {#each nodeSelection as nodeID }
-          {@const currentTheory = diagramConfClass.getCurrentTheoryName()}
+          {@const currentTheoryID = diagramConfClass.getCurrentTheoryName()}
           {@const node = diagramConfClass.getCurrentDiagram()?.nodes?.[nodeID]}
-          {@const paramDefs = (node === undefined) ? {} : diagramConfClass.getParamSpecs(currentTheory, node.nodeKind) || {}}
+          {@const paramDefs = (node === undefined) ? {} : diagramConfClass.getParamSpecs(currentTheoryID, node.nodeKind) || {}}
           <hr class={hr}>
-          <ul class="list-disc px-5">
-            <li>Node ID: <ContentEditable
-                           onedit={(s) => {diagramConfClass.undoSnapshot(); diagramConfClass.tryOrSendNotificationError(
-                             () => diagramConfClass.renameNodeID(nodeID, s))}}
-              >{nodeID}</ContentEditable></li>
-            <li>
-              Node Kind: <code>{node?.nodeKind}</code>
-            </li>
-            <li>
-              Available parameters:
-              <ul class="list-disc px-5">
-                {#each Object.entries(paramDefs) as [paramName, paramDef]}
-                  <li><code>{paramName}</code>:
-                    {#if paramDef.type === "string"}
-                      <input class="border p-1 rounded border-gray-500" oninput={(e) => {diagramConfClass.changeNodeParam(nodeID, paramName, (e.target as HTMLInputElement).value)}} value={node?.params?.[paramName]?.value || paramDef.default} />
-                    {:else if paramDef.type === "boolean"}
-                      <Toogle tiny={true} enabled={toBoolean(node?.params?.[paramName]?.value || paramDef.default)} onchange={(v) => diagramConfClass.changeNodeParam(nodeID, paramName, v)}/>
-                    {:else if paramDef.type === "integer"}
-                        <input class="border p-1 rounded border-gray-500" type="number" oninput={(e) => {diagramConfClass.changeNodeParam(nodeID, paramName, (e.target as HTMLInputElement).value)}} value={node?.params?.[paramName]?.value || paramDef.default} />
-                    {:else}
-                        We provide no way to edit yourself the type "{paramDef.type}". Please report a bug.
-                    {/if}
-                  </li>
-                {/each}
-              </ul>
-            </li>
-          </ul>
+          {#if node === undefined }
+            The node {nodeID} does not exist in the current diagram.
+          {:else}
+            <ul class="list-disc px-5">
+              <li>Node ID: <ContentEditable
+                             onedit={(s) => {diagramConfClass.undoSnapshot(); diagramConfClass.tryOrSendNotificationError(
+                               () => diagramConfClass.renameNodeID(nodeID, s))}}
+                >{nodeID}</ContentEditable></li>
+              <li>
+                Node Kind: <code>{node?.nodeKind}</code>
+              </li>
+              <li>
+                Available parameters:
+                <ul class="list-disc px-5">
+                  {#each Object.entries(paramDefs) as [paramName, paramDef]}
+                    <li><code>{paramName}</code>:
+                      {#if paramDef.type === "string"}
+                        <input class="border p-1 rounded border-gray-500" oninput={(e) => {diagramConfClass.changeNodeParam(nodeID, paramName, (e.target as HTMLInputElement).value)}} value={diagramConfClass.getParamFromNode(node, currentTheoryID, paramName)} />
+                      {:else if paramDef.type === "boolean"}
+                        <Toogle tiny={true} enabled={toBoolean(diagramConfClass.getParamFromNode(node, currentTheoryID, paramName))} onchange={(v) => diagramConfClass.changeNodeParam(nodeID, paramName, v)}/>
+                      {:else if paramDef.type === "integer"}
+                          <input class="border p-1 rounded border-gray-500" type="number" oninput={(e) => {diagramConfClass.changeNodeParam(nodeID, paramName, (e.target as HTMLInputElement).value)}} value={diagramConfClass.getParamFromNode(node, currentTheoryID, paramName)} />
+                      {:else}
+                          We provide no way to edit yourself the type "{paramDef.type}". Please report a bug.
+                      {/if}
+                    </li>
+                  {/each}
+                </ul>
+              </li>
+            </ul>
+          {/if}
           <Button title="Select only this node" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addNodeSelection(nodeID)}}>
             <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
           </Button>

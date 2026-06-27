@@ -64,7 +64,7 @@ export function assertNever(x: never, m: string = `We should never enter this ca
   throw new ProofDiagError(`${m}: ${x}`);
 }
 
-export function toBoolean(x: string | boolean | number) {
+export function toBoolean(x: string | boolean | number | undefined) {
   if (typeof x === 'string' ) {
     if (x === "true") {
       return true
@@ -77,6 +77,8 @@ export function toBoolean(x: string | boolean | number) {
     throw new ProofDiagError("Expecting a boolean but got a number ${x}")
   } else if (typeof x === 'boolean') {
     return x
+  } else if (x === undefined) {
+    return false
   } else {
     throw new ProofDiagError(`Can't turn type ${typeof x} into a boolean`)
   }
