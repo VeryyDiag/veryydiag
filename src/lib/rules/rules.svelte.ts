@@ -1,6 +1,6 @@
-import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap } from "$lib/types/types"
+import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, Node, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
-import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID } from "$lib/types/types"
+import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID, getParam } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
 export function checkTheory(theory: Theory) : true {
@@ -159,18 +159,48 @@ export function checkRule(rule: Rule, theory: Theory, shouldCheckTheory: boolean
     }
     return undefined
   }).filter(x => x !== undefined)
-  const boundaryFromNames = boundaryFrom.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryFromWithNames : Record<BoundaryName, Node> = Object.fromEntries(boundaryFrom.map(n => {
+    const boundaryName = getBoundaryName(n, theory)
+    if (boundaryName === undefined) {
+      return undefined
+    } else {
+      return [boundaryName, n]
+    }
+  }).filter(x => x !== undefined))
+  const boundaryFromNames = keys(boundaryFromWithNames)
   const boundaryTo = Object.entries(rhs?.nodes || {}).map(([nodeID, node]) => {
     if (isBoundaryNodeID(nodeID, rhs)) {
       return node
     }
     return undefined
   }).filter(x => x !== undefined)
-  const boundaryToNames = boundaryTo.map(n => getBoundaryName(n, theory)).filter(x => x !== undefined)
+  const boundaryToWithNames : Record<BoundaryName, Node> = Object.fromEntries(boundaryTo.map(n => {
+    const boundaryName = getBoundaryName(n, theory)
+    if (boundaryName === undefined) {
+      return undefined
+    } else {
+      return [boundaryName, n]
+    }
+  }).filter(x => x !== undefined))
+  const boundaryToNames = keys(boundaryToWithNames)
   assertDontThrow(
     () => listsAreUniqueAndIdenticalSetsThrow(boundaryFromNames, boundaryToNames),
     `You should have the same sets of boundary nodes in the right and left parts of the rule`
   )
+  // Check if all boundary nodes have the same properties (mono/multi-wire)
+  entries(boundaryFromWithNames).forEach(([boundaryNameFrom, nodeFrom]) => {
+    const nodeTo = boundaryToWithNames[boundaryNameFrom]
+    const mwFrom = assertNotUndefined(getParam(nodeFrom, theory, "multipleWiresAllowed"),
+                                      `The boundary node ${nodeFrom} has no 'multipleWiresAllowed' parameter`)
+    const mwTo = assertNotUndefined(getParam(nodeTo, theory, "multipleWiresAllowed"),
+                                    `The boundary node ${nodeTo} has no 'multipleWiresAllowed' parameter`)
+    assertTrue(mwFrom === true || mwFrom === false,
+               `The parameter 'multipleWiresAllowed' of the boundary node ${nodeFrom} must be a boolean, either true or false (not ${mwFrom})`)
+    assertTrue(mwTo === true || mwTo === false,
+               `The parameter 'multipleWiresAllowed' of the boundary node ${nodeTo} must be a boolean, either true or false (not ${mwTo})`)
+    assertTrue(mwFrom === mwTo,
+               `The two boundary nodes assotiated with the boundary name ${boundaryNameFrom} have different values for the 'multipleWiresAllowed' parameter (${mwFrom} != ${mwTo})`)
+  })
   // TODO: check same set of mono and multi-boundary nodes, with same properties etc.
   return true
 }
@@ -400,13 +430,14 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       if (n === 0) { // not a multi-wire boundary link
         return undefined
       } else if (n === 1) { // from is multi-wire boundary link
-        return [getBoundaryNameFromNode(link.from, ruleFrom, theory), link.from]
+        return [getBoundaryNameFromNode(link.from, ruleFrom, theory), link.to]
       } else if (n === 2) { // to is boundary link
-        return [getBoundaryNameFromNode(link.to, ruleFrom, theory), link.to]
+        return [getBoundaryNameFromNode(link.to, ruleFrom, theory), link.from]
       } else {
         throw new ProofDiagError(`The link ${linkID} points to two multi-wire nodes which is not supported (no clear and useful semantic defined)`)
     }}).filter((x) => x !== undefined))
   }
+  // List of anchors in B connected to a multi-wire node
   const multiWireBoundaryLinksB : IDAnchor[] = values(multiWireBoundaryNameToAnchorB)
 
   // monoBoundaryNameToIDAnchorInD(boundaryName, anchor) paps a boundary name to the name of the corresponding IDAnchor in D via:
@@ -438,15 +469,15 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     // == Check if the link is partially inside the rewriting region and throw an error if it is not a multi-wire boundary link
     // From node:
     const [fromNode, fromAnchor] = fullAnchorToIDAndAnchor(link.from)
-    assertTrue(
-      !nodesA.includes(fromNode) || multiWireBoundaryLinksB.includes(nodeBijectionAB[link.from]),
-      `The link ${linkID} is not present in linkBijectionAB, yet its from node ${fromNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire anchor`
-    )
-    // To link:
     const [toNode, toAnchor] = fullAnchorToIDAndAnchor(link?.to)
     assertTrue(
-      !nodesA.includes(toNode) || multiWireBoundaryLinksB.includes(nodeBijectionAB[link.to]),
-      `The link ${linkID} is not present in linkBijectionAB, yet its to node ${toNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire anchor`
+      !nodesA.includes(fromNode) || multiWireBoundaryLinksB.includes(IDAnchorToFullAnchor(nodeBijectionAB[fromNode], fromAnchor)),
+      `The link ${linkID} is not present in linkBijectionAB, yet its source node ${fromNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire link (${nodeBijectionAB[link.from]} not in ${multiWireBoundaryLinksB}, link.from = ${link.from})`
+    )
+    // To link:
+    assertTrue(
+      !nodesA.includes(toNode) || multiWireBoundaryLinksB.includes(IDAnchorToFullAnchor(nodeBijectionAB[toNode], toAnchor)),
+      `The link ${linkID} is not present in linkBijectionAB, yet its destination node ${toNode} is part of the region to be rewritten (i.e. is inside nodeBijectionAB) and is not a multi-wire link (in ${multiWireBoundaryLinksB})`
     )
   });
 

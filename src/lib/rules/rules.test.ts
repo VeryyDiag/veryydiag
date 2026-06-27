@@ -297,6 +297,29 @@ export const diagramAtoAlice = {
   },
 } satisfies Diagram
 
+export const diagramAtoAliceMulti = {
+  nodes: {
+    myA: diagramA.nodes.myA,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+        multipleWiresAllowed: {
+          value: true
+        },
+      },
+    }
+  },
+  linksWithID: {
+    foo: {
+      from: "myA.out",
+      to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
 export const diagramAprimetoAlice = {
   nodes: {
     myAprime: diagramAprime.nodes.myAprime,
@@ -305,6 +328,29 @@ export const diagramAprimetoAlice = {
       params: {
         boundaryName: {
           value: "Alice",
+        },
+      },
+    }
+  },
+  linksWithID: {
+    fooPrime: {
+      from: "myAprime.out",
+      to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
+export const diagramAprimetoAliceMulti = {
+  nodes: {
+    myAprime: diagramAprime.nodes.myAprime,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+        multipleWiresAllowed: {
+          value: true
         },
       },
     }
@@ -362,6 +408,29 @@ export const diagramA2toAlice = {
   },
 } satisfies Diagram
 
+export const diagramA2toAliceMulti = {
+  nodes: {
+    myA2: diagramA2.nodes.myA2,
+    myAliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+        multipleWiresAllowed: {
+          value: true
+        },
+      },
+    }
+  },
+  linksWithID: {
+    foo: {
+      from: "myA2.out",
+      to: "myAliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
+
 export const diagramA2primetoAlice = {
   nodes: {
     myA2prime: diagramA2prime.nodes.myA2prime,
@@ -382,6 +451,29 @@ export const diagramA2primetoAlice = {
   },
 } satisfies Diagram
 
+
+export const diagramA2primetoAliceMulti = {
+  nodes: {
+    myA2prime: diagramA2prime.nodes.myA2prime,
+    aliceBoundary: {
+      nodeKind: "boundary",
+      params: {
+        boundaryName: {
+          value: "Alice",
+        },
+        multipleWiresAllowed: {
+          value: true
+        },
+      },
+    }
+  },
+  linksWithID: {
+    bar: {
+      from: "myA2prime.out",
+      to: "aliceBoundary.boundary"
+    },
+  },
+} satisfies Diagram
 
 
 
@@ -468,6 +560,10 @@ export const theoryABCrules = {
       lhs: diagramAprimetoAlice,
       rhs: diagramA2primetoAlice,
     },
+    AprimetoA2primeWithMultiLinks: {
+      lhs: diagramAprimetoAliceMulti,
+      rhs: diagramA2primetoAliceMulti,
+    },
     AitselfprimetoA2primeWithLinks: {
       lhs: diagramAprimetoAliceAndHerself,
       rhs: diagramA2primetoAlice,
@@ -535,6 +631,21 @@ export const proofStepAtoA2WithLinksViaPrime = {
   linkBijectionCD: {
     bar: "foo"
   },
+} satisfies ProofStepApplyRule
+
+export const proofStepAtoA2WithMultiLinksViaPrime = {
+  kind: "applyRule",
+  ruleName: "AprimetoA2primeWithMultiLinks",
+  direction: "lr",
+  nodeBijectionAB: {
+    myA: "myAprime",
+  },
+  boundaryAnchorsBA: {},
+  linkBijectionAB: {},
+  nodeBijectionCD: {
+    myA2prime: "myA2"
+  },
+  linkBijectionCD: {},
 } satisfies ProofStepApplyRule
 
 export const proofStepAitselftoA2WithLinksViaPrime = {
@@ -681,6 +792,7 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         draft.nodes.aliceBoundary.params.multipleWiresAllowed.value = true;
       }), theoryABC)).toBe(true)
+      expect(checkDiagram(diagramAtoAliceMulti, theoryABC)).toBe(true)
     })
 
     test('Boundary nodes should have a single anchor called boundary', () => {
@@ -760,7 +872,7 @@ describe('Test well formed diagrams/rules/…', () => {
       }, theoryABC)).toThrow(ProofDiagError)
     })
 
-    test('Simple valid rule with one boundary', () => {
+    test('Simple valid rule with one mono-wire boundary', () => {
       expect(checkRule({
         // Rule
         lhs: diagramAtoAlice,
@@ -768,7 +880,15 @@ describe('Test well formed diagrams/rules/…', () => {
       }, theoryABC)).toBe(true)
     })
 
-    test('Simple valid rule with two boundaries', () => {
+    test('Simple valid rule with one multi-wire boundary', () => {
+      expect(checkRule({
+        // Rule
+        lhs: diagramAtoAliceMulti,
+        rhs: diagramA2toAliceMulti
+      }, theoryABC)).toBe(true)
+    })
+
+    test('Simple valid rule with two mono-wire boundaries', () => {
       expect(checkRule({
         // Rule
         lhs: diagramBtoAliceAndBob,
@@ -810,38 +930,58 @@ describe('Test well formed diagrams/rules/…', () => {
       }), theoryABC)).toBe(true)
     })
 
+    test('Wrong rule with one mono and one multi-boundary', () => {
+      expect(() => checkRule({
+        // Rule
+        lhs: diagramAtoAlice,
+        rhs: diagramA2toAliceMulti
+      }, theoryABC)).toThrow(ProofDiagError)
+    })
+
+
   })
 
   describe('Test application of proofApplyRule', () => {
+
     test('Trivial one node rule, no link', () => {
       expect(proofApplyRule(diagramA, proofStepAtoA2, theoryABCrules)).toEqual(diagramA2)
     })
+
     test('Trivial one node rule, no link, but different names', () => {
       expect(
         proofApplyRule(diagramA, proofStepAtoA2ViaPrime, theoryABCrules)
       ).toEqual(diagramA2)
     })
+
     test('Apply rule other direction', () => {
       expect(
         proofApplyRule(diagramA2, proofStepAtoA2ViaPrimeInverse, theoryABCrules)
       ).toEqual(diagramA)
     })
+
     test('Trivial broken rule with node name mismatch', () => {
       expect(
         () => proofApplyRule(diagramAprime, // <-- should be diagramA to work
                                 proofStepAtoA2ViaPrime, theoryABCrules)
       ).toThrow(ProofDiagError)
     })
+
     test('Trivial broken rule with links', () => {
       expect(
         () => proofApplyRule(diagramAtoC, // <-- this contains an extra link that breaks the proof
-                                proofStepAtoA2, theoryABCrules)
+                             proofStepAtoA2, theoryABCrules)
       ).toThrow(ProofDiagError)
     })
 
-    test('Simple rule with one link', () => {
+    test('Simple rule with one mono-wire link', () => {
       expect(proofApplyRule(diagramAtoC,
                             proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+      ).toEqual(diagramA2toC)
+    })
+
+    test('Simple rule with one multi-wire link', () => {
+      expect(proofApplyRule(diagramAtoC,
+                            proofStepAtoA2WithMultiLinksViaPrime, theoryABCrules)
       ).toEqual(diagramA2toC)
     })
 
@@ -948,6 +1088,40 @@ describe('Test well formed diagrams/rules/…', () => {
 
 
     })
+
+    test('Extra boundary link breaks mono-wire but not multi-wire', () => {
+      const diagramAtoCExtraLink = editCopy(diagramAtoC, (draft : any) => {
+        draft.linksWithID.extra = {
+          from: "myA.out",
+          to: "myC.in"
+        }
+      })
+      const diagramA2toCExtraLink = editCopy(diagramA2toC, (draft : any) => {
+        draft.linksWithID.extra = {
+          from: "myA2.out",
+          to: "myC.in"
+        }
+      })
+
+      // With a mono-wire rule we expect an error:
+      expect(() => proofApplyRule(diagramAtoCExtraLink,
+                                  proofStepAtoA2WithLinksViaPrime, theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+      // An error should occur even if we map the extra link to the same link
+      expect(() => proofApplyRule(diagramAtoCExtraLink,
+                            editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
+                              draft.linkBijectionAB.extra = "fooPrime"
+                            }), theoryABCrules)
+      ).toThrow(ProofDiagError)
+
+
+      // With a multi-wire rule we expect no errors:
+      expect(proofApplyRule(diagramAtoCExtraLink,
+                            proofStepAtoA2WithMultiLinksViaPrime, theoryABCrules)
+      ).toEqual(diagramA2toCExtraLink)
+    })
+
 
     // TODO: ID and copy rules in ZX are interesting to test
   })
