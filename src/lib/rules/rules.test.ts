@@ -641,7 +641,7 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Trivial broken diagram with a badly typed default parameter', () => {
       expect(() => checkDiagram(diagramB, editCopy(theoryABCparam, (draft: any) => {
-        draft.availableNodes.B.paramSpecs.gateName.default = false
+        draft.availableNodes.B.parsedSVG.paramSpecs.gateName.default = false
       }))).toThrow(ProofDiagError)
     })
 
@@ -691,13 +691,13 @@ describe('Test well formed diagrams/rules/…', () => {
 
     test('Boundary nodes must have a boundary name', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft : any) => {
-        delete draft.availableNodes.boundary.paramSpecs.boundaryName
+        delete draft.availableNodes.boundary.parsedSVG.paramSpecs.boundaryName
       }))).toThrow(ProofDiagError)
 
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         delete draft.nodes.aliceBoundary.params.boundaryName.value
       }), editCopy(theoryABC, (draft : any) => {
-        delete draft.availableNodes.boundary.paramSpecs.boundaryName
+        delete draft.availableNodes.boundary.parsedSVG.paramSpecs.boundaryName
       }))).toThrow(ProofDiagError)
 
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
