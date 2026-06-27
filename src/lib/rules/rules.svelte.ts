@@ -484,7 +484,9 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     if (diagram?.nodes === undefined) {
       diagram.nodes = {}
     }
-    diagram.nodes[newNodeID] = node;
+    // Otherwise we copy a reference to a node that may be updated later.
+    // One can also take a full snapshot of the whole theory but it seems like unnecessary.
+    diagram.nodes[newNodeID] = structuredClone($state.snapshot(node));
     // TODO: think about how to set the position of the new node (center of all other nodes? relative to the first anchor?…)
   })
 
@@ -578,6 +580,16 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
 
   // TODO: check link direction/type/?
   assertDontThrow(() => checkDiagram(diagram, theory, false), `The final diagram is not well formed`)
+  // return proofApplyMove(diagram, proofStep, true)
+  entries(proofStep?.move).forEach(([nodeID, pos]) => {
+    assertNotUndefinedNR(diagram?.nodes?.[nodeID],
+                         `The nodeID ${nodeID} does not exist in the diagram when applying the proofStep 'move'`)
+    diagram.nodes[nodeID].pos = pos
+  })
+  if (proofStep?.viewport !== undefined) {
+    diagram.viewport = proofStep.viewport
+  }
+
   return diagram
 }
 

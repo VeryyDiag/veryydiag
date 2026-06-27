@@ -6,7 +6,7 @@ import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
 import { MapReduce } from '$lib/svelteRelatedUtils.svelte';
 import { SvelteSet } from 'svelte/reactivity';
-import { proofApplyOneStep, proofApplyRule } from '$lib/rules/rules';
+import { proofApplyOneStep, proofApplyRule } from '$lib/rules/rules.svelte';
 import { proofStepApplyRuleFromSelection } from '$lib/rules/matching';
 
 // Configuration
@@ -942,8 +942,11 @@ export class DiagramConfClass {
                       const theory = assertNotUndefined(
                         this.diagramConf.theories?.[this.startingDiagram?.theory || "main"],
                         `The theory ${this.startingDiagram?.theory || "main"} does not exist`)
+                      // We need to take a snapshot of everything including the theory because
+                      // when nodes are copied from a rule to the new diagram we
                       return proofApplyOneStep($state.snapshot(acc), x, theory)
                     } catch (e) {
+                      console.log(e)
                       return { error: `Error when applying the ${i+1}-th proof step (${e}).` }
                     }
                   },
@@ -1000,6 +1003,7 @@ export class DiagramConfClass {
                                     (msg) => {str = `${str}\n${msg}`}
                                   )
                                 } catch (e) {
+                                  console.log(e)
                                   this.sendNotification("error", `Error when applying the rule (${e}).\nDetails:\n${str}`, {codeFormatted: true})
                                 }
                               }]],
@@ -1022,6 +1026,7 @@ export class DiagramConfClass {
       try {
         this.diagramConf.diagrams[this.getCurrentDiagramID()] = proofApplyRule($state.snapshot(diagram), proofStep, theory)
       } catch (e) {
+        console.log(e);
         this.sendNotification("error", `Error when applying the rule (${e})`,
                               {
                                 buttons: [["Show details of proofStep", () => {

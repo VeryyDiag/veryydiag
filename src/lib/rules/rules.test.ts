@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { checkDiagram, checkRule, proofApplyRule } from './rules'
+import { checkDiagram, checkRule, proofApplyRule } from './rules.svelte'
 import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
 // Nice syntax to update nested objects in an immutable way via
 // const myobj2 = editCopy(myobj, draft => {draft.foo.bar.baz = 5})

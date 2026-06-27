@@ -4,7 +4,7 @@
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte"
   import Toogle from '../reusable/Toogle.svelte';
-  import { toBoolean } from '$lib/utils';
+  import { entries, toBoolean } from '$lib/utils';
 	import { getConfig } from 'storybook/test';
 	import Button from '../reusable/Button.svelte';
 	import type { ProofStep, ProofStepApplyRule, ProofStepMove, ProofStepGroupStart } from '$lib/types/types';
@@ -26,6 +26,7 @@
   let styleDot = "absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-buffer"
   let styleDotDisabled = `${styleDot} bg-gray-100 border-gray-200`
   let styleDotEnabled = `${styleDot} bg-green-200 border-green-300`
+  let styleLists = "list-disc ml-2"
 </script>
 <div class={[
              "absolute right-4 -translate-y-1/2 w-xs min-w-0 flex flex-col items-center transition-all duration-300",
@@ -87,8 +88,54 @@
               </div>
             {/if}
             {#if kind === "applyRule"}
-              Apply rule {proofStep?.ruleName}
-              {@render description(i, proofStep)}
+              Apply rule
+              <ul class={styleLists}>
+                <li>Rule name: {proofStep?.ruleName}</li>
+                <li>Description: {@render description(i, proofStep)}</li>
+                <li>Direction: {proofStep?.direction}</li>
+                <li>nodeBijectionAB:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.nodeBijectionAB) as [nodeIDA, nodeIDB]}
+	                    <li>{nodeIDA} → {nodeIDB}</li>
+                    {/each}
+                  </ul>
+                </li>
+                <li>boundaryAnchorsBA:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.boundaryAnchorsBA) as [nodeIDB, nodeIDA]}
+	                    <li>{nodeIDB} → {nodeIDA}</li>
+                    {/each}
+                  </ul>
+                </li>
+                <li>linkBijectionAB:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.linkBijectionAB) as [linkIDA, linkIDB]}
+	                    <li>{linkIDA} → {linkIDB}</li>
+                    {/each}
+                  </ul>
+                </li>
+                <li>nodeBijectionCD:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.nodeBijectionCD) as [nodeIDA, nodeIDB]}
+	                    <li>{nodeIDA} → {nodeIDB}</li>
+                    {/each}
+                  </ul>
+                </li>
+                <li>linkBijectionCD:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.linkBijectionCD) as [linkIDA, linkIDB]}
+	                    <li>{linkIDA} → {linkIDB}</li>
+                    {/each}
+                  </ul>
+                </li>
+                <li>move:
+                  <ul class={styleLists}>
+                    {#each entries(proofStep?.move) as [nodeID, point]}
+	                    <li>{nodeID} → x: {point?.x} y: {point?.y}</li>
+                    {/each}
+                  </ul>
+                </li>
+              </ul>
               {@render addMoveStep(i+1)}
             {:else if kind === "move"}
               Move
