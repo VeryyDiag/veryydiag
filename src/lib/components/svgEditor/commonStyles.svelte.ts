@@ -10,5 +10,7 @@ export const styleSelected = (selected: boolean) => (selected ? "bg-blue-100/50 
 export const styleTitleInTheoryPanel = "text-center mb-3 text-lg font-normal text-body"
 export const styleTitle2InTheoryPanel = "text-left mb-3 text-lg font-normal text-body"
 
+export const styleInput = "bg-gray-100 p-1 rounded-md"
+
 // Horizontal rule: <hr class={hr}>
 export const hr = "h-px my-2 bg-black/20 border-0"

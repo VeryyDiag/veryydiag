@@ -60,6 +60,8 @@
         "@iconify/svelte": "^5.2.1",
         "immer": "^11.1.6",
         "immutable": "^5.1.6",
+        "mathjax": "^4.1.2",
+        "mathjax-full": "^3.2.1",
         "uuid": "^13.0.0",
         "yaml": "^2.8.2"
     }

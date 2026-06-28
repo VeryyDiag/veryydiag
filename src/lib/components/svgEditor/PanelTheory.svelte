@@ -10,7 +10,7 @@
 
   let diagramConfClass = getContextDiagram()
 
-  let { addPanelCollapsed = $bindable() } = $props()
+  let { addPanelCollapsed = $bindable(), createNodeTemplatePanel = $bindable() } = $props()
 
   let isEditingRules = $state(false)
 
@@ -80,7 +80,7 @@
           {/each}
         </ul>
 
-        <CreateNodes />
+        <CreateNodes bind:createNodeTemplatePanel={createNodeTemplatePanel} />
       {:else}
         <!-- ========== Rules ========== -->
         <h1 class={styleTitleInTheoryPanel}>Available rules</h1>

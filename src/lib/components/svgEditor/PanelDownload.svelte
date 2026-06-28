@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** Notification panel */
+  /** Download panel */
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import Button from '$lib/components/reusable/Button.svelte'

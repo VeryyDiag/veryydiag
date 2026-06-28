@@ -18,6 +18,7 @@
   import PanelDetails from "./PanelDetails.svelte";
   import PanelProofMode from "./PanelProofMode.svelte";
   import { untrack } from "svelte";
+  import PanelCreateNodeTemplate from "./PanelCreateNodeTemplate.svelte";
 
   /**
    * Interactive SVG editor component
@@ -87,7 +88,7 @@
   let loadFilePanel = $state(false)
   let downloadPanel = $state(false)
   let panelDetailsEnabled = $state(true)
-
+  let createNodeTemplatePanel = $state(false)
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
@@ -154,7 +155,7 @@
     />
 
     <!-- Theory panel -->
-    <PanelTheory bind:addPanelCollapsed={addPanelCollapsed} />
+    <PanelTheory bind:addPanelCollapsed={addPanelCollapsed} bind:createNodeTemplatePanel={createNodeTemplatePanel} />
 
     <!-- Theory panel -->
     <PanelDetails bind:panelDetailsEnabled={panelDetailsEnabled} />
@@ -173,6 +174,9 @@
 
     <!-- Download panel -->
     <PanelDownload bind:downloadPanel={downloadPanel} />
+
+    <!-- Download panel -->
+    <PanelCreateNodeTemplate bind:createNodeTemplatePanel={createNodeTemplatePanel} />
 
   </div>
 {/if}

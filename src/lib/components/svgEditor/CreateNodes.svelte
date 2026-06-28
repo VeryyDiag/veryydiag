@@ -3,6 +3,7 @@
   import Button from '$lib/components/reusable/Button.svelte'
   import SvgEditor from './SvgEditor.svelte';
   import { allDefaultSvgNames } from "$lib/components/Nodes/allNodes"
+  let { createNodeTemplatePanel = $bindable() } = $props()
 
   import { parse } from 'yaml'
 
@@ -28,7 +29,9 @@
 
 <h1 class={styleTitleInTheoryPanel}>Create node</h1>
 <div class="text-sm mb-3 text-gray-600 min-w-0">
-  <p class="mb-2">Either create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
+  <p class="mb-2">Either create nodes via:</p>
+  <p class="mb-2"><Button onclick={() => createNodeTemplatePanel = true}>Create node from templates</Button></p>
+  <p class="mb-2">… or create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
   <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
     <div class="flex flex-nowrap w-max gap-2">
       {#each allDefaultSvgNames as svgName}
