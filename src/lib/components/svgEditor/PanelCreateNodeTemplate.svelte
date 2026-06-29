@@ -177,7 +177,7 @@
 </script>
 
 {#if createNodeTemplatePanel }
-  <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4/10 h-7/10 flex flex-col items-center gap-2 p-5 overflow-x-auto overflow-y-auto", stylePanel]}>
+  <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-6/10 h-7/10 flex flex-col items-center gap-2 p-5 overflow-x-auto overflow-y-auto", stylePanel]}>
     <!-- Floating close icon -->
     <button
       class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
@@ -196,8 +196,8 @@
       {#each svgParameters.anchors as anchor, i}
         <li class="list-disc">
           Name: <input class={`${styleInput} w-15`} bind:value={anchor.name} />
-          Position x (in [0,1]): <input class={`${styleInput} w-10`} bind:value={anchor.posX} />
-          Position y (in [0,1]): <input class={`${styleInput} w-10`} bind:value={anchor.posY} />
+          x in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posX} />
+          y in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posY} />
           Color: <input class={`${styleInput} w-15`} bind:value={anchor.color} />
           Radius: <input class={`${styleInput} w-15`} bind:value={anchor.radius} />
           <Button onclick={() => svgParameters.anchors.splice(i, 1)}><Icon icon="mdi:trash-outline" width="25" height="25" /></Button>
