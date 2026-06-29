@@ -1,6 +1,6 @@
-import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, Node, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap } from "$lib/types/types"
+import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, Node, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap, Point } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
-import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID, getParam } from "$lib/types/types"
+import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID, getParam, subtractPoints, addPoints } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
 export function checkTheory(theory: Theory) : true {
@@ -217,6 +217,31 @@ export function proofApplyMove(diagramOrig: Diagram, proofStep: ProofStepMove | 
     diagram.viewport = proofStep.viewport
   }
   return diagram
+}
+
+
+export function getCenterOfMass(nodes: Node[], theory: Theory) : Point {
+  let nodesWithPos = nodes.filter((x): x is Node & {pos: Point} => x.pos !== undefined)
+  let nodesToUse = nodesWithPos.filter((node) =>
+    !isBoundaryNode(node)
+  )
+  if (nodesToUse.length === 0) {
+    nodesToUse = nodesWithPos
+    if (nodesToUse.length === 0) {
+      return {x: 0, y: 0}
+    }
+  }
+  const sumPos = nodesToUse.reduce((point, node) => {
+    return {
+      x: point.x + node.pos.x,
+      y: point.y + node.pos.y,
+    }
+  }, {x: 0, y: 0})
+  const n = nodesToUse.length
+  return {
+    x: sumPos.x/n,
+    y: sumPos.y/n,
+  }
 }
 
 
@@ -482,6 +507,13 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
   });
 
   // === After all these checks we can finally apply the changes!
+  // == 0. Get the average position to add the diagram in the center of mass of the current diagram
+  // First, we check if there are some non-boundary nodes to compute the center of mass based on them
+  const centerOfMassA = getCenterOfMass(keys(nodeBijectionAB).map(nodeID =>
+    assertNotUndefined(diagram?.nodes?.[nodeID],
+                       `Node '${nodeID}' does not exist in the starting diagram`)), theory)
+  const centerOfMassC = getCenterOfMass(values(ruleTo?.nodes), theory)
+  const deltaCenterOfMass = subtractPoints(centerOfMassA, centerOfMassC)
   // == 1. Remove old stuff
   // As explained in the doc of ProofStepApplyRule, the semantic is to remove all links and nodes (except mono-wire boundaries):
   // We remove the old links
@@ -518,7 +550,9 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
     // Otherwise we copy a reference to a node that may be updated later.
     // One can also take a full snapshot of the whole theory but it seems like unnecessary.
     diagram.nodes[newNodeID] = structuredClone($state.snapshot(node));
-    // TODO: think about how to set the position of the new node (center of all other nodes? relative to the first anchor?…)
+    if (diagram.nodes[newNodeID].pos !== undefined) {
+      diagram.nodes[newNodeID].pos = addPoints(diagram.nodes[newNodeID].pos, deltaCenterOfMass)
+    }
   })
 
   // Deal with multi-wire boundary links by redirecting them

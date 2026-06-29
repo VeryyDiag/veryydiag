@@ -25,6 +25,14 @@ export type Point = {
   y: number,
 }
 
+export function addPoints(a: Point, b: Point) : Point {
+  return {x: a.x + b.x, y: a.y + b.y}
+}
+
+export function subtractPoints(a: Point, b: Point) : Point {
+  return {x: a.x - b.x, y: a.y - b.y}
+}
+
 /** Parameters of a node, like the name of a box…
  *  This is semantically more or less equivalent to allowing another input plugged with a node simulating this type,
  *  but parameters are far less cumbursome (try to write an ascii string as a graph…), and most
