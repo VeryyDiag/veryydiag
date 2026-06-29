@@ -74,7 +74,7 @@
         {/snippet}
         <li>
           {@render dotStep(0)}
-          Starting diagram {currentProofStep}
+          Starting diagram
           {@render addMoveStep(0)}
         </li>
         {#each (currentProof?.steps || []) as proofStep, i}

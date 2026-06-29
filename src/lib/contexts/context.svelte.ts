@@ -1067,8 +1067,10 @@ export class DiagramConfClass {
       } else {
         proof.steps.splice(i, 1)
       }
-      if (proof.currentStep > proof.steps.length) {
-        proof.currentStep = proof.steps.length // Current step counts also the first element
+      if (proof?.currentStep !== undefined) {
+        if (proof.currentStep > proof.steps.length) {
+          proof.currentStep = proof.steps.length // Current step counts also the first element
+        }
       }
     }
   }
