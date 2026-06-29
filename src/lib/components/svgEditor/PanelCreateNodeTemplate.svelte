@@ -85,7 +85,6 @@
     try {
       // Read all reactive state BEFORE any await
       const x = $state.snapshot(svgParameters)
-      console.log(x)
       const { tex, height, scale, mainNodeColor, anchors } = svgParameters;
 
       const texSvg = await getSvgImage(tex, {display: true})
@@ -141,7 +140,6 @@
       svg.prepend(rect)
 
       const newSvg = new XMLSerializer().serializeToString(svg)
-      console.log(newSvg)
       return newSvg
     } catch (e) {
       console.log("Error when converting to svg", e)
@@ -154,8 +152,6 @@
   function addNAnchors(prefix: string, posX: number, nbElementsToAdd: number) {
     const dx = 2*nbElementsToAdd;
     const dh = 1 / dx;
-    console.log(nbElementsToAdd, dx, dh);
-    console.log("XXX", ([...Array(nbElementsToAdd).keys()]));
     ([...Array(nbElementsToAdd).keys()]).forEach(i => {
       const a = {
         name: `${prefix}${i}`,
@@ -164,7 +160,6 @@
         color: "black",
         radius: 0.06
       }
-      console.log("i", a)
       svgParameters.anchors.push(a)
     })
   }
