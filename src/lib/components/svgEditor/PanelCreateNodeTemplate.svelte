@@ -70,7 +70,7 @@
     anchors: {name: string, posX: number, posY: number, color: string, radius: number}[]
   }
 
-  let svgParameters = $state<SvgParameters>({
+  const defaultSvgParameters : SvgParameters = {
     tex: "\\sqrt{\\cdot}",
     /** Height in cm */
     height: 0.7,
@@ -78,7 +78,8 @@
     scale: 1,
     mainNodeColor: "white",
     anchors: [],
-  })
+  }
+  let svgParameters = $state<SvgParameters>(structuredClone(defaultSvgParameters))
 
   async function createSvg(svgParameters: SvgParameters) {
     try {
@@ -192,13 +193,14 @@
     <p>Color: <input class={styleInput} bind:value={svgParameters.mainNodeColor} /></p>
     <p>Anchors:</p>
     <ul>
-      {#each svgParameters.anchors as anchor}
+      {#each svgParameters.anchors as anchor, i}
         <li class="list-disc">
           Name: <input class={`${styleInput} w-15`} bind:value={anchor.name} />
           Position x (in [0,1]): <input class={`${styleInput} w-10`} bind:value={anchor.posX} />
           Position y (in [0,1]): <input class={`${styleInput} w-10`} bind:value={anchor.posY} />
           Color: <input class={`${styleInput} w-15`} bind:value={anchor.color} />
           Radius: <input class={`${styleInput} w-15`} bind:value={anchor.radius} />
+          <Button onclick={() => svgParameters.anchors.splice(i, 1)}><Icon icon="mdi:trash-outline" width="25" height="25" /></Button>
         </li>
       {/each}
     </ul>
@@ -211,6 +213,9 @@
         output(s)
       </Button>
     </p>
-    <Button onclick={() => {diagramConfClass.undoSnapshot(); addNode()}}>Create new node</Button>
+    <p>
+      <Button onclick={() => {diagramConfClass.undoSnapshot(); addNode()}}>Create new node</Button>
+      <Button onclick={() => {svgParameters = defaultSvgParameters}}>Reset</Button>
+    </p>
   </div>
 {/if}
