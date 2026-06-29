@@ -31,3 +31,5 @@ test-results
 # Storybook
 *storybook.log
 storybook-static
+
+debug/
