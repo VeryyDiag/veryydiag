@@ -20,7 +20,7 @@
   // https://github.com/mathjax/MathJax/issues/3584#issuecomment-4826341132
   onMount(async () => {
     window.MathJax = {
-      loader: {
+    loader: {
         load: ['input/tex', 'output/svg'],
         paths: {
           mathjax: './node_modules/mathjax',
@@ -28,8 +28,9 @@
         svg: { fontCache: 'none' }, // Required for standalone svg
       },
     };
+    // @ts-expect-error: mathjax/startup.js doesn't have a .d.ts file
     await import('mathjax/startup.js');
-    await MathJax.startup.promise;
+    await assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).promise;
 	});
 
   // https://docs.mathjax.org/en/v4.0/web/convert.html#creating-stand-alone-svg-images
@@ -46,8 +47,8 @@
   const SVGXMLNS = 'http://www.w3.org/2000/svg';
 
   async function getSvgImage(math: string, options = {}) : Promise<string> {
-    const adaptor = MathJax.startup.adaptor;
-    const result = await MathJax.tex2svgPromise(math, options);
+    const adaptor = assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).adaptor;
+    const result = await assertNotUndefined(MathJax.tex2svgPromise, `MathJax.tex2svgPromise is not defined`)(math, options);
     const svg = adaptor.tags(result, 'svg')[0];
     const defs = adaptor.tags(svg, 'defs')[0] || adaptor.append(svg, adaptor.create('defs'));
     adaptor.append(defs, adaptor.node('style', {}, [adaptor.text(svgCss)], SVGXMLNS));
