@@ -28,9 +28,15 @@
         svg: { fontCache: 'none' }, // Required for standalone svg
       },
     };
-    // @ts-expect-error: mathjax/startup.js doesn't have a .d.ts file
-    await import('mathjax/startup.js');
-    await assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).promise;
+    try {
+      // @ts-expect-error: mathjax/startup.js doesn't have a .d.ts file
+      await import('mathjax/startup.js');
+      await assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).promise;
+    } catch (e) {
+      // We don't throw here because each time svelte hot-reloads, MathJax.startup is undefined for
+      // a reason I don't understand yet, and it blocks the whole app.
+      console.log(e)
+    }
 	});
 
   // https://docs.mathjax.org/en/v4.0/web/convert.html#creating-stand-alone-svg-images

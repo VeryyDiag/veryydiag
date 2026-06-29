@@ -148,6 +148,16 @@
             {:else}
               Unknown proofStep kind {kind}
             {/if}
+            <Button title="Delete proof step"
+              onclick={() => { diagramConfClass.undoSnapshot();
+                               diagramConfClass.removeProofStep(i, false)}}>
+              <Icon icon="mdi:trash-outline" width="15" height="15" />
+            </Button>
+            <Button title="Delete all remaining proof steps"
+              onclick={() => {diagramConfClass.undoSnapshot();
+                               diagramConfClass.removeProofStep(i, true)}}>
+              <Icon icon="mdi:trash-outline" width="15" height="15" /> … <Icon icon="mdi:trash-outline" width="15" height="15" />
+            </Button>
           </li>
         {/each}
       </ol>

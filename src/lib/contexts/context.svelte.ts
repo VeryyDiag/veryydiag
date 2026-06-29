@@ -1053,6 +1053,25 @@ export class DiagramConfClass {
       }
     }
   }
+
+  /** Proof step to remove (0 = first proof step, not the first diagram)*/
+  removeProofStep = (i: number, allRemainings: boolean = false) => {
+    const diagAndProofInfo = this.getCurrentDiagramAndProofInfo()
+    if (diagAndProofInfo.proofmode) {
+      const { diagram, proof } = diagAndProofInfo
+      if (i >= proof.steps.length) {
+        return
+      }
+      if (allRemainings) {
+        proof.steps.splice(i)
+      } else {
+        proof.steps.splice(i, 1)
+      }
+      if (proof.currentStep > proof.steps.length) {
+        proof.currentStep = proof.steps.length // Current step counts also the first element
+      }
+    }
+  }
 }
 
 // *** Jump to end, not sure how to cleanly avoid this huge class **
