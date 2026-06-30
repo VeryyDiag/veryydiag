@@ -126,13 +126,13 @@
       <circle r="10000%" fill="red"/>
     {/if}
 
-    {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link]}
+    {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
       <Link {...link} id={linkID}  />
     {/each}
     {#if diagramConfClass?.currentlyCreatedLink !== undefined}
       <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
     {/if}
-    {#each Object.entries(diagramConfClass.getNodes()) as [id, node]}
+    {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
       <Node id={id} {...node} />
     {/each}
   </svg>

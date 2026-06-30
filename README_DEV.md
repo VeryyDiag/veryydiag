@@ -113,6 +113,8 @@ let {
 - Allow an option to re-edit a node created via the template.
 - Renaming an available node does not rename the nodes in the rule
 - Selection local to a diagram? Or clean selection? (but practical to keep selection when changing tab) At least avoid error "selection do not belong to the diagram" when applying a rule after changing tab.
+- I need to understand why, but sometimes I have weird bugs (rule that don't apply, rule that displays poorly with missing links/nodes…) that disapear when I save and reload the file. I think this is due to malformed rules (e.g. because of renaming a node with different anchors?) that don't show up as corrupted in the list of rules. Need some investigation to reproduce.
+
 
 ### More substantial changes
 

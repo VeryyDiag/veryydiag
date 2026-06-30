@@ -75,7 +75,7 @@
           Drag and drop a node to add it to your diagram (click to edits its name).
         </p>
         <ul class="list-disc">
-          {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node]}
+          {#each Object.entries(diagramConfClass.getCurrentTheory()?.availableNodes || {}) as [nodeKind, node] (nodeKind)}
             <li><AvailableNode nodeKind={nodeKind} node={node} /></li>
           {/each}
         </ul>
