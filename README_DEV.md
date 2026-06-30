@@ -112,11 +112,12 @@ let {
 - In the node template, anchors should be placed above the text, not below.
 - Allow an option to re-edit a node created via the template.
 - Renaming an available node does not rename the nodes in the rule
-
+- Selection local to a diagram? Or clean selection? (but practical to keep selection when changing tab) At least avoid error "selection do not belong to the diagram" when applying a rule after changing tab.
 
 ### More substantial changes
 
 - Create ordered anchors that accept multiple ordered wires. Add an option to specify that the order may be arbitrary (needed when applying the rule), and make it work with boundaries, including multi-wire ones.
+- Copy/paste parts of the diagram
 - Redefine the Node type so that it is distinct from AvailableNode
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3

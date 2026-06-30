@@ -208,6 +208,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
     // We drag only if we dragged during a long enough distance
     if (!dragging && dist >= dragThreshold) {
       dragging = true
+      diagramConfClass.undoSnapshot()
       node.setPointerCapture(e.pointerId)
     }
 
@@ -224,7 +225,6 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
       return
     }
 
-    diagramConfClass.undoSnapshot()
     diagramConfClass.moveNode(targetNodeID, {x: startPos.x + from.x - to.x, y: startPos.y + from.y - to.y})
   }
 

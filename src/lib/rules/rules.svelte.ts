@@ -54,7 +54,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
     )
     assertNotUndefinedNR(
       theory?.availableNodes?.[diagram?.nodes?.[nodeFrom]?.nodeKind]?.parsedSVG?.anchors?.[anchorFrom],
-      `The anchor ${anchorFrom} in the source node ${nodeFrom} does not exist in the link ${linkID}`
+      `The anchor ${anchorFrom} specified in the source of the link ${linkID} does not exist in the node ${nodeFrom} (list of anchors: ${JSON.stringify(theory?.availableNodes?.[diagram?.nodes?.[nodeFrom]?.nodeKind]?.parsedSVG?.anchors)})`
     )
     const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(
       assertNotUndefined(
@@ -67,7 +67,7 @@ export function checkDiagram(diagram: Diagram, theory: Theory, shouldCheckTheory
     )
     assertNotUndefinedNR(
       theory?.availableNodes?.[diagram?.nodes?.[nodeTo]?.nodeKind]?.parsedSVG?.anchors?.[anchorTo],
-      `The anchor ${anchorTo} in the source node ${nodeTo} does not exist in the link ${linkID}`
+      `The anchor ${anchorTo} specified in the to destination of the link ${linkID} does not exist in the node ${nodeTo} (list of anchors: ${JSON.stringify(theory?.availableNodes?.[diagram?.nodes?.[nodeTo]?.nodeKind]?.parsedSVG?.anchors)})`
     )
     // Check if multi-wire boundary nodes are not connected to single-boundary nodes
     const nbMulti = nbMultiWireBoundaryLink(linkID, diagram, theory);

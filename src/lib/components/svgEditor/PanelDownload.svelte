@@ -16,7 +16,7 @@
   let diagramConfClass = getContextDiagram()
 
   let copy = $state(false)
-  let useYaml = $state(false)
+  let useYaml = $state(true)
 
   async function downloadSVG({asInView, copy} : {asInView: boolean, copy:boolean}) {
     let svgRef = diagramConfClass.getSVG()
@@ -90,6 +90,6 @@
     <p class="text-center">Copy instead of download: <Toogle bind:enabled={copy} /> Use yaml: <Toogle bind:enabled={useYaml} /></p>
     <Button onclick={() => downloadSVG({asInView: true, copy: copy})}>{copy ? "Copy" : "Download"} SVG like in view</Button>
     <Button onclick={() => downloadSVG({asInView: false, copy: copy})}>{copy ? "Copy" : "Download"} whole SVG</Button>
-    <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended if plan to manually edit" : "json variant, recommended if no plan to manually edit"})</Button>
+    <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended (better versionning, manual edit)" : "json variant, if yaml not supported"})</Button>
   </div>
 {/if}
