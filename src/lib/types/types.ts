@@ -117,12 +117,18 @@ export type ParsedSVG = {
   anchors?: Record<AnchorName, AnchorProps>,
 }
 
+export type SvgGenerationMethod = {[x:string]: any} & {method: string}
+
 export type AvailableNode = {
   svgString?: string, // You can either specify the SVG directly in the YML file…
   svgName?: string, // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
   componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
   parsedSVG?: ParsedSVG,
   params?: Params,
+  /** If the SVG was generated via an automatic procedure (e.g. builtin template mode), you may specify it here.
+   *  This may be helpful to re-edit the node later, or to generate tikz instead for native inclusion in LaTeX…
+   */
+  svgGenerationMethod?: SvgGenerationMethod,
   /** Value given to the parameters */
   // TODO: … or specify the URL of a SVG file
 }

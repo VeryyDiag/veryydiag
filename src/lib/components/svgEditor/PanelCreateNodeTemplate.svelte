@@ -93,14 +93,19 @@
   // ---------
 
   type SvgParameters = {
+    method: "builtin.createNodeTemplate",
     tex: string,
     height: number,
     scale: number,
     mainNodeColor: string,
     anchors: {name: string, posX: number, posY: number, color: string, radius: number}[]
+    extraSpacingAroundText: number,
+    strokeWidth: number,
+    extraSpacingAroundMargin: number,
   }
 
   const defaultSvgParameters : SvgParameters = {
+    method: "builtin.createNodeTemplate",
     tex: "\\sqrt{\\cdot}",
     /** Height in cm */
     height: 0.7,
@@ -108,6 +113,9 @@
     scale: 1,
     mainNodeColor: "white",
     anchors: [],
+    extraSpacingAroundText: 300,
+    strokeWidth: 100,
+    extraSpacingAroundMargin: 300,
   }
   let svgParameters = $state<SvgParameters>(structuredClone(defaultSvgParameters))
 
@@ -115,12 +123,10 @@
     try {
       // Read all reactive state BEFORE any await
       const x = $state.snapshot(svgParameters)
-      const { tex, height, scale, mainNodeColor, anchors } = svgParameters;
+      const { tex, height, scale, mainNodeColor, anchors, extraSpacingAroundText, strokeWidth, extraSpacingAroundMargin } = svgParameters;
 
       const texSvg = await getSvgImage(tex, {display: true})
-      const extraSpacingAroundText = 300
-      const strokeWidth = 100
-      const extraSpacingAroundMargin = extraSpacingAroundText + strokeWidth/2 + 300
+      const totalSpacing = extraSpacingAroundText + strokeWidth/2 + extraSpacingAroundMargin
 
       const parser = new DOMParser()
       const doc = parser.parseFromString(texSvg, 'image/svg+xml')
@@ -133,10 +139,10 @@
         svg.getAttribute('viewBox')?.split(" ")?.map(x => parseFloat(x)),
         `Svg has no viewBox, please report a bug`)
       assertTrue(viewBox.length === 4, `Weird, the viewBox has ${viewBox.length} != 4 elements`)
-      const viewboxXYWH = [viewBox[0] - extraSpacingAroundMargin,
-                           viewBox[1] - extraSpacingAroundMargin,
-                           viewBox[2] + 2*extraSpacingAroundMargin,
-                           viewBox[3] + 2*extraSpacingAroundMargin]
+      const viewboxXYWH = [viewBox[0] - totalSpacing,
+                           viewBox[1] - totalSpacing,
+                           viewBox[2] + 2*totalSpacing,
+                           viewBox[3] + 2*totalSpacing]
       svg.setAttribute('viewBox', `${viewboxXYWH[0]} ${viewboxXYWH[1]} ${viewboxXYWH[2]} ${viewboxXYWH[3]}`)
       svg.setAttribute('height', `${scale*cm(height)}`)
       svg.setAttribute('width', `${scale*cm(svgParameters.height * viewBox[2] / viewBox[3])}`)
@@ -160,7 +166,7 @@
         const circ = doc.createElementNS('http://www.w3.org/2000/svg', 'circle')
         circ.setAttribute('cx', `${rectXYWH[0] + posX*rectXYWH[2]}`)
         circ.setAttribute('cy', `${rectXYWH[1] + posY*rectXYWH[3]}`)
-        circ.setAttribute('r', `${radius * viewboxXYWH[3] / height}`)
+        circ.setAttribute('r', `${radius * rectXYWH[3] / height}`)
         circ.setAttribute('data-proofdiag-anchor', name)
         circ.setAttribute('fill', color)
         svg.prepend(circ)
@@ -188,15 +194,16 @@
         posX,
         posY: (2*i+1)*dh,
         color: "black",
-        radius: 0.06
+        radius: 0.09
       }
       svgParameters.anchors.push(a)
     })
   }
 
+  let nodeKind = $state("myNode")
   async function addNode() {
     const svg = await createSvg(svgParameters)
-    diagramConfClass.addSVGNodeToTheory("My node", {svgString: svg});
+    diagramConfClass.addSVGNodeToTheory(nodeKind, {svgString: svg, svgGenerationMethod: $state.snapshot(svgParameters)});
   }
 
 </script>
@@ -211,7 +218,7 @@
       >
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
-    <h1 class="text-center text-lg font-normal text-body">Create node</h1>
+    <h1 class="text-center text-lg font-normal text-body">Create node <input class={styleInput} bind:value={nodeKind} /></h1>
     <p>{@html await createSvg({...svgParameters, scale: 2.5})}</p>
     <p>Text (LaTeX): <input class={styleInput} bind:value={svgParameters.tex} /></p>
     <p>Height: <input class={styleInput} bind:value={svgParameters.height} /> cm</p>
@@ -229,6 +236,7 @@
         </li>
       {/each}
     </ul>
+    <p>Spacing around text <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundText} type="number" />, margin <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundMargin} type="number" /> and stroke width <input class={`${styleInput} w-15`} bind:value={svgParameters.strokeWidth} type="number" /></p>
     <p>
       Add <input class={`${styleInput} w-15`} bind:value={nbElementsToAdd} type="number" />
       <Button onclick={() => addNAnchors("in.", 0, nbElementsToAdd)}>
