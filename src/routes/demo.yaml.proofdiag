@@ -2,35 +2,154 @@ diagrams:
   main:
     name: Main diagram
     nodes:
-      a:
-        nodeKind: inputDiscard
+      :9b23b127-cb95-408e-bebe-7bd1dbd77755:
+        nodeKind: KeyGen
         pos:
-          x: 0
-          y: 0
-      alice:
+          x: -1.3610862597823141
+          y: -0.7092751947045326
+      :755bc433-b71c-42a9-8042-011d811ab6a0:
         nodeKind: boundary
         pos:
-          x: 1.4606696844100946
-          y: -0.11087049861749007
+          x: -0.4638247576355934
+          y: 0.28207451879978174
+        params:
+          boundaryName:
+            value: "2"
+          multipleWiresAllowed:
+            value: false
+      :903e23b2-d418-42de-a054-007c1a65789f:
+        nodeKind: boundary
+        pos:
+          x: -1.7859564749399823
+          y: -0.8700368663668632
         params:
           multipleWiresAllowed:
             value: false
+      :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c:
+        nodeKind: boundary
+        pos:
+          x: 3.0210264364878343
+          y: 0.29355730182180795
+        params:
+          boundaryName:
+            value: "3"
+          multipleWiresAllowed:
+            value: false
+      :461b02ca-1bd3-4937-8e5c-d99121483d23:
+        nodeKind: boundary
+        pos:
+          x: 1.0014671540260316
+          y: -1.1665668956438702
+        params:
+          boundaryName:
+            value: "4"
+      :5bd7cbda-d729-4bf0-8ac4-c64ece475537:
+        nodeKind: Wait
+        pos:
+          x: 0.5379926884174349
+          y: 0.41245398084322626
+      :c5815661-84d1-4f7e-b077-74fe860efdef:
+        nodeKind: Wait
+        pos:
+          x: 1.9194891834259038
+          y: 0.4124540313084917
     theory: main
     linksWithID:
-      a-to-alice:
-        from: a.out.0
-        to: alice.boundary
+      :abfa60c9-816c-4c60-a588-d336f173e2ee:
+        from: :903e23b2-d418-42de-a054-007c1a65789f.boundary
+        to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.in.0
+      :4a8613d2-b414-4863-9cdc-0b0050ec1485:
+        from: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+        to: :461b02ca-1bd3-4937-8e5c-d99121483d23.boundary
+      :59df01b9-c874-4995-9d08-d86002289241:
+        from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.in.1
+        to: :755bc433-b71c-42a9-8042-011d811ab6a0.boundary
+      :bf3c25b7-11ab-4b2d-87db-d04c221f3ab0:
+        from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.in.0
+        to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+      :1ecfd252-6605-4fe4-90af-0fbc6eae8695:
+        from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.out.0
+        to: :c5815661-84d1-4f7e-b077-74fe860efdef.in.1
+      :453199d9-11b1-43c7-a128-458faa160065:
+        from: :c5815661-84d1-4f7e-b077-74fe860efdef.out.0
+        to: :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c.boundary
+      :819b07d8-bead-4c42-b381-15098898f356:
+        from: :c5815661-84d1-4f7e-b077-74fe860efdef.in.0
+        to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
     viewport:
-      x: -1.1342972049669253
-      y: -1.6910700110347576
-      w: 4.931939278832129
-      h: 4.931939278832129
+      x: -2.060201957424815
+      y: -3.0868684371453528
+      w: 6.023884238244041
+      h: 6.023884238244041
+  04851cfb-2038-4420-8b14-99df298fb8e9:
+    name: Click to edit
+    nodes:
+      :4bad9a0d-b11e-4a8a-854b-688b65865696:
+        nodeKind: boundary
+        pos:
+          x: -0.86932804385821
+          y: -0.40711761961380644
+        params:
+          multipleWiresAllowed:
+            value: false
+          boundaryName:
+            value: "2"
+      :2fc66c8c-39e6-4349-b86e-c2260207461a:
+        nodeKind: boundary
+        pos:
+          x: -0.8752129499117535
+          y: -1.190186961491903
+        params:
+          multipleWiresAllowed:
+            value: false
+      :3fcd5169-1b40-4d5a-bf68-095760a84a16:
+        nodeKind: boundary
+        pos:
+          x: 2.959397042592367
+          y: -0.6759878132740657
+        params:
+          boundaryName:
+            value: "3"
+          multipleWiresAllowed:
+            value: false
+      :0d20f1b8-2466-4de6-adf8-93ed5aff7604:
+        nodeKind: discardWithOutput
+        pos:
+          x: 0.5954929637908937
+          y: -0.5961312484741212
+      :b6a09652-dfe9-45da-8ae7-bab678ad7e28:
+        nodeKind: Enc1
+        pos:
+          x: 1.6121436023712161
+          y: -0.532146236896515
+    linksWithID:
+      :18ce30a6-49ca-49c6-b268-a06850278183:
+        from: :4bad9a0d-b11e-4a8a-854b-688b65865696.boundary
+        to: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.in.0
+      :ef16ebd9-a166-41a1-ad24-78afd576b3fd:
+        from: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.out.0
+        to: :b6a09652-dfe9-45da-8ae7-bab678ad7e28.in.0
+      :01a10c9e-a090-4f01-b8bf-8268ae7e8761:
+        from: :b6a09652-dfe9-45da-8ae7-bab678ad7e28.out.0
+        to: :3fcd5169-1b40-4d5a-bf68-095760a84a16.boundary
+      :39647434-cb85-44aa-aa37-3b303d6ccfa2:
+        from: :2fc66c8c-39e6-4349-b86e-c2260207461a.boundary
+        to: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.in.0
+    theory: main
+    viewport:
+      x: -3.3381636691789547
+      y: -3.838038456417227
+      w: 8.549819307121188
+      h: 6.107013790800849
 proofs: {}
 tabs:
-  - &a1
-    tabKind: tabDiagram
+  - tabKind: tabDiagram
     diagramID: main
-currentTab: *a1
+  - tabKind: tabDiagram
+    diagramID: 04851cfb-2038-4420-8b14-99df298fb8e9
+currentTab:
+  tabKind: tabDiagram
+  diagramID: 04851cfb-2038-4420-8b14-99df298fb8e9
 theories:
   main:
     theoryName: Main theory
@@ -63,71 +182,753 @@ theories:
               default: true
           anchors:
             boundary: {}
+      discardWithOutput:
+        svgName: builtins.circuits.discardWithOutput
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            in.0: {}
+            out.0: {}
+      inputDiscardWithInput:
+        svgName: builtins.circuits.inputDiscardWithInput
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            out.0: {}
+            in.0: {}
+      KeyGen:
+        svgString: '<svg style="vertical-align: -0.464ex;"
+          xmlns="http://www.w3.org/2000/svg" width="93.71651814653792"
+          height="26.456692913385822" viewBox="-650 -1356 4527 2211"
+          xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1006"
+          width="3827" height="1511" fill="white" stroke="black"
+          stroke-width="100"/><circle cx="3527" cy="-250.5"
+          r="194.2714285714286" data-proofdiag-anchor="out.0"
+          fill="red"/><circle cx="-300" cy="-250.5" r="194.2714285714286"
+          data-proofdiag-anchor="in.0" fill="grey"/><defs><path
+          id="MJX-1-NCM-SS-1D5AA" d="M554 0L654 0L374 419L643 694L540 694L188
+          333L188 694L96 694L96 0L188 0L188 227L314 358Z"/><path
+          id="MJX-1-NCM-SS-1D5BE" d="M112 215L414 215C414 353 363 461 236
+          461C177 461 128 436 89 386C53 340 35 287 35 226C35 162 55 107 94
+          61C135 13 187-11 250-11C308-11 361 7 410 42L404 116C356 77 305 57 251
+          57C170 57 115 133 112 215M350 277L117 277C130 333 174 393 236 393C303
+          393 340 339 350 277Z"/><path id="MJX-1-NCM-SS-1D5D2" d="M237 81C233
+          100 226 124 215 155C181 253 126 381 98 444L12 444L204 1L169-86C160-109
+          144-141 117-141C93-141 66-135 36-123L43-196C68-202 92-205
+          117-205C182-205 208-148 232-90L448 444L366 444C291 261 248 140 237
+          81Z"/><path id="MJX-1-NCM-SS-1D5A6" d="M387-11C460-11 530 6 598 39L598
+          304L383 304L383 236L513 236L513 80C473 67 431 60 387 60C318 60 262 92
+          219 155C181 211 162 275 162 347C162 419 181 483 219 540C262 603 318
+          635 387 635C456 635 518 611 574 564L591 655C528 689 460 706 387
+          706C294 706 216 669 154 595C95 525 66 442 66 347C66 252 95 169 154
+          100C216 26 294-11 387-11Z"/><path id="MJX-1-NCM-SS-1D5C7" d="M260
+          387C325 387 351 355 351 290L351 0L435 0L435 297C435 402 389 455 297
+          455C242 455 196 433 159 388L159 450L81 450L81 0L165 0L165 245C165 317
+          194 387 260 387Z"/><style>svg
+          a{fill:blue;stroke:blue}[data-mml-node="merror"]&gt;g{fill:red;stroke:red}[data-mml-node="merror"]&gt;rect[data-background]{fill:yellow;stroke:none}[data-frame],[data-line]{stroke-width:70px;fill:none}.mjx-dashed{stroke-dasharray:140}.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}use[data-c]{stroke-width:3px}</style></defs><g
+          stroke="black" fill="black" stroke-width="0"
+          transform="scale(1,-1)"><g data-mml-node="math"
+          data-latex="\mathsf{KeyGen}"><g data-mml-node="TeXAtom"
+          data-latex="\mathsf{KeyGen}" data-mjx-texclass="ORD"><g
+          data-mml-node="mi" data-latex="KeyGen"><use data-c="1D5AA"
+          xlink:href="#MJX-1-NCM-SS-1D5AA"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/><use data-c="1D5BE"
+          xlink:href="#MJX-1-NCM-SS-1D5BE"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(694,0)"/><use data-c="1D5D2"
+          xlink:href="#MJX-1-NCM-SS-1D5D2"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(1138,0)"/><use data-c="1D5A6"
+          xlink:href="#MJX-1-NCM-SS-1D5A6"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(1599,0)"/><use data-c="1D5BE"
+          xlink:href="#MJX-1-NCM-SS-1D5BE"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(2266,0)"/><use data-c="1D5C7"
+          xlink:href="#MJX-1-NCM-SS-1D5C7"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(2710,0)"/></g></g></g></g></svg>'
+        svgGenerationMethod:
+          method: builtin.createNodeTemplate
+          tex: \mathsf{KeyGen}
+          height: 0.7
+          scale: 1
+          mainNodeColor: white
+          anchors:
+            - name: in.0
+              posX: 0
+              posY: 0.5
+              color: grey
+              radius: 0.09
+            - name: out.0
+              posX: 1
+              posY: 0.5
+              color: red
+              radius: 0.09
+          extraSpacingAroundText: 300
+          strokeWidth: 100
+          extraSpacingAroundMargin: 300
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            out.0: {}
+            in.0: {}
+      Enc:
+        svgString: '<svg style="vertical-align: -0.561ex;"
+          xmlns="http://www.w3.org/2000/svg" width="97.36381747462288"
+          height="26.456692913385822" viewBox="-650 -1398 4965.4 2296"
+          xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1048"
+          width="4265.4" height="1596" fill="white" stroke="black"
+          stroke-width="100"/><circle cx="1832.6999999999998" cy="-1048"
+          r="205.2" data-proofdiag-anchor="in.0" fill="red"/><circle
+          cx="3965.3999999999996" cy="-250" r="205.2"
+          data-proofdiag-anchor="out.0" fill="blue"/><circle cx="-300" cy="-250"
+          r="205.2" data-proofdiag-anchor="in.1" fill="green"/><defs><path
+          id="MJX-1-NCM-SS-1D5A4" d="M94 0L554 0L554 78L409 78C401 77 395 77 391
+          77L189 77L189 325L514 325L514 393L189 393L189 620L321 620C325 620 331
+          620 339 619L540 619L540 691L94 691Z"/><path id="MJX-1-NCM-SS-1D5C7"
+          d="M260 387C325 387 351 355 351 290L351 0L435 0L435 297C435 402 389
+          455 297 455C242 455 196 433 159 388L159 450L81 450L81 0L165 0L165
+          245C165 317 194 387 260 387Z"/><path id="MJX-1-NCM-SS-1D5BC" d="M120
+          223C120 315 165 390 256 390C303 390 350 375 397 344L411 417C359 446
+          307 461 255 461C191 461 139 437 98 390C57 343 36 287 36 222C36 159 56
+          105 96 60C137 13 189-11 251-11C310-11 365 6 415 41L408 117C360 79 308
+          60 252 60C168 60 120 135 120 223Z"/><path id="MJX-1-NCM-I-1D458"
+          d="M409 353C409 327 423 314 450 314C485 314 508 345 508 379C508 418
+          476 445 437 445C392 445 344 415 291 356C250 311 217 282 190 269L291
+          679C289 688 287 694 274 694C242 694 166 685 154 684C139 682 132 675
+          132 660C132 650 141 645 159 645C178 645 204 646 204 632L59 43C56 32 55
+          25 55 21C55 0 66-11 87-11C104-11 117-3 124 12C129 21 147 92 179
+          226C231 221 286 196 286 146C286 131 279 101 279 91C279 34 316-11
+          373-11C431-11 470 41 490 145C490 154 485 159 475 159C466 159 460 152
+          457 138C435 59 408 19 375 19C357 19 348 33 348 61C348 77 360 131 360
+          147C360 204 314 239 221 253C244 269 270 292 298 322C326 352 346 371
+          359 382C386 404 412 415 435 415C445 415 453 413 459 409C432 404 409
+          379 409 353Z"/><path id="MJX-1-NCM-N-28" d="M318-248C327-248 332-243
+          332-234C332-231 330-227 327-223C275-183 233-117 202-26C175 53 161 131
+          161 208L161 292C161 369 175 447 202 526C233 617 275 683 327 723C330
+          726 332 730 332 734C332 743 327 748 318 748C317 748 314 747 311
+          745C251 699 201 631 160 540C121 453 101 371 101 292L101 208C101 129
+          121 47 160-40C201-131 251-199 311-245C314-247 317-248 318-248Z"/><path
+          id="MJX-1-NCM-I-1D45A" d="M657 442C596 442 543 412 498 353C489 412 451
+          442 383 442C324 442 273 416 231 363C223 407 188 442 137 442C96 442 66
+          409 45 344C34 312 29 293 29 287C29 278 34 273 45 273C50 273 53 274 56
+          276C61 285 64 292 66 299C84 375 107 413 134 413C152 413 161 399 161
+          371C161 358 156 331 145 290L88 63C84 51 79 25 79 19C79-1 90-11
+          111-11C131-11 145-1 152 19C153 24 160 49 171 92L192 181L222 295C233
+          318 250 341 272 365C301 397 337 413 380 413C413 413 429 391 429
+          348C429 335 424 308 414 267L387 153C380 124 364 64 356 32C355 25 354
+          21 354 19C354-1 365-11 387-11C398-11 406-8 413-1C428 14 429 21 435
+          48L494 285C497 298 511 321 535 353C565 393 605 413 654 413C687 413 703
+          391 703 348C703 309 683 236 642 129C633 106 629 87 629 74C629 25
+          666-11 714-11C759-11 793 14 818 64C838 104 848 131 848 144C848 153 843
+          158 832 158C825 157 818 148 813 137C791 58 759 18 716 18C703 18 696 28
+          696 47C696 62 702 84 714 115C755 222 775 295 775 333C775 404 728 442
+          657 442Z"/><path id="MJX-1-NCM-N-29" d="M78-245C138-199 188-131
+          229-40C268 47 288 129 288 208L288 292C288 371 268 453 229 540C188 631
+          138 699 78 745C75 747 72 748 71 748C62 748 57 743 57 734C57 730 59 726
+          62 723C114 683 156 617 187 526C214 447 228 369 228 292L228 208C228 131
+          214 53 187-26C156-117 114-183 62-223C59-227 57-231 57-234C57-243
+          62-248 71-248C72-248 75-247 78-245Z"/><style>svg
+          a{fill:blue;stroke:blue}[data-mml-node="merror"]&gt;g{fill:red;stroke:red}[data-mml-node="merror"]&gt;rect[data-background]{fill:yellow;stroke:none}[data-frame],[data-line]{stroke-width:70px;fill:none}.mjx-dashed{stroke-dasharray:140}.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}use[data-c]{stroke-width:3px}</style></defs><g
+          stroke="black" fill="black" stroke-width="0"
+          transform="scale(1,-1)"><g data-mml-node="math"
+          data-latex="\mathsf{Enc}_{\textcolor{red}{k}}(\textcolor{green}{m})"><g
+          data-mml-node="msub" data-latex="\mathsf{Enc}_{\textcolor{red}{k}}"><g
+          data-mml-node="TeXAtom" data-latex="\mathsf{Enc}"
+          data-mjx-texclass="ORD"><g data-mml-node="mi" data-latex="Enc"><use
+          data-c="1D5A4" xlink:href="#MJX-1-NCM-SS-1D5A4"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/><use data-c="1D5C7"
+          xlink:href="#MJX-1-NCM-SS-1D5C7"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(597,0)"/><use data-c="1D5BC"
+          xlink:href="#MJX-1-NCM-SS-1D5BC"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(1114,0)"/></g></g><g data-mml-node="TeXAtom"
+          transform="translate(1591,-150) scale(0.707)"
+          data-latex="{\textcolor{red}{k}}" data-mjx-texclass="ORD"><g
+          data-mml-node="mstyle" fill="red" stroke="red"
+          data-latex="\textcolor{red}{k}"><g data-mml-node="mi"
+          data-latex="k"><use data-c="1D458" xlink:href="#MJX-1-NCM-I-1D458"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g></g><g
+          data-mml-node="mo" data-latex="(" transform="translate(2009.4,0)"><use
+          data-c="28" xlink:href="#MJX-1-NCM-N-28"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g><g
+          data-mml-node="mstyle" fill="green" stroke="green"
+          data-latex="\textcolor{green}{m}" transform="translate(2398.4,0)"><g
+          data-mml-node="mi" data-latex="m"><use data-c="1D45A"
+          xlink:href="#MJX-1-NCM-I-1D45A"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g><g
+          data-mml-node="mo" data-latex=")" transform="translate(3276.4,0)"><use
+          data-c="29" xlink:href="#MJX-1-NCM-N-29"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g></svg>'
+        svgGenerationMethod:
+          method: builtin.createNodeTemplate
+          tex: \mathsf{Enc}_{\textcolor{red}{k}}(\textcolor{green}{m})
+          height: 0.7
+          scale: 1
+          mainNodeColor: white
+          anchors:
+            - name: in.1
+              posX: 0
+              posY: 0.5
+              color: green
+              radius: 0.09
+            - name: out.0
+              posX: 1
+              posY: 0.5
+              color: blue
+              radius: 0.09
+            - name: in.0
+              posX: "0.5"
+              posY: "0"
+              color: red
+              radius: 0.09
+          extraSpacingAroundText: 300
+          strokeWidth: 100
+          extraSpacingAroundMargin: 300
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            in.0: {}
+            out.0: {}
+            in.1: {}
+      Enc1:
+        svgString: '<svg style="vertical-align: -0.357ex;"
+          xmlns="http://www.w3.org/2000/svg" width="78.88929305032522"
+          height="26.456692913385822" viewBox="-650 -1081 3055.7 1888.8"
+          xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-731"
+          width="2355.7" height="1188.8" fill="white" stroke="black"
+          stroke-width="100"/><circle cx="2055.7" cy="-136.60000000000002"
+          r="152.84571428571428" data-proofdiag-anchor="out.0"
+          fill="blue"/><circle cx="-300" cy="-136.60000000000002"
+          r="152.84571428571428" data-proofdiag-anchor="in.0"
+          fill="grey"/><defs><path id="MJX-1-NCM-I-1D70E" d="M525 431L300
+          431C252 431 207 416 166 385C102 336 38 250 38 148C38 58 100-11
+          190-11C257-11 317 18 368 76C417 132 441 194 441 263C441 304 432 338
+          414 366L515 366C550 366 567 378 567 403C567 426 550 431 525 431M107
+          121C107 180 121 234 150 282C184 338 228 366 283 366C341 366 370 336
+          370 275C370 250 365 221 355 187C335 116 302 66 256 39C233 25 211 18
+          191 18C136 18 107 63 107 121Z"/><path id="MJX-1-NCM-SS-1D5A4" d="M94
+          0L554 0L554 78L409 78C401 77 395 77 391 77L189 77L189 325L514 325L514
+          393L189 393L189 620L321 620C325 620 331 620 339 619L540 619L540 691L94
+          691Z"/><path id="MJX-1-NCM-SS-1D5C7" d="M260 387C325 387 351 355 351
+          290L351 0L435 0L435 297C435 402 389 455 297 455C242 455 196 433 159
+          388L159 450L81 450L81 0L165 0L165 245C165 317 194 387 260 387Z"/><path
+          id="MJX-1-NCM-SS-1D5BC" d="M120 223C120 315 165 390 256 390C303 390
+          350 375 397 344L411 417C359 446 307 461 255 461C191 461 139 437 98
+          390C57 343 36 287 36 222C36 159 56 105 96 60C137 13 189-11
+          251-11C310-11 365 6 415 41L408 117C360 79 308 60 252 60C168 60 120 135
+          120 223Z"/><style>svg
+          a{fill:blue;stroke:blue}[data-mml-node="merror"]&gt;g{fill:red;stroke:red}[data-mml-node="merror"]&gt;rect[data-background]{fill:yellow;stroke:none}[data-frame],[data-line]{stroke-width:70px;fill:none}.mjx-dashed{stroke-dasharray:140}.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}use[data-c]{stroke-width:3px}</style></defs><g
+          stroke="black" fill="black" stroke-width="0"
+          transform="scale(1,-1)"><g data-mml-node="math"
+          data-latex="\mathsf{\sigma_{\mathsf{Enc}}}"><g data-mml-node="TeXAtom"
+          data-latex="\mathsf{\sigma_{\mathsf{Enc}}}" data-mjx-texclass="ORD"><g
+          data-mml-node="msub" data-latex="\sigma_{\mathsf{Enc}}"><g
+          data-mml-node="mi" data-latex="\sigma"><use data-c="1D70E"
+          xlink:href="#MJX-1-NCM-I-1D70E"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g><g
+          data-mml-node="TeXAtom" transform="translate(604,-150) scale(0.707)"
+          data-latex="{\mathsf{Enc}}" data-mjx-texclass="ORD"><g
+          data-mml-node="TeXAtom" data-latex="\mathsf{Enc}"
+          data-mjx-texclass="ORD"><g data-mml-node="mi" data-latex="Enc"><use
+          data-c="1D5A4" xlink:href="#MJX-1-NCM-SS-1D5A4"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/><use data-c="1D5C7"
+          xlink:href="#MJX-1-NCM-SS-1D5C7"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(597,0)"/><use data-c="1D5BC"
+          xlink:href="#MJX-1-NCM-SS-1D5BC"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(1114,0)"/></g></g></g></g></g></g></g></svg>'
+        svgGenerationMethod:
+          method: builtin.createNodeTemplate
+          tex: \mathsf{\sigma_{\mathsf{Enc}}}
+          height: 0.7
+          scale: 1
+          mainNodeColor: white
+          anchors:
+            - name: in.0
+              posX: 0
+              posY: 0.5
+              color: grey
+              radius: 0.09
+            - name: out.0
+              posX: 1
+              posY: 0.5
+              color: blue
+              radius: 0.09
+          extraSpacingAroundText: 300
+          strokeWidth: 100
+          extraSpacingAroundMargin: 300
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            out.0: {}
+            in.0: {}
+      Dec:
+        svgString: '<svg style="vertical-align: -0.561ex;"
+          xmlns="http://www.w3.org/2000/svg" width="86.9245802106062"
+          height="26.456692913385822" viewBox="-650 -1398 4572.4 2296"
+          xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1048"
+          width="3872.4" height="1596" fill="white" stroke="black"
+          stroke-width="100"/><circle cx="1636.2" cy="-1048" r="205.2"
+          data-proofdiag-anchor="in.0" fill="red"/><circle cx="3572.4" cy="-250"
+          r="205.2" data-proofdiag-anchor="out.0" fill="green"/><circle
+          cx="-300" cy="-250" r="205.2" data-proofdiag-anchor="in.1"
+          fill="blue"/><defs><path id="MJX-1-NCM-SS-1D5A3" d="M359 0C448 0 522
+          35 581 105C637 172 665 250 665 341C665 434 637 514 582 583C523 657 449
+          694 358 694L96 694L96 0M336 631C411 631 470 600 514 539C553 485 572
+          419 572 341C572 265 552 201 512 149C469 92 410 63 336 63L189 63L189
+          631Z"/><path id="MJX-1-NCM-SS-1D5BE" d="M112 215L414 215C414 353 363
+          461 236 461C177 461 128 436 89 386C53 340 35 287 35 226C35 162 55 107
+          94 61C135 13 187-11 250-11C308-11 361 7 410 42L404 116C356 77 305 57
+          251 57C170 57 115 133 112 215M350 277L117 277C130 333 174 393 236
+          393C303 393 340 339 350 277Z"/><path id="MJX-1-NCM-SS-1D5BC" d="M120
+          223C120 315 165 390 256 390C303 390 350 375 397 344L411 417C359 446
+          307 461 255 461C191 461 139 437 98 390C57 343 36 287 36 222C36 159 56
+          105 96 60C137 13 189-11 251-11C310-11 365 6 415 41L408 117C360 79 308
+          60 252 60C168 60 120 135 120 223Z"/><path id="MJX-1-NCM-I-1D458"
+          d="M409 353C409 327 423 314 450 314C485 314 508 345 508 379C508 418
+          476 445 437 445C392 445 344 415 291 356C250 311 217 282 190 269L291
+          679C289 688 287 694 274 694C242 694 166 685 154 684C139 682 132 675
+          132 660C132 650 141 645 159 645C178 645 204 646 204 632L59 43C56 32 55
+          25 55 21C55 0 66-11 87-11C104-11 117-3 124 12C129 21 147 92 179
+          226C231 221 286 196 286 146C286 131 279 101 279 91C279 34 316-11
+          373-11C431-11 470 41 490 145C490 154 485 159 475 159C466 159 460 152
+          457 138C435 59 408 19 375 19C357 19 348 33 348 61C348 77 360 131 360
+          147C360 204 314 239 221 253C244 269 270 292 298 322C326 352 346 371
+          359 382C386 404 412 415 435 415C445 415 453 413 459 409C432 404 409
+          379 409 353Z"/><path id="MJX-1-NCM-N-28" d="M318-248C327-248 332-243
+          332-234C332-231 330-227 327-223C275-183 233-117 202-26C175 53 161 131
+          161 208L161 292C161 369 175 447 202 526C233 617 275 683 327 723C330
+          726 332 730 332 734C332 743 327 748 318 748C317 748 314 747 311
+          745C251 699 201 631 160 540C121 453 101 371 101 292L101 208C101 129
+          121 47 160-40C201-131 251-199 311-245C314-247 317-248 318-248Z"/><path
+          id="MJX-1-NCM-I-1D450" d="M328 325C328 300 341 287 368 287C404 287 427
+          318 427 354C427 410 368 442 308 442C239 442 176 412 122 353C68 294 41
+          229 41 159C41 61 106-11 204-11C257-11 304 2 345 27C379 48 404 69 420
+          90C427 99 430 106 430 109C430 120 425 126 414 126C409 126 404 122 398
+          114C365 70 324 42 277 30C246 22 223 18 206 18C149 18 121 53 121
+          122C121 184 150 274 174 317C198 361 249 413 308 413C346 413 372 402
+          386 381C355 378 328 358 328 325Z"/><path id="MJX-1-NCM-N-29"
+          d="M78-245C138-199 188-131 229-40C268 47 288 129 288 208L288 292C288
+          371 268 453 229 540C188 631 138 699 78 745C75 747 72 748 71 748C62 748
+          57 743 57 734C57 730 59 726 62 723C114 683 156 617 187 526C214 447 228
+          369 228 292L228 208C228 131 214 53 187-26C156-117 114-183
+          62-223C59-227 57-231 57-234C57-243 62-248 71-248C72-248 75-247
+          78-245Z"/><style>svg
+          a{fill:blue;stroke:blue}[data-mml-node="merror"]&gt;g{fill:red;stroke:red}[data-mml-node="merror"]&gt;rect[data-background]{fill:yellow;stroke:none}[data-frame],[data-line]{stroke-width:70px;fill:none}.mjx-dashed{stroke-dasharray:140}.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}use[data-c]{stroke-width:3px}</style></defs><g
+          stroke="black" fill="black" stroke-width="0"
+          transform="scale(1,-1)"><g data-mml-node="math"
+          data-latex="\mathsf{Dec}_{\textcolor{red}{k}}(\textcolor{blue}{c})"><g
+          data-mml-node="msub" data-latex="\mathsf{Dec}_{\textcolor{red}{k}}"><g
+          data-mml-node="TeXAtom" data-latex="\mathsf{Dec}"
+          data-mjx-texclass="ORD"><g data-mml-node="mi" data-latex="Dec"><use
+          data-c="1D5A3" xlink:href="#MJX-1-NCM-SS-1D5A3"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/><use data-c="1D5BE"
+          xlink:href="#MJX-1-NCM-SS-1D5BE"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(722,0)"/><use data-c="1D5BC"
+          xlink:href="#MJX-1-NCM-SS-1D5BC"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          transform="translate(1166,0)"/></g></g><g data-mml-node="TeXAtom"
+          transform="translate(1643,-150) scale(0.707)"
+          data-latex="{\textcolor{red}{k}}" data-mjx-texclass="ORD"><g
+          data-mml-node="mstyle" fill="red" stroke="red"
+          data-latex="\textcolor{red}{k}"><g data-mml-node="mi"
+          data-latex="k"><use data-c="1D458" xlink:href="#MJX-1-NCM-I-1D458"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g></g><g
+          data-mml-node="mo" data-latex="(" transform="translate(2061.4,0)"><use
+          data-c="28" xlink:href="#MJX-1-NCM-N-28"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g><g
+          data-mml-node="mstyle" fill="blue" stroke="blue"
+          data-latex="\textcolor{blue}{c}" transform="translate(2450.4,0)"><g
+          data-mml-node="mi" data-latex="c"><use data-c="1D450"
+          xlink:href="#MJX-1-NCM-I-1D450"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g><g
+          data-mml-node="mo" data-latex=")" transform="translate(2883.4,0)"><use
+          data-c="29" xlink:href="#MJX-1-NCM-N-29"
+          xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g></svg>'
+        svgGenerationMethod:
+          method: builtin.createNodeTemplate
+          tex: \mathsf{Dec}_{\textcolor{red}{k}}(\textcolor{blue}{c})
+          height: 0.7
+          scale: 1
+          mainNodeColor: white
+          anchors:
+            - name: in.1
+              posX: 0
+              posY: 0.5
+              color: blue
+              radius: 0.09
+            - name: out.0
+              posX: 1
+              posY: 0.5
+              color: green
+              radius: 0.09
+            - name: in.0
+              posX: "0.5"
+              posY: "0"
+              color: red
+              radius: 0.09
+          extraSpacingAroundText: 300
+          strokeWidth: 100
+          extraSpacingAroundMargin: 300
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            in.0: {}
+            out.0: {}
+            in.1: {}
+      Wait:
+        svgString: '<svg style="vertical-align: 0px;" xmlns="http://www.w3.org/2000/svg"
+          width="37.79527559055118" height="18.89763779527559" viewBox="-325
+          -1369.1 2738.2 1694.1"
+          xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="0" y="-1044.1"
+          width="2088.2" height="1044.1" fill="white" stroke="black"
+          stroke-width="50"/><circle cx="1044.1" cy="-1044.1" r="187.938"
+          data-proofdiag-anchor="in.0" fill="grey"/><circle cx="2088.2"
+          cy="-104.40999999999997" r="187.938" data-proofdiag-anchor="out.0"
+          fill="black"/><circle cx="0" cy="-104.40999999999997" r="187.938"
+          data-proofdiag-anchor="in.1" fill="black"/><defs><style>svg
+          a{fill:blue;stroke:blue}[data-mml-node="merror"]&gt;g{fill:red;stroke:red}[data-mml-node="merror"]&gt;rect[data-background]{fill:yellow;stroke:none}[data-frame],[data-line]{stroke-width:70px;fill:none}.mjx-dashed{stroke-dasharray:140}.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}use[data-c]{stroke-width:3px}</style></defs><g
+          stroke="black" fill="black" stroke-width="0"
+          transform="scale(1,-1)"><g data-mml-node="math"
+          data-latex="\rule{1cm}{0.1cm}\vphantom{\rule{1cm}{.5cm}}"><g
+          data-mml-node="mspace" data-latex="\rule{1cm}{0.1cm}"><rect
+          fill="black" x="0" y="0" width="2088.2" height="208.8"
+          data-bgcolor="true"/></g><g data-mml-node="TeXAtom"
+          data-latex="\vphantom{\rule{1cm}{.5cm}}" data-mjx-texclass="ORD"
+          transform="translate(2088.2,0)"><g data-mml-node="mpadded"><g
+          data-mml-node="mphantom"/></g></g></g></g></svg>'
+        svgGenerationMethod:
+          method: builtin.createNodeTemplate
+          tex: \rule{1cm}{0.1cm}\vphantom{\rule{1cm}{.5cm}}
+          height: "0.5"
+          scale: 1
+          mainNodeColor: white
+          anchors:
+            - name: in.1
+              posX: 0
+              posY: "0.90"
+              color: black
+              radius: 0.09
+            - name: out.0
+              posX: 1
+              posY: "0.9"
+              color: black
+              radius: 0.09
+            - name: in.0
+              posX: "0.5"
+              posY: "0"
+              color: grey
+              radius: 0.09
+          extraSpacingAroundText: 0
+          strokeWidth: 50
+          extraSpacingAroundMargin: 300
+        parsedSVG:
+          paramSpecs: {}
+          anchors:
+            in.0: {}
+            out.0: {}
+            in.1: {}
     rules:
-      My rule (click me to edit):
+      Correctness:
         lhs:
           name: LHS My rule (click me to edit)
           nodes:
-            b:
-              nodeKind: inputDiscard
+            :9b23b127-cb95-408e-bebe-7bd1dbd77755:
+              nodeKind: KeyGen
               pos:
-                x: 0
-                y: 0
-            bob:
+                x: -1.3610862597823141
+                y: -0.7092751947045326
+            :04fc8ca8-3c66-43d2-bdc6-64fb30a2ea4a:
+              nodeKind: Enc
+              pos:
+                x: -0.5113457663853964
+                y: 0.4217981799443564
+            :755bc433-b71c-42a9-8042-011d811ab6a0:
               nodeKind: boundary
               pos:
-                x: 1.002076168855031
-                y: -0.08779660572608305
+                x: -0.9476990373929342
+                y: 0.2610365082820256
+              params:
+                boundaryName:
+                  value: "2"
+                multipleWiresAllowed:
+                  value: false
+            :903e23b2-d418-42de-a054-007c1a65789f:
+              nodeKind: boundary
+              pos:
+                x: -1.7859564749399823
+                y: -0.8700368663668632
               params:
                 multipleWiresAllowed:
-                  value: true
+                  value: false
+            :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c:
+              nodeKind: boundary
+              pos:
+                x: 3.1402415434519453
+                y: 0.27251929130405184
+              params:
+                boundaryName:
+                  value: "3"
+                multipleWiresAllowed:
+                  value: false
+            :461b02ca-1bd3-4937-8e5c-d99121483d23:
+              nodeKind: boundary
+              pos:
+                x: 1.0014671540260316
+                y: -1.1665668956438702
+              params:
+                boundaryName:
+                  value: "4"
+            :e19dd87e-46be-4469-9150-8cab3edf99a3:
+              nodeKind: Dec
+              pos:
+                x: 1.3850983524322515
+                y: 0.42837057431538894
           linksWithID:
-            b-to-bob:
-              from: b.out.0
-              to: bob.boundary
+            :521e7cfe-8b0b-43a3-9765-5b9096d4f03b:
+              from: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+              to: :04fc8ca8-3c66-43d2-bdc6-64fb30a2ea4a.in.0
+            :abfa60c9-816c-4c60-a588-d336f173e2ee:
+              from: :903e23b2-d418-42de-a054-007c1a65789f.boundary
+              to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.in.0
+            :d031954b-533c-4c30-a227-361ee6eeef3f:
+              from: :755bc433-b71c-42a9-8042-011d811ab6a0.boundary
+              to: :04fc8ca8-3c66-43d2-bdc6-64fb30a2ea4a.in.1
+            :4a8613d2-b414-4863-9cdc-0b0050ec1485:
+              from: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+              to: :461b02ca-1bd3-4937-8e5c-d99121483d23.boundary
+            :2178087b-6f6b-4ac5-a640-520d748d5086:
+              from: :04fc8ca8-3c66-43d2-bdc6-64fb30a2ea4a.out.0
+              to: :e19dd87e-46be-4469-9150-8cab3edf99a3.in.1
+            :7a6be7b4-396e-442b-bbc5-6d12cce22444:
+              from: :e19dd87e-46be-4469-9150-8cab3edf99a3.out.0
+              to: :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c.boundary
+            :7ee8c324-246e-4b45-802a-5f0ad2807c50:
+              from: :e19dd87e-46be-4469-9150-8cab3edf99a3.in.0
+              to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
           theory: main
           viewport:
-            x: 0.0025838216145833335
-            y: -0.14997590700785318
-            w: 1.9420812718073528
-            h: 1.0066516526540121
+            x: -1.7285451698303222
+            y: -1.2485831467310589
+            w: 5.811375738779704
+            h: 2.4655748351414997
           svgSize:
-            w: 73.40149688720703pt
-            h: 38.04667663574219pt
+            w: 219.6425476074219pt
+            h: 93.18708038330078pt
         rhs:
-          name: RHS My rule (click me to edit)
+          name: Main diagram
           nodes:
-            c0:
-              nodeKind: inputDiscard
+            :9b23b127-cb95-408e-bebe-7bd1dbd77755:
+              nodeKind: KeyGen
               pos:
-                x: 0
-                y: 0
-            c1:
-              nodeKind: inputDiscard
-              pos:
-                x: -0.0069649132092795
-                y: 0.8949670735994975
-            charlie:
+                x: -1.3610862597823141
+                y: -0.7092751947045326
+            :755bc433-b71c-42a9-8042-011d811ab6a0:
               nodeKind: boundary
               pos:
-                x: 1.002076168855031
-                y: -0.08779660572608305
+                x: -0.4638247576355934
+                y: 0.28207451879978174
+              params:
+                boundaryName:
+                  value: "2"
+                multipleWiresAllowed:
+                  value: false
+            :903e23b2-d418-42de-a054-007c1a65789f:
+              nodeKind: boundary
+              pos:
+                x: -1.7859564749399823
+                y: -0.8700368663668632
               params:
                 multipleWiresAllowed:
-                  value: true
+                  value: false
+            :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c:
+              nodeKind: boundary
+              pos:
+                x: 3.0210264364878343
+                y: 0.29355730182180795
+              params:
+                boundaryName:
+                  value: "3"
+                multipleWiresAllowed:
+                  value: false
+            :461b02ca-1bd3-4937-8e5c-d99121483d23:
+              nodeKind: boundary
+              pos:
+                x: 1.0014671540260316
+                y: -1.1665668956438702
+              params:
+                boundaryName:
+                  value: "4"
+            :5bd7cbda-d729-4bf0-8ac4-c64ece475537:
+              nodeKind: Wait
+              pos:
+                x: 0.5379926884174349
+                y: 0.41245398084322626
+            :c5815661-84d1-4f7e-b077-74fe860efdef:
+              nodeKind: Wait
+              pos:
+                x: 1.9194891834259038
+                y: 0.4124540313084917
+          theory: main
           linksWithID:
-            c1-to-c0:
-              from: c1.out.0
-              to: c0.out.0
-            c0-to-charlie:
-              from: c0.out.0
-              to: charlie.boundary
+            :abfa60c9-816c-4c60-a588-d336f173e2ee:
+              from: :903e23b2-d418-42de-a054-007c1a65789f.boundary
+              to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.in.0
+            :4a8613d2-b414-4863-9cdc-0b0050ec1485:
+              from: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+              to: :461b02ca-1bd3-4937-8e5c-d99121483d23.boundary
+            :59df01b9-c874-4995-9d08-d86002289241:
+              from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.in.1
+              to: :755bc433-b71c-42a9-8042-011d811ab6a0.boundary
+            :bf3c25b7-11ab-4b2d-87db-d04c221f3ab0:
+              from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.in.0
+              to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+            :1ecfd252-6605-4fe4-90af-0fbc6eae8695:
+              from: :5bd7cbda-d729-4bf0-8ac4-c64ece475537.out.0
+              to: :c5815661-84d1-4f7e-b077-74fe860efdef.in.1
+            :453199d9-11b1-43c7-a128-458faa160065:
+              from: :c5815661-84d1-4f7e-b077-74fe860efdef.out.0
+              to: :d48c6ed5-6ba8-499b-bbc9-8dd4ea55e95c.boundary
+            :819b07d8-bead-4c42-b381-15098898f356:
+              from: :c5815661-84d1-4f7e-b077-74fe860efdef.in.0
+              to: :9b23b127-cb95-408e-bebe-7bd1dbd77755.out.0
+          viewport:
+            x: -1.7285451698303222
+            y: -1.2485831467310589
+            w: 5.692160631815592
+            h: 2.4866127951939903
+          svgSize:
+            w: 215.13677978515622pt
+            h: 93.98221588134767pt
+      One-time security:
+        lhs:
+          name: Click to edit
+          nodes:
+            :4bad9a0d-b11e-4a8a-854b-688b65865696:
+              nodeKind: boundary
+              pos:
+                x: -1.0186264042059578
+                y: -0.3928987281521162
+              params:
+                multipleWiresAllowed:
+                  value: false
+                boundaryName:
+                  value: "2"
+            :afd304e0-9ba7-4d03-a6f8-51590e6c497f:
+              nodeKind: KeyGen
+              pos:
+                x: -1.3945246080557507
+                y: -1.1765050204594933
+            :e0f45419-8b3b-4442-ae6d-81add6ee4bf3:
+              nodeKind: Enc
+              pos:
+                x: -0.36670570333798724
+                y: -0.23573922932147978
+            :2fc66c8c-39e6-4349-b86e-c2260207461a:
+              nodeKind: boundary
+              pos:
+                x: -1.7070181004206342
+                y: -1.3323758761088054
+              params:
+                multipleWiresAllowed:
+                  value: false
+            :3fcd5169-1b40-4d5a-bf68-095760a84a16:
+              nodeKind: boundary
+              pos:
+                x: 1.8218853219350177
+                y: -0.39871942977110536
+              params:
+                boundaryName:
+                  value: "3"
+                multipleWiresAllowed:
+                  value: false
+          linksWithID:
+            :8f4013bb-6dba-49c0-933e-26495a81afd4:
+              from: :afd304e0-9ba7-4d03-a6f8-51590e6c497f.out.0
+              to: :e0f45419-8b3b-4442-ae6d-81add6ee4bf3.in.0
+            :35d4bc54-6ee1-4262-9c39-8c4e1dff7e0b:
+              from: :4bad9a0d-b11e-4a8a-854b-688b65865696.boundary
+              to: :e0f45419-8b3b-4442-ae6d-81add6ee4bf3.in.1
+            :23c3e522-3911-4013-8d29-df2c296a3ae4:
+              from: :2fc66c8c-39e6-4349-b86e-c2260207461a.boundary
+              to: :afd304e0-9ba7-4d03-a6f8-51590e6c497f.in.0
+            :0ef599bc-a7bd-47b9-ab67-b8f3a8fd809a:
+              from: :e0f45419-8b3b-4442-ae6d-81add6ee4bf3.out.0
+              to: :3fcd5169-1b40-4d5a-bf68-095760a84a16.boundary
           theory: main
           viewport:
-            x: -0.004381192525227865
-            y: -0.14997932602961858
-            w: 1.949046285947164
-            h: 1.864017964998881
+            x: -1.649606896241506
+            y: -1.414392127195994
+            w: 4.414081344604492
+            h: 1.9659658765792847
           svgSize:
-            w: 73.66474151611328pt
-            h: 70.4510726928711pt
+            w: 166.8314208984375pt
+            h: 74.3042221069336pt
+        rhs:
+          name: Click to edit
+          nodes:
+            :4bad9a0d-b11e-4a8a-854b-688b65865696:
+              nodeKind: boundary
+              pos:
+                x: -0.86932804385821
+                y: -0.40711761961380644
+              params:
+                multipleWiresAllowed:
+                  value: false
+                boundaryName:
+                  value: "2"
+            :2fc66c8c-39e6-4349-b86e-c2260207461a:
+              nodeKind: boundary
+              pos:
+                x: -0.8752129499117535
+                y: -1.190186961491903
+              params:
+                multipleWiresAllowed:
+                  value: false
+            :3fcd5169-1b40-4d5a-bf68-095760a84a16:
+              nodeKind: boundary
+              pos:
+                x: 2.959397042592367
+                y: -0.6759878132740657
+              params:
+                boundaryName:
+                  value: "3"
+                multipleWiresAllowed:
+                  value: false
+            :0d20f1b8-2466-4de6-adf8-93ed5aff7604:
+              nodeKind: discardWithOutput
+              pos:
+                x: 0.5954929637908937
+                y: -0.5961312484741212
+            :b6a09652-dfe9-45da-8ae7-bab678ad7e28:
+              nodeKind: Enc1
+              pos:
+                x: 1.6121436023712161
+                y: -0.532146236896515
+          linksWithID:
+            :18ce30a6-49ca-49c6-b268-a06850278183:
+              from: :4bad9a0d-b11e-4a8a-854b-688b65865696.boundary
+              to: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.in.0
+            :ef16ebd9-a166-41a1-ad24-78afd576b3fd:
+              from: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.out.0
+              to: :b6a09652-dfe9-45da-8ae7-bab678ad7e28.in.0
+            :01a10c9e-a090-4f01-b8bf-8268ae7e8761:
+              from: :b6a09652-dfe9-45da-8ae7-bab678ad7e28.out.0
+              to: :3fcd5169-1b40-4d5a-bf68-095760a84a16.boundary
+            :39647434-cb85-44aa-aa37-3b303d6ccfa2:
+              from: :2fc66c8c-39e6-4349-b86e-c2260207461a.boundary
+              to: :0d20f1b8-2466-4de6-adf8-93ed5aff7604.in.0
+          theory: main
+          viewport:
+            x: -0.8178017457326253
+            y: -1.2722032125790914
+            w: 4.719787813822428
+            h: 1.8095580705006917
+          svgSize:
+            w: 178.38568115234375pt
+            h: 68.39274597167969pt

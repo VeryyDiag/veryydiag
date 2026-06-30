@@ -106,19 +106,23 @@ let {
 
 ### Small bugs/features to correct/add quickly
 
-- For now if you edit a rule with a mono-wire boundary, the parameter of the boundary is shown as multi-wire but the svg shows mono-wire, and we need to toggle in/out the parameter. Weird.
 - For now just clicking an anchor creates an invisible self-looping link. Add a minimal distance to travel so that a self link is added.
-- For now we can't move nodes in an applyRule proof step.
-- Implement an undo mechanism
+- If you paste, e.g., a number when editing an input zone, it resets the whole diagram!!
+- Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.
+- In the node template, anchors should be placed above the text, not below.
+- Allow an option to re-edit a node created via the template.
+- Renaming an available node does not rename the nodes in the rule
+
 
 ### More substantial changes
 
+- Create ordered anchors that accept multiple ordered wires. Add an option to specify that the order may be arbitrary (needed when applying the rule), and make it work with boundaries, including multi-wire ones.
 - Redefine the Node type so that it is distinct from AvailableNode
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3
 - Write more tests (and fix existing ones)
 - Check if all errors are cached correctly
-- Implement the unique constraint
+- Implement the unique constraint, and auto-increment the number when adding multiple anchors
 - Run prettier and ESLint to have uniform code
 - Implement a language like:
   ```
@@ -130,3 +134,4 @@ let {
   to also be able to "code" diagrams with a shorter syntax than YAML/JSON (may also be more LLM friendly as it consumes less tokens) and a CLI interface similar to Coq/Lean etc. To have a concise notation, we may omit anchors named like `in.0`, `in.1`… in the inputs and `out.0`… in the outputs.
 - Implement cherry-picking to import only a theory/diagram/rule/… from a different diagram.
 - Define "well formed" diagram, e.g. to avoid loops in circuits.
+- Snap to the grid. Center nodes (and/or allow a custom center) instead of positionning them based on their top/right position.

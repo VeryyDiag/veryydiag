@@ -102,6 +102,7 @@
     extraSpacingAroundText: number,
     strokeWidth: number,
     extraSpacingAroundMargin: number,
+    shape: "rectangle" | "circle"
   }
 
   const defaultSvgParameters : SvgParameters = {
@@ -116,6 +117,7 @@
     extraSpacingAroundText: 300,
     strokeWidth: 100,
     extraSpacingAroundMargin: 300,
+    shape: "rectangle",
   }
   let svgParameters = $state<SvgParameters>(structuredClone(defaultSvgParameters))
 
@@ -123,10 +125,10 @@
     try {
       // Read all reactive state BEFORE any await
       const x = $state.snapshot(svgParameters)
-      const { tex, height, scale, mainNodeColor, anchors, extraSpacingAroundText, strokeWidth, extraSpacingAroundMargin } = svgParameters;
+      const { tex, height, scale, mainNodeColor, anchors, extraSpacingAroundText, strokeWidth, extraSpacingAroundMargin, shape } = svgParameters;
 
       const texSvg = await getSvgImage(tex, {display: true})
-      const totalSpacing = extraSpacingAroundText + strokeWidth/2 + extraSpacingAroundMargin
+      const distMultiplier = shape === "circle" ? Math.sqrt(2) : 1
 
       const parser = new DOMParser()
       const doc = parser.parseFromString(texSvg, 'image/svg+xml')
@@ -135,45 +137,76 @@
       assertNotUndefinedNR(svg, `Couldn't parse the svg image (no svg found)`)
 
       // We extend the viewbox and width/height
-      const viewBox : number[] = assertNotUndefined(
+      let viewBox : number[] = assertNotUndefined(
         svg.getAttribute('viewBox')?.split(" ")?.map(x => parseFloat(x)),
         `Svg has no viewBox, please report a bug`)
       assertTrue(viewBox.length === 4, `Weird, the viewBox has ${viewBox.length} != 4 elements`)
-      const viewboxXYWH = [viewBox[0] - totalSpacing,
-                           viewBox[1] - totalSpacing,
-                           viewBox[2] + 2*totalSpacing,
-                           viewBox[3] + 2*totalSpacing]
-      svg.setAttribute('viewBox', `${viewboxXYWH[0]} ${viewboxXYWH[1]} ${viewboxXYWH[2]} ${viewboxXYWH[3]}`)
-      svg.setAttribute('height', `${scale*cm(height)}`)
-      svg.setAttribute('width', `${scale*cm(svgParameters.height * viewBox[2] / viewBox[3])}`)
+      // For circle we update the viewBox so that it becomes a square
+      if (shape === "circle") {
+        const m = Math.max(viewBox[2], viewBox[3])
+        viewBox = [viewBox[0]-(m-viewBox[2])/2, viewBox[1]-(m-viewBox[3])/2, m, m]
+      }
 
-      // We create the rectangle
-      const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-      const rectXYWH = [viewBox[0] - extraSpacingAroundText,
-                        viewBox[1] - extraSpacingAroundText,
-                        viewBox[2] + 2*extraSpacingAroundText,
-                        viewBox[3] + 2*extraSpacingAroundText]
-      rect.setAttribute('x', `${rectXYWH[0]}`)
-      rect.setAttribute('y', `${rectXYWH[1]}`)
-      rect.setAttribute('width', `${rectXYWH[2]}`)
-      rect.setAttribute('height', `${rectXYWH[3]}`)
-      rect.setAttribute('fill', mainNodeColor) // This way we can select the shape
-      rect.setAttribute('stroke', 'black')
-      rect.setAttribute('stroke-width', `${strokeWidth}`)
+      // We create the shape
+      let shapeSVG : SVGElement = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      let shapeXYWH = [0,0,0,0]
+      let shapeFittingXYWH = [0,0,0,0]
+      if (shape === "rectangle") {
+        shapeXYWH = [viewBox[0] - extraSpacingAroundText,
+                     viewBox[1] - extraSpacingAroundText,
+                     viewBox[2] + 2*extraSpacingAroundText,
+                     viewBox[3] + 2*extraSpacingAroundText]
+        shapeFittingXYWH = shapeXYWH
+        shapeSVG.setAttribute('x', `${shapeXYWH[0]}`)
+        shapeSVG.setAttribute('y', `${shapeXYWH[1]}`)
+        shapeSVG.setAttribute('width', `${shapeXYWH[2]}`)
+        shapeSVG.setAttribute('height', `${shapeXYWH[3]}`)
+        shapeSVG.setAttribute('fill', mainNodeColor) // This way we can select the shape
+        shapeSVG.setAttribute('stroke', 'black')
+        shapeSVG.setAttribute('stroke-width', `${strokeWidth}`)
+      } else if (shape === "circle") {
+        shapeXYWH = [viewBox[0] - extraSpacingAroundText,
+                     viewBox[1] - extraSpacingAroundText,
+                     viewBox[2] + 2*extraSpacingAroundText,
+                     viewBox[3] + 2*extraSpacingAroundText]
+        const [centerShapeX, centerShapeY] = [shapeXYWH[0] + shapeXYWH[2]/2,
+                                              shapeXYWH[1] + shapeXYWH[3]/2]
+        const r = shapeXYWH[2]*Math.sqrt(2)/2
+        shapeFittingXYWH = [centerShapeX-r, centerShapeY-r, 2*r, 2*r]
+        shapeSVG = doc.createElementNS('http://www.w3.org/2000/svg', 'circle')
+        shapeSVG.setAttribute('cx', `${shapeXYWH[0]+shapeXYWH[2]/2}`)
+        shapeSVG.setAttribute('cy', `${shapeXYWH[1]+shapeXYWH[3]/2}`)
+        // sqrt ensures that the whole square fits inside (simpler to do math than trying to fit
+        // the rectangle, and we can adujst with the margin if we really want a tighter node)
+        shapeSVG.setAttribute('r', `${shapeXYWH[3] * distMultiplier/2}`)
+        shapeSVG.setAttribute('fill', mainNodeColor) // This way we can select the shape
+        shapeSVG.setAttribute('stroke', 'black')
+        shapeSVG.setAttribute('stroke-width', `${strokeWidth}`)
+      }
 
       // Add anchors
       svgParameters.anchors.forEach(({name, posX, posY, color, radius}) => {
         const circ = doc.createElementNS('http://www.w3.org/2000/svg', 'circle')
-        circ.setAttribute('cx', `${rectXYWH[0] + posX*rectXYWH[2]}`)
-        circ.setAttribute('cy', `${rectXYWH[1] + posY*rectXYWH[3]}`)
-        circ.setAttribute('r', `${radius * rectXYWH[3] / height}`)
+        circ.setAttribute('cx', `${shapeFittingXYWH[0] + posX*shapeFittingXYWH[2]}`)
+        circ.setAttribute('cy', `${shapeFittingXYWH[1] + posY*shapeFittingXYWH[3]}`)
+        circ.setAttribute('r', `${radius * shapeXYWH[3] / height}`)
         circ.setAttribute('data-proofdiag-anchor', name)
         circ.setAttribute('fill', color)
-        svg.prepend(circ)
+        svg.appendChild(circ)
       })
 
-      // We add the rectangle to the shape
-      svg.prepend(rect)
+      // We add the shape to the node
+      svg.prepend(shapeSVG)
+
+      // Setting the final viewbox
+      const delta = strokeWidth/2 + extraSpacingAroundMargin
+      const viewboxXYWH = [shapeFittingXYWH[0] - delta,
+                           shapeFittingXYWH[1] - delta,
+                           shapeFittingXYWH[2] + 2*delta,
+                           shapeFittingXYWH[3] + 2*delta]
+      svg.setAttribute('viewBox', `${viewboxXYWH[0]} ${viewboxXYWH[1]} ${viewboxXYWH[2]} ${viewboxXYWH[3]}`)
+      svg.setAttribute('height', `${scale*cm(height)}`)
+      svg.setAttribute('width', `${scale*cm(svgParameters.height * viewBox[2] / viewBox[3])}`)
 
       const newSvg = new XMLSerializer().serializeToString(svg)
       return newSvg
@@ -220,9 +253,19 @@
     </button>
     <h1 class="text-center text-lg font-normal text-body">Create node <input class={styleInput} bind:value={nodeKind} /></h1>
     <p>{@html await createSvg({...svgParameters, scale: 2.5})}</p>
-    <p>Text (LaTeX): <input class={styleInput} bind:value={svgParameters.tex} /></p>
-    <p>Height: <input class={styleInput} bind:value={svgParameters.height} /> cm</p>
-    <p>Color: <input class={styleInput} bind:value={svgParameters.mainNodeColor} /></p>
+    <p>
+      Text (LaTeX): <input class={styleInput} bind:value={svgParameters.tex} />
+    </p>
+    <p>Height: <input class={styleInput} bind:value={svgParameters.height} /> cm
+      <span class="mr-4"></span>
+      Shape: <select class={styleInput} bind:value={svgParameters.shape}>
+      <option value="rectangle">Rectangle</option>
+      <option value="circle">Circle</option>
+      </select>
+      <span class="mr-4"></span>
+      Color: <input class={styleInput} bind:value={svgParameters.mainNodeColor} />
+      <span class="mr-4"></span>
+    </p>
     <p>Anchors:</p>
     <ul>
       {#each svgParameters.anchors as anchor, i}
