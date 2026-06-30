@@ -392,6 +392,13 @@ export class DiagramConfClass {
     }
   }
 
+  removeAvailableNodeKind = (nodeKind: NodeKind) => {
+    const theory = this.getCurrentTheory()
+    if (theory?.availableNodes?.[nodeKind] !== undefined) {
+      delete theory.availableNodes[nodeKind]
+    }
+  }
+
   /** Triggers when pressing ctrl-A */
   selectAll = () => {
     const diag = this.getCurrentDiagram()

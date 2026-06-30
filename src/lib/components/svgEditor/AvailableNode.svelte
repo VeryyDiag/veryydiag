@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import type { NodeKind, AvailableNode, DiagramConf } from "$lib/types/types";
+  import Button from '$lib/components/reusable/Button.svelte'
   import SvgEditor from "./SvgEditor.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
 
@@ -36,15 +37,15 @@
   <p>
     <Icon icon="ph:arrow-bend-down-right-bold" width="15" height="15" class="inline align-baseline mr-1"/>
     Node <span contenteditable spellcheck="false" role="button" tabindex="0"
-               onblur={(e) => {
-                      const res = diagramConfClass.renameNodeKind(nodeKind, (e.target as HTMLElement).innerText)
-                      // If the name already exists, reset to old value
-                      if (!res) {
-                        (e.target as HTMLElement).innerText = nodeKind
-                      }
-                      }}
-               onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
-      >{nodeKind}</span>
+           onblur={(e) => {
+                    const res = diagramConfClass.renameNodeKind(nodeKind, (e.target as HTMLElement).innerText)
+                    // If the name already exists, reset to old value
+                    if (!res) {
+                      (e.target as HTMLElement).innerText = nodeKind
+                    }
+                    }}
+      onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
+      >{nodeKind}</span> <Button tiny title="Delete this available node in the theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeAvailableNodeKind(nodeKind)}}><Icon icon="mdi:trash-outline" width="15" height="15" /></Button>
   </p>
   <div class="m-2" data-proofdiag-available-node={nodeKind} draggable="true">
     <SvgEditor onlySvg={1.3} diagramConfParsed={subDiagramConf}/>
