@@ -79,7 +79,6 @@
     });
 
     const result = await doc.convertPromise(math, options);
-    console.log(result)
     const svg = adaptor.tags(result, 'svg')[0];
     const defs = adaptor.tags(svg, 'defs')[0] || adaptor.append(svg, adaptor.node('defs', {}, []));
     adaptor.append(defs, adaptor.node('style', {}, [adaptor.text(svgCss)], SVGXMLNS));
@@ -91,57 +90,6 @@
     adaptor.setAttribute(g, 'fill', 'black');
     return xmlDeclaration + '\n' + adaptor.serializeXML(svg);
   }
-
-  //
-  // // https://github.com/mathjax/MathJax/issues/3584#issuecomment-4826341132
-  // onMount(async () => {
-  //   window.MathJax = {
-  //   loader: {
-  //       load: ['input/tex', 'output/svg'],
-  //       paths: {
-  //         mathjax: './node_modules/mathjax',
-  //       },
-  //       svg: { fontCache: 'none' }, // Required for standalone svg
-  //     },
-  //   };
-  //   try {
-  //     // @ts-expect-error: mathjax/startup.js doesn't have a .d.ts file
-  //     await import('mathjax/startup.js');
-  //     await assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).promise;
-  //   } catch (e) {
-  //     // We don't throw here because each time svelte hot-reloads, MathJax.startup is undefined for
-  //     // a reason I don't understand yet, and it blocks the whole app.
-  //     console.log(e)
-  //   }
-  // 	});
-  //
-  // // https://docs.mathjax.org/en/v4.0/web/convert.html#creating-stand-alone-svg-images
-  // const svgCss = [
-  //   'svg a{fill:blue;stroke:blue}',
-  //   '[data-mml-node="merror"]>g{fill:red;stroke:red}',
-  //   '[data-mml-node="merror"]>rect[data-background]{fill:yellow;stroke:none}',
-  //   '[data-frame],[data-line]{stroke-width:70px;fill:none}',
-  //   '.mjx-dashed{stroke-dasharray:140}',
-  //   '.mjx-dotted{stroke-linecap:round;stroke-dasharray:0,140}',
-  //   'use[data-c]{stroke-width:3px}'
-  // ].join('');
-  // const xmlDeclaration = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>';
-  // const SVGXMLNS = 'http://www.w3.org/2000/svg';
-  //
-  // async function getSvgImage(math: string, options = {}) : Promise<string> {
-  //   const adaptor = assertNotUndefined(MathJax?.startup, `MathJax.startup is not defined`).adaptor;
-  //   const result = await assertNotUndefined(MathJax.tex2svgPromise, `MathJax.tex2svgPromise is not defined`)(math, options);
-  //   const svg = adaptor.tags(result, 'svg')[0];
-  //   const defs = adaptor.tags(svg, 'defs')[0] || adaptor.append(svg, adaptor.create('defs'));
-  //   adaptor.append(defs, adaptor.node('style', {}, [adaptor.text(svgCss)], SVGXMLNS));
-  //   adaptor.removeAttribute(svg, 'role');
-  //   adaptor.removeAttribute(svg, 'focusable');
-  //   adaptor.removeAttribute(svg, 'aria-hidden');
-  //   const g = adaptor.tags(svg, 'g')[0];
-  //   adaptor.setAttribute(g, 'stroke', 'black');
-  //   adaptor.setAttribute(g, 'fill', 'black');
-  //   return xmlDeclaration + '\n' + adaptor.serializeXML(svg);
-  // }
   // ---------
 
   type SvgParameters = {
@@ -170,7 +118,6 @@
       const { tex, height, scale, mainNodeColor, anchors } = svgParameters;
 
       const texSvg = await getSvgImage(tex, {display: true})
-      console.log(texSvg)
       const extraSpacingAroundText = 300
       const strokeWidth = 100
       const extraSpacingAroundMargin = extraSpacingAroundText + strokeWidth/2 + 300
