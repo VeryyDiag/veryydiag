@@ -135,8 +135,22 @@
     {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
       <Node id={id} {...node} />
     {/each}
-    {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined }
+    {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined && diagramConfClass.currentlyDrawnLassoSelection.length > 0}
       <path data-proofdiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
+        <!-- It is very hard to draw links with touch devices (and sometimes with the mouse as well)
+             since we need to click exactly on the small anchor with a big finger. Hence, we provide
+             another way to create links: if we end our lasso where we started on the circle, it
+             creates a link between the two selected anchors when available.
+        -->
+        <circle
+          cx={diagramConfClass.currentlyDrawnLassoSelection[0].x}
+          cy={diagramConfClass.currentlyDrawnLassoSelection[0].y}
+          r="5"
+          fill="grey"
+          stroke="dodgerblue"
+          data-proofdiag-lasso-create-link="true"
+        />
+        <!-- To select nodes we show the center of the node that must be selected -->
         {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
           {#if node?.pos !== undefined}
             <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />

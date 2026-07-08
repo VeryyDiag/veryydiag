@@ -41,7 +41,7 @@
   let errorsAnchors : string[] = []
 
   // This computes basically once when creating the node the position of the anchors relative to the node.
-  // This helps when drawing links
+  // This helps when drawing links, selecting anchors to create links via lasso etc
   $effect(() => {
     if (container === undefined) {
       return

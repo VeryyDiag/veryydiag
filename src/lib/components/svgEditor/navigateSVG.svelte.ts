@@ -1,7 +1,7 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, entries, cmToUnit, fullAnchorToIDAndAnchor } from '$lib/utils';
+import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, keys, entries, cmToUnit, fullAnchorToIDAndAnchor } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-proofdiag-anchor]") !== null
@@ -452,45 +452,107 @@ export function removeSelection(node: SVGSVGElement, diagramConfClass: DiagramCo
 }
 
 export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
-  if (diagramConfClass === undefined) {return}
+  if (diagramConfClass === undefined) return
 
-  function dragstart(e: DragEvent) {
-    if (e.dataTransfer && e.target instanceof HTMLElement && e.target?.dataset?.proofdiagAvailableNode !== undefined) {
-      e.dataTransfer.setData("proofdiag/available-node-kind", e.target.dataset.proofdiagAvailableNode);
+  let ghost: HTMLElement | undefined
+  let draggedKind: string | undefined
+  let pointerId: number | undefined
+  let offsetX = 0
+  let offsetY = 0
+
+  function pointerdown(e: PointerEvent) {
+    // We try to find the wanted element under the cursor
+    const target = e?.target
+    if (!(target instanceof Element)) return
+    const targetAvailableNode = target?.closest("[data-proofdiag-available-node]")
+    if (!(targetAvailableNode instanceof HTMLElement)) return
+    const kind = targetAvailableNode.dataset.proofdiagAvailableNode
+    if (kind === undefined) return
+
+    draggedKind = kind
+    pointerId = e.pointerId
+
+    const rect = targetAvailableNode.getBoundingClientRect()
+
+    offsetX = e.clientX - rect.left
+    offsetY = e.clientY - rect.top
+
+    ghost = targetAvailableNode.cloneNode(true) as HTMLElement
+
+    Object.assign(ghost.style, {
+      position: "fixed",
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      opacity: "0.7",
+      pointerEvents: "none",
+      zIndex: "999999",
+      transform: "scale(1.05)",
+    })
+
+    document.body.appendChild(ghost)
+
+    node.setPointerCapture(e.pointerId)
+
+    e.preventDefault()
+  }
+
+
+  function pointermove(e: PointerEvent) {
+    if (!ghost || e.pointerId !== pointerId) return
+
+    ghost.style.left = `${e.clientX - offsetX}px`
+    ghost.style.top = `${e.clientY - offsetY}px`
+  }
+
+
+  function pointerup(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (e.pointerId !== pointerId) return
+
+    if (ghost) {
+      ghost.remove()
+      ghost = undefined
     }
-  }
 
-  // Cancel dragover so that drop can fire
-  function dragover(ev: DragEvent) {
-    ev.preventDefault();
-  }
+    if (draggedKind !== undefined) {
+      const target = document.elementFromPoint(e.clientX, e.clientY)
 
-  function drop(e: DragEvent) {
-    if (diagramConfClass === undefined || !e.dataTransfer ) {return}
-    // Check if dropped on the SVG
-    if (e.target instanceof Element) {
-      const svg = e.target.closest("[data-proofdiag-main-svg]")
-      if (svg instanceof SVGSVGElement) {
-        if (svg && e.dataTransfer.getData("proofdiag/available-node-kind")) {
+      if (target instanceof Element) {
+        const svg = target.closest("[data-proofdiag-main-svg]")
+
+        if (svg instanceof SVGSVGElement) {
           const pos = clientToSVGCoordInCm(svg, e.clientX, e.clientY)
+
           if (pos !== undefined) {
             diagramConfClass.undoSnapshot()
-            diagramConfClass.addNode(e.dataTransfer.getData("proofdiag/available-node-kind"), pos)
+            diagramConfClass.addNode(draggedKind, pos)
           }
         }
       }
     }
+
+    draggedKind = undefined
+    pointerId = undefined
   }
 
-  node.addEventListener('dragstart', dragstart)
-  node.addEventListener('drop', drop)
-  node.addEventListener('dragover', dragover)
+
+  node.addEventListener("pointerdown", pointerdown)
+  node.addEventListener("pointermove", pointermove)
+  node.addEventListener("pointerup", pointerup)
+  node.addEventListener("pointercancel", pointerup)
+  node.addEventListener("pointerleave", pointerup)
 
   return {
     destroy() {
-      node.removeEventListener("dragstart", dragstart)
-      node.removeEventListener("drop", drop)
-      node.removeEventListener("dragover", dragover)
+      node.removeEventListener("pointerdown", pointerdown)
+      node.removeEventListener("pointermove", pointermove)
+      node.removeEventListener("pointerup", pointerup)
+      node.removeEventListener("pointercancel", pointerup)
+      node.removeEventListener("pointerleave", pointerup)
+
+      ghost?.remove()
     }
   }
 }
@@ -650,6 +712,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
   function onPointerDown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     pointers.set(e.pointerId, e)
+    debugger
     // We are zooming, cancelling selection
     if (pointers.size > 1) {
       lastDownPos = undefined
@@ -659,8 +722,6 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     }
     const now = e.timeStamp
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
-
-    console.log(lastDownPos !== undefined, now - lastDownTime, maxDelay, distance(lastDownPos || {x: 0, y: 0}, pos), distanceThreshold)
 
     const isSecondClick = lastDownPos !== undefined && now - lastDownTime <= maxDelay && distance(lastDownPos, pos) <= distanceThreshold
     // record this pointer down as a potential "click 1" for the *next* gesture
@@ -694,7 +755,6 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
       if (lastDownPos !== undefined) {
         const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
         if(distance(lastDownPos, pos) <= distanceThreshold) {
-          console.log("RESET")
           lastDownPos = undefined
           lastDownTime = 0
         }
@@ -712,7 +772,9 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     if (diagramConfClass === undefined) {return}
     pointers.delete(e.pointerId)
     // We are zooming, cancelling selection
-    if (pointers.size > 1) {
+    const currentlyDrawnLassoSelection = diagramConfClass?.currentlyDrawnLassoSelection
+    if (pointers.size > 1 || (armed && (currentlyDrawnLassoSelection === undefined
+                                     || currentlyDrawnLassoSelection?.length < 1))) {
       lastDownPos = undefined
       armed = false
       diagramConfClass.currentlyDrawnLassoSelection = undefined
@@ -721,34 +783,68 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
 
     if (armed) {
+      if (currentlyDrawnLassoSelection === undefined) return
       const selection = node.querySelector('[data-proofdiag-lasso]')
       if (selection === undefined || selection === null || !(selection instanceof SVGGeometryElement))
       {
         console.log("Weird, no valid selection was found…")
         return
       }
-      const currentDiagram = diagramConfClass.getCurrentDiagram()
-      // We check what nodes are inside the selection or not. For this we check
-      // if all anchors of the node are selected
-      entries(currentDiagram.nodes).forEach(([nodeID, node]) => {
-        const posNode = node?.pos
-        if (posNode !== undefined && selection.isPointInFill({x: cmToUnit(posNode.x), y: cmToUnit(posNode.y)})) {
-          diagramConfClass.addNodeSelection(nodeID)
-        }
-      })
-      // We check what links are inside/crossing the selection
-      entries(currentDiagram.linksWithID).forEach(([linkID, link]) => {
-        ([link.from, link.to]).forEach((fullAnchor) => {
-          const [nodeID, anchor] = fullAnchorToIDAndAnchor(fullAnchor)
-          const node = currentDiagram?.nodes?.[nodeID]
-          if (node !== undefined && node?.pos !== undefined) {
-            const pos = diagramConfClass.getXYOfAnchor(nodeID, anchor)
-            if (pos !== undefined && selection.isPointInFill(pos)) {
-              diagramConfClass.addLinkSelection(linkID)
-            }
+
+      // First, we check if we stopped on the lasso "create link" node
+      // that specifies that we want to create a link instead of selecting the elements
+      const target = document.elementFromPoint(e.clientX, e.clientY)
+      if (target instanceof Element) {
+        const targetCreateLink = target.closest("[data-proofdiag-lasso-create-link]")
+        // We simply select
+        const currentDiagram = diagramConfClass.getCurrentDiagram()
+        const theory = diagramConfClass.getCurrentTheory()
+        if (targetCreateLink instanceof Element) {
+          // We create a new link if two different anchors are selected
+          const allSelectedAnchors = entries(currentDiagram?.nodes).map(([nodeID, node]) => {
+            const allAnchors = keys(theory?.availableNodes?.[node?.nodeKind]?.parsedSVG?.anchors)
+            return allAnchors.map((anchor) => {
+              const posAnchor = diagramConfClass.getXYOfAnchor(nodeID, anchor)
+              if (selection.isPointInFill(posAnchor)) {
+                return {fullIDAnchor: IDAnchorToFullAnchor(nodeID, anchor), posAnchor}
+              } else {
+                return undefined
+              }
+            })
+          }).flat().filter(x => x !== undefined)
+          if (allSelectedAnchors.length !== 2) {
+            console.log(`Warning, you should select 2 anchors to create a link but you selected ${allSelectedAnchors.length}`)
+          } else {
+            // We sort them so that
+            allSelectedAnchors.sort((a, b) =>
+              distance(a.posAnchor,currentlyDrawnLassoSelection[0])
+                                          - distance(b.posAnchor,currentlyDrawnLassoSelection[0]))
+            diagramConfClass.addLink({from: allSelectedAnchors[0].fullIDAnchor, to: allSelectedAnchors[1].fullIDAnchor})
           }
-        })
-      })
+        } else {
+          // We check what nodes are inside the selection or not. For this we check
+          // if all anchors of the node are selected
+          entries(currentDiagram?.nodes).forEach(([nodeID, node]) => {
+            const posNode = node?.pos
+            if (posNode !== undefined && selection.isPointInFill({x: cmToUnit(posNode.x), y: cmToUnit(posNode.y)})) {
+              diagramConfClass.addNodeSelection(nodeID)
+            }
+          })
+          // We check what links are inside/crossing the selection
+          entries(currentDiagram?.linksWithID).forEach(([linkID, link]) => {
+            ([link.from, link.to]).forEach((fullAnchor) => {
+              const [nodeID, anchor] = fullAnchorToIDAndAnchor(fullAnchor)
+              const node = currentDiagram?.nodes?.[nodeID]
+              if (node !== undefined && node?.pos !== undefined) {
+                const pos = diagramConfClass.getXYOfAnchor(nodeID, anchor)
+                if (pos !== undefined && selection.isPointInFill(pos)) {
+                  diagramConfClass.addLinkSelection(linkID)
+                }
+              }
+            })
+          })
+        }
+      }
       lastDownPos = undefined
     }
 
