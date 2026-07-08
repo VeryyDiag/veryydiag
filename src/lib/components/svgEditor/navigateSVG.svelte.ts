@@ -1,7 +1,7 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
+import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, entries, cmToUnit, fullAnchorToIDAndAnchor } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-proofdiag-anchor]") !== null
@@ -43,6 +43,10 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
 
   function pointermove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    if (diagramConfClass.currentlyDrawnLassoSelection !== undefined) {
+      // We are drawing the selection, don't want to move at the same time!
+      return
+    }
     if (!pointers.has(e.pointerId)) return
 
     pointers.set(e.pointerId, e)
@@ -626,4 +630,101 @@ export function redo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
     }
   }
 
+}
+
+
+export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  // Parameters
+  const maxDelay = 400
+
+  let lastUpTime = 0
+  let lastUpPos: Point | undefined = undefined
+
+  let armed = false      // we're inside a potential "2nd click"
+
+  function onPointerDown(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
+    const now = e.timeStamp
+
+    const isSecondClick = lastUpPos !== undefined && now - lastUpTime <= maxDelay
+
+    if (isSecondClick) {
+      armed = true
+      node.setPointerCapture(e.pointerId)
+      // prevent text selection / default double-click behavior
+      e.preventDefault()
+      diagramConfClass.currentlyDrawnLassoSelection = []
+    } else {
+      armed = false
+    }
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (!armed) return
+    const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
+    if (diagramConfClass.currentlyDrawnLassoSelection === undefined) {
+      diagramConfClass.currentlyDrawnLassoSelection = []
+    }
+    diagramConfClass.currentlyDrawnLassoSelection.push(pos)
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    if (diagramConfClass === undefined) {return}
+    const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
+
+    if (armed) {
+      const selection = node.querySelector('[data-proofdiag-lasso]')
+      if (selection === undefined || selection === null || !(selection instanceof SVGGeometryElement))
+      {
+        console.log("Weird, no valid selection was found…")
+        return
+      }
+      const currentDiagram = diagramConfClass.getCurrentDiagram()
+      // We check what nodes are inside the selection or not. For this we check
+      // if all anchors of the node are selected
+      entries(currentDiagram.nodes).forEach(([nodeID, node]) => {
+        const posNode = node?.pos
+        if (posNode !== undefined && selection.isPointInFill({x: cmToUnit(posNode.x), y: cmToUnit(posNode.y)})) {
+          diagramConfClass.addNodeSelection(nodeID)
+        }
+      })
+      // We check what links are inside/crossing the selection
+      entries(currentDiagram.linksWithID).forEach(([linkID, link]) => {
+        ([link.from, link.to]).forEach((fullAnchor) => {
+          const [nodeID, anchor] = fullAnchorToIDAndAnchor(fullAnchor)
+          const node = currentDiagram?.nodes?.[nodeID]
+          if (node !== undefined && node?.pos !== undefined) {
+            const pos = diagramConfClass.getXYOfAnchor(nodeID, anchor)
+            if (pos !== undefined && selection.isPointInFill(pos)) {
+              diagramConfClass.addLinkSelection(linkID)
+            }
+          }
+        })
+      })
+    }
+
+    // record this pointerup as a potential "click 1" for the *next* gesture
+    lastUpTime = e.timeStamp
+    lastUpPos = pos
+
+    armed = false
+    diagramConfClass.currentlyDrawnLassoSelection = undefined
+
+    if (node.hasPointerCapture(e.pointerId)) {
+      node.releasePointerCapture(e.pointerId)
+    }
+  }
+
+  node.addEventListener('pointerdown', onPointerDown)
+  node.addEventListener('pointermove', onPointerMove)
+  node.addEventListener('pointerup', onPointerUp)
+
+  return {
+    destroy() {
+      node.removeEventListener('pointerdown', onPointerDown)
+      node.removeEventListener('pointermove', onPointerMove)
+      node.removeEventListener('pointerup', onPointerUp)
+    },
+  }
 }

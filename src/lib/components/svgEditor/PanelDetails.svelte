@@ -36,10 +36,8 @@
           {@const currentTheoryID = diagramConfClass.getCurrentTheoryName()}
           {@const node = diagramConfClass.getCurrentDiagram()?.nodes?.[nodeID]}
           {@const paramDefs = (node === undefined) ? {} : diagramConfClass.getParamSpecs(currentTheoryID, node.nodeKind) || {}}
-          <hr class={hr}>
-          {#if node === undefined }
-            The node {nodeID} does not exist in the current diagram.
-          {:else}
+          {#if node !== undefined }
+            <hr class={hr}>
             <ul class="list-disc px-5">
               <li>Node ID: <ContentEditable
                              onedit={(s) => {diagramConfClass.undoSnapshot(); diagramConfClass.tryOrSendNotificationError(
@@ -67,39 +65,41 @@
                 </ul>
               </li>
             </ul>
+            <Button title="Select only this node" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addNodeSelection(nodeID)}}>
+              <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
+            </Button>
+            <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNodeSelection(nodeID)}}>
+              <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
+            </Button>
+            <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNode(nodeID)}}>
+              <Icon icon="mdi:trash-outline" width="18" height="18" />
+            </Button>
           {/if}
-          <Button title="Select only this node" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addNodeSelection(nodeID)}}>
-            <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
-          </Button>
-          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNodeSelection(nodeID)}}>
-            <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
-          </Button>
-          <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeNode(nodeID)}}>
-            <Icon icon="mdi:trash-outline" width="18" height="18" />
-          </Button>
         {/each}
         {#each linkSelection as linkID }
           {@const link = diagramConfClass.getCurrentDiagram()?.linksWithID?.[linkID]}
-          <hr class={hr}>
-          <ul class="list-disc px-5">
-            <li>Link ID:
-              <ContentEditable onedit={(s) => diagramConfClass.tryOrSendNotificationError(
-                                        () => diagramConfClass.renameLinkID(linkID, s))}>
-                {linkID}
-              </ContentEditable>
-            </li>
-            <li>From: <code>{link?.from}</code></li>
-            <li>To: <code>{link?.to}</code></li>
-          </ul>
-          <Button title="Select only this link" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addLinkSelection(linkID)}}>
-            <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
-          </Button>
-          <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLinkSelection(linkID)}}>
-            <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
-          </Button>
-          <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLink(linkID)}}>
-            <Icon icon="mdi:trash-outline" width="18" height="18" />
-          </Button>
+          {#if link !== undefined }
+            <hr class={hr}>
+            <ul class="list-disc px-5">
+              <li>Link ID:
+                <ContentEditable onedit={(s) => diagramConfClass.tryOrSendNotificationError(
+                                          () => diagramConfClass.renameLinkID(linkID, s))}>
+                  {linkID}
+                </ContentEditable>
+              </li>
+              <li>From: <code>{link?.from}</code></li>
+              <li>To: <code>{link?.to}</code></li>
+            </ul>
+            <Button title="Select only this link" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addLinkSelection(linkID)}}>
+              <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />
+            </Button>
+            <Button title="Un-Select" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLinkSelection(linkID)}}>
+              <Icon icon="hugeicons:cursor-remove-selection-02" width="18" height="18"/>
+            </Button>
+            <Button title="Remove" tiny={true} class="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeLink(linkID)}}>
+              <Icon icon="mdi:trash-outline" width="18" height="18" />
+            </Button>
+          {/if}
         {/each}
         <hr class={hr}>
       {/if}

@@ -1,20 +1,20 @@
 <script lang="ts">
   // This component is a wrapper that takes care of checking, given nodeKind, which component must be loaded, with which properties etc
-  import type { AvailableNode, Node } from "$lib/types/types"
+  import type { AvailableNode, Node, Point } from "$lib/types/types"
   import { componentNameToComponent } from "$lib/components/Nodes/allNodes"
   import { registerErrors } from "$lib/contexts/context.svelte";
   import { getTransformToElement, randomID, cmToUnit, unitToCm } from "$lib/utils";
   import { getContextDiagram } from "$lib/contexts/context.svelte";
-  
+
   // This file is used to draw arbitrary nodes
   let props : Node & {id: string} = $props();
 
   let diagramConfClass = getContextDiagram()
 
   let selected = $derived(props.id !== undefined ? diagramConfClass.isNodeSelected(props.id) : false)
-  
+
   // See which component we should mount etc
-  let [availableNode, errorsA] : [AvailableNode | null, string[]] = $derived.by(() => {
+  let [availableNode, errorsA] = $derived.by<[AvailableNode | null, string[]]>(() => {
     try {
       return [diagramConfClass.nodeKindToAvailableNode(props.nodeKind), []]
     } catch (err) {
@@ -27,13 +27,15 @@
       return [null, [errMsg]]
     }
   })
-  
+
+  let center = $derived<Point>(availableNode?.parsedSVG?.center || {x: 0, y: 0})
+  // let center = {x: 10, y: 2}
 
   const Component = $derived(componentNameToComponent(availableNode?.componentName || "NodeGeneric"));
 
 
   // Deals with positioning and finding anchors
-  
+
   let container = $state<SVGGraphicsElement | undefined>(undefined);
 
   let errorsAnchors : string[] = []
@@ -73,7 +75,7 @@
   })
 
 
-  
+
   let errorsB = $derived(Component !== undefined ? [] :
                          [`Error: the component ${props.nodeKind} does not exist.`]);
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
@@ -81,7 +83,7 @@
   registerErrors(uid, () => errors)
 </script>
 {#if Component !== undefined}
-  <g bind:this={container} transform="translate({cmToUnit(props.pos?.x || 0)},{cmToUnit(props.pos?.y || 0)})" data-proofdiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
+  <g bind:this={container} transform="translate({cmToUnit((props.pos?.x || 0) - center.x)},{cmToUnit((props.pos?.y || 0) - center.y)})" data-proofdiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
     <Component svgGroupRef={container} {...({...props, ...availableNode})}/>
   </g>
 {/if}

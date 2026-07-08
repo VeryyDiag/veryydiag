@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { AnchorName, IDAnchor, NodeID, Point, ParamValue } from './types/types';
+import type { AnchorName, IDAnchor, NodeID, Point, ParamValue, Error } from './types/types';
 import { ProofDiagError } from './types/types';
 import { List, Map, Set as SetIm, Collection } from "immutable"
 
@@ -62,6 +62,14 @@ export function assertDontThrow<T>(f: () => T, m: string): T {
 // Use on pattern matching to ensure we never arrive here.
 export function assertNever(x: never, m: string = `We should never enter this case`): never {
   throw new ProofDiagError(`${m}: ${x}`);
+}
+
+export function exceptionToErrorMessage<A>(f: () => A) : A | Error {
+  try {
+    return f()
+  } catch (e) {
+    return {message: `${e}`}
+  }
 }
 
 export function toBoolean(x: string | boolean | number | undefined) {

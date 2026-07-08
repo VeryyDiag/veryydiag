@@ -41,11 +41,13 @@ export class DiagramConfClass {
   /** When drawing links, we add them here before they are completed. Unde */
   currentlyCreatedLink = $state<undefined | { from: IDAnchor, to: Point }>(undefined)
 
+  currentlyDrawnLassoSelection = $state<undefined | Point[]>(undefined)
+
   /** Selection. We use lists and not sets because the order of selection may help to solve ambiguity in
    *  rule application.
    */
-  linkSelection : LinkID[]= $state([])
-  nodeSelection : NodeID[] = $state([])
+  linkSelection = $state<LinkID[]>([])
+  nodeSelection = $state<NodeID[]>([])
 
   /** Notifications (information, temporary errors…) */
   notifications = $state<Notification[]>([])
@@ -408,20 +410,19 @@ export class DiagramConfClass {
 
   isNodeSelected = (nodeID: NodeID) => this.nodeSelection.includes(nodeID)
 
-  getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point | Error => {
-    const rel = this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)];
-    if (rel !== undefined) {
-      const pos = this.getCurrentDiagram()?.nodes?.[nodeID].pos
-      if (pos !== undefined) {
-        return {
-          x: cmToUnit(pos.x + rel.x),
-          y: cmToUnit(pos.y + rel.y)
-        }
-      } else {
-        return {message: `Node ${nodeID} does not exist.`}
-      }
-    } else {
-      return {message: `Can't find anchor ${nodeID}.${anchor}`}
+  getXYOfAnchor = (nodeID: NodeID, anchor: AnchorName) : Point => {
+    const currentDiagram = this.getCurrentDiagram()
+    const theory = this.getCurrentTheory()
+    const rel = assertNotUndefined(this.relativeAnchorPos?.[IDAnchorToFullAnchor(nodeID, anchor)],
+                                   `Can't find anchor ${nodeID}.${anchor}`);
+    const node = assertNotUndefined(currentDiagram?.nodes?.[nodeID],
+                                    `Node ${nodeID} does not exist.`)
+    const pos = assertNotUndefined(node?.pos,
+                                   `Node ${nodeID} has no position.`)
+    const center = theory?.availableNodes?.[node.nodeKind]?.parsedSVG?.center || {x:0, y:0}
+    return {
+      x: cmToUnit(pos.x + rel.x - center.x),
+      y: cmToUnit(pos.y + rel.y - center.y)
     }
   }
 
@@ -845,11 +846,13 @@ export class DiagramConfClass {
   }
 
   getLinkSelection = () => {
-    return this.linkSelection
+    const diagram = this.getCurrentDiagram()
+    return this.linkSelection.filter(linkID => diagram?.linksWithID?.[linkID] !== undefined)
   }
 
   getNodeSelection = () => {
-    return this.nodeSelection
+    const diagram = this.getCurrentDiagram()
+    return this.nodeSelection.filter(nodeID => diagram?.nodes?.[nodeID] !== undefined)
   }
 
   getParamSpecs = (theoryID: TheoryID, nodeKind: NodeKind) : ParamSpecs | undefined => {

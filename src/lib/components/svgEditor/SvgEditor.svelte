@@ -3,8 +3,8 @@
   import Node from "$lib/components/Nodes/Node.svelte"
   import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID } from "$lib/utils"
+  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo, drawLassoSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { cm, randomID, cmToUnit } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
 
@@ -106,6 +106,7 @@
     use:selectAll={onlySvg ? undefined : diagramConfClass}
     use:undo={onlySvg ? undefined : diagramConfClass}
     use:redo={onlySvg ? undefined : diagramConfClass}
+    use:drawLassoSelection={onlySvg ? undefined : diagramConfClass}
     style="touch-action: none;"
     data-proofdiag-app="true"
     data-proofdiag-main-svg={onlySvg ? undefined : "true"}
@@ -125,7 +126,6 @@
     {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
       <circle r="10000%" fill="red"/>
     {/if}
-
     {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
       <Link {...link} id={linkID}  />
     {/each}
@@ -135,6 +135,14 @@
     {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
       <Node id={id} {...node} />
     {/each}
+    {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined }
+      <path data-proofdiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
+        {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
+          {#if node?.pos !== undefined}
+            <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />
+          {/if}
+        {/each}
+    {/if}
   </svg>
 {/snippet}
 

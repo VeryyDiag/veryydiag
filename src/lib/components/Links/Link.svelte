@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Point, Link } from "$lib/types/types"
-  import { randomID, fullAnchorToIDAndAnchor, cm } from "$lib/utils";
+  import { randomID, fullAnchorToIDAndAnchor, cm, exceptionToErrorMessage } from "$lib/utils";
   import { getContextDiagram, registerErrors } from "$lib/contexts/context.svelte";
 
   let diagramConfClass = getContextDiagram()
@@ -19,18 +19,21 @@
     x : undefined,
     y : undefined,
     message : undefined,
-    ...diagramConfClass.getXYOfAnchor(fromNode, fromAnchor)
+    ...exceptionToErrorMessage(() => diagramConfClass.getXYOfAnchor(fromNode, fromAnchor))
   }));
 
   let {x: toX = undefined, y: toY, message: errorsTo} = $derived(({
     x : undefined,
     y : undefined,
     message : undefined,
-    ... typeof to === 'string' ? diagramConfClass.getXYOfAnchor(...fullAnchorToIDAndAnchor(to, "in.0")) : to
+    ... typeof to === 'string'
+            ? exceptionToErrorMessage(() =>
+              diagramConfClass.getXYOfAnchor(...fullAnchorToIDAndAnchor(to, "in.0")))
+            : to
   }));
 
-  let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
-  registerErrors(uid, () => [...(errorsFrom ? [errorsFrom] : []), ...(errorsTo ? [errorsTo] : [])])
+    let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
+    registerErrors(uid, () => [...(errorsFrom ? [errorsFrom] : []), ...(errorsTo ? [errorsTo] : [])])
 
 </script>
 {#if fromX !== undefined && fromY !== undefined && toX !== undefined && toY !== undefined}

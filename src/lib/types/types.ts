@@ -1,7 +1,7 @@
 // File containing most of the types and some helper to translate from one type to another
 
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger } from '$lib/utils';
+import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger, unitToCm } from '$lib/utils';
 
 
 export class ProofDiagError extends Error {
@@ -115,6 +115,12 @@ export type ParsedSVG = {
    * It also provides some robustness, as we can use it to detect when the SVG file changed.
    */
   anchors?: Record<AnchorName, AnchorProps>,
+  /** Position of the center in cm (same unit as "width") relative to the top left coordinate */
+  center?: Point,
+  /** Width of the SVG image (as specified in "width") */
+  width?: number,
+  /** Height of the SVG image (as specified in "height") */
+  height?: number,
 }
 
 export type SvgGenerationMethod = {[x:string]: any} & {method: string}
@@ -900,12 +906,38 @@ export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
   }))
 }
 
+/** Turns something like "3mm" to its value in pixels */
+function parseSvgLengthToPx(value: string) : number {
+  const match = String(value).trim().match(/^(-?[\d.]+)([a-z%]*)$/i);
+  assertTrue(!!match && match.length == 3, `Couldn't parse the svg distance ${value}`)
+
+  const num = parseFloat(match[1]);
+  const unit = match[2] || "px";
+
+  const DPI = 96;
+
+  switch (unit) {
+    case "": return num;
+    case "px": return num;
+    case "in": return num * DPI;
+    case "cm": return num * DPI / 2.54;
+    case "mm": return num * DPI / 25.4;
+    case "pt": return num * DPI / 72;
+    case "pc": return num * DPI / 6;
+    default:
+      // ❗ needs context (viewport size)
+      throw new ProofDiagError(`Unit must be px/in/cm/mm/pt/pc, '${unit}' not supported`)
+  }
+}
+
 /**
  * To have a single source of trust for the nodes, all the node data are stored inside the SVG file (go to the
    XML editor in inkscape to modify them). More precisely we store:
  * - anchors: anchor are places where links can be connected. They are added via the attribute
    data-proofdiag-anchor="name of your anchor", for instance via:
    <circle … data-proofdiag-anchor="out.0"/>
+ * - center: the x/y position of the center of the node (cm, in parent coordinates parent). If you don't want it to be centered, you need to create a circle with attribute data-proofdiag-center=true AT THE ROOT (not inside a group) and WITHOUT ANY TRANSFORM (to remove transforms, in inkscape you can click on the object, go to the Transform tab, uncheck "relative move" and click "apply")
+ * - width/height: the width/height of the svg image (cm, in parent coordinates). Note that it assumes that the SVG has a width, height, and viewBox parameter, all of them expressed in absolute units (no percentage, auto…).
  * - parameters: they can tune the node, for instance to derive multiple variants of a node. We use them notably
  *   in the boundary nodes to identify links accross equalities by adding them a name, and an option like
  *   to specify if multi-wire nodes are allowed or not. Parameters can be numbers, texts or booleans and are added
@@ -973,7 +1005,46 @@ export function parseSVG(svg: string): ParsedSVG {
   }))
   const anchorElements = doc.querySelectorAll<SVGElement>('[data-proofdiag-anchor]')
   const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.proofdiagAnchor, {}]))
-  return {paramSpecs, anchors}
+  // We also compute the position of the center by checking if a node is present with kind
+  // data-proofdiag-center. This node should be a circle (typically invisible) at the
+  // top-level of the SVG (makes computations easier)
+  const svgElt = doc.querySelector<SVGSVGElement>('svg')
+  assertTrue(svgElt !== null,
+             `We found no <svg> element when parsing the svg file.`)
+  // We compute the position in percentage of the viewbox
+  const viewbox = (svgElt.getAttribute("viewBox") || "").split(" ")
+  assertTrue(viewbox.length === 4,
+             `The viewbox of the node is not made of 4 elements ${svgElt.getAttribute("viewbox")}`)
+  const [x, y, w, h] = viewbox.map(x => parseSvgLengthToPx(x))
+  const widthUnit = parseSvgLengthToPx(assertNotUndefined(
+    svgElt.getAttribute("width"),
+    `No width attribute found on <svg> when parsing`)
+  )
+  const heightUnit = parseSvgLengthToPx(assertNotUndefined(
+    svgElt.getAttribute("height"),
+    `No height attribute found on <svg> when parsing`))
+  // By default we center the node
+  let center = {
+    x: unitToCm(widthUnit/2),
+    y: unitToCm(heightUnit/2)
+  }
+  center = {
+    x: unitToCm(widthUnit/2),
+    y: unitToCm(heightUnit/2)
+  }
+  const centerElements = Array.from(doc.querySelectorAll<SVGElement>('[data-proofdiag-center]'))
+  if (centerElements.length === 1) {
+    console.log("Interesting, something with a center!")
+    const centerElement = centerElements[0]
+    const cx = parseFloat(assertNotUndefined(centerElement.getAttribute("cx"),
+                                             `No cx attribute on the data-proofdiag-center element`))
+    const cy = parseFloat(assertNotUndefined(centerElement.getAttribute("cy"),
+                                             `No cx attribute on the data-proofdiag-center element`))
+    center.x = unitToCm((cx - x)/w * widthUnit)
+    center.y = unitToCm((cy - y)/h * heightUnit)
+    console.log("cx", cx, "x", x, "w", w, "widthUnit", widthUnit, "center.x", center.x)
+  }
+  return {paramSpecs, anchors, width: unitToCm(widthUnit), height: unitToCm(heightUnit), center}
 }
 
 export function availableNodeToParsedSVG(availableNode: AvailableNode) : ParsedSVG | undefined {
