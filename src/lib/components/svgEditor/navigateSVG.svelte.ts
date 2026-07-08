@@ -93,16 +93,14 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
       vp.y = worldY - newH * my
       vp.w = newW
       vp.h = newH
+
     }
   }
 
   function pointerup(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (pointers.size === 0) return;
-    //return;
     pointers.delete(e.pointerId)
-
-    node.releasePointerCapture(e.pointerId)
 
     if (pointers.size === 0) {
       dragging = false
@@ -635,18 +633,40 @@ export function redo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
 
 export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
   // Parameters
-  const maxDelay = 400
+  const maxDelay = 500
+  const distanceThreshold = 1500
 
-  let lastUpTime = 0
-  let lastUpPos: Point | undefined = undefined
+  // Count pointers to avoid to start selection when panning
+  //const pointers = new Map<number, PointerEvent>()
+  let lastDownTime = 0
+  let lastDownPos: Point | undefined = undefined
 
   let armed = false      // we're inside a potential "2nd click"
 
+  // We count the pointers to see if the user tried to pan
+  const pointers = new Map<number, PointerEvent>()
+
+
   function onPointerDown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    pointers.set(e.pointerId, e)
+    // We are zooming, cancelling selection
+    if (pointers.size > 1) {
+      lastDownPos = undefined
+      armed = false
+      diagramConfClass.currentlyDrawnLassoSelection = undefined
+      return
+    }
     const now = e.timeStamp
+    const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
 
-    const isSecondClick = lastUpPos !== undefined && now - lastUpTime <= maxDelay
+    console.log(lastDownPos !== undefined, now - lastDownTime, maxDelay, distance(lastDownPos || {x: 0, y: 0}, pos), distanceThreshold)
+
+    const isSecondClick = lastDownPos !== undefined && now - lastDownTime <= maxDelay && distance(lastDownPos, pos) <= distanceThreshold
+    // record this pointer down as a potential "click 1" for the *next* gesture
+    lastDownPos = pos
+    lastDownTime = e.timeStamp
+
 
     if (isSecondClick) {
       armed = true
@@ -661,7 +681,26 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
 
   function onPointerMove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
-    if (!armed) return
+    // We are zooming, cancelling selection
+    if (pointers.size > 1) {
+      lastDownPos = undefined
+      armed = false
+      diagramConfClass.currentlyDrawnLassoSelection = undefined
+      return
+    }
+    if (!armed) {
+      // If we pan like twice but put the finger at the same position to restart (fairly common)
+      // we trigger a selection. To avoid this we check that all intermediate points stay close
+      if (lastDownPos !== undefined) {
+        const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
+        if(distance(lastDownPos, pos) <= distanceThreshold) {
+          console.log("RESET")
+          lastDownPos = undefined
+          lastDownTime = 0
+        }
+      }
+      return
+    }
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
     if (diagramConfClass.currentlyDrawnLassoSelection === undefined) {
       diagramConfClass.currentlyDrawnLassoSelection = []
@@ -671,6 +710,14 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
 
   function onPointerUp(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    pointers.delete(e.pointerId)
+    // We are zooming, cancelling selection
+    if (pointers.size > 1) {
+      lastDownPos = undefined
+      armed = false
+      diagramConfClass.currentlyDrawnLassoSelection = undefined
+      return
+    }
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
 
     if (armed) {
@@ -702,11 +749,8 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
           }
         })
       })
+      lastDownPos = undefined
     }
-
-    // record this pointerup as a potential "click 1" for the *next* gesture
-    lastUpTime = e.timeStamp
-    lastUpPos = pos
 
     armed = false
     diagramConfClass.currentlyDrawnLassoSelection = undefined
@@ -719,12 +763,17 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
   node.addEventListener('pointerdown', onPointerDown)
   node.addEventListener('pointermove', onPointerMove)
   node.addEventListener('pointerup', onPointerUp)
+  node.addEventListener("pointercancel", onPointerUp)
+  node.addEventListener("pointerleave", onPointerUp)
 
   return {
     destroy() {
       node.removeEventListener('pointerdown', onPointerDown)
       node.removeEventListener('pointermove', onPointerMove)
       node.removeEventListener('pointerup', onPointerUp)
+      node.removeEventListener("pointercancel", onPointerUp)
+      node.removeEventListener("pointerleave", onPointerUp)
+
     },
   }
 }
