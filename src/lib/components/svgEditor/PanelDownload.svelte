@@ -39,7 +39,7 @@
         target: container,
         props: {
           onlySvg: 1,
-          diagramConfParsed: diagramConfClass.getConfig()
+          diagramConfParsed: $state.snapshot(diagramConfClass.getConfig())
       }})
       flushSync(); // Make sure that effects are ran, not sure if it makes a difference when mounted in the dom?
       // Wait for the javascript code that creates the svg file to mount

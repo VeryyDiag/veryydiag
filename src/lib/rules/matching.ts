@@ -261,7 +261,8 @@ export function matchSelectionToDiagram(
   boundaryAnchorsBA: AnchorMap,
   linkBijectionAB: LinkBijection,
 } {
-  const linkSelectionIm = Set(linkSelection)
+  const linkSelectionInDiagram = linkSelection.filter(linkID => diagram?.linksWithID?.[linkID] !== undefined)
+  const linkSelectionIm = Set(linkSelectionInDiagram)
 
   // We maintain this list , to avoid to search for no reason, we check if the remaining nodes to map are compatible
   const nonBoundaryNodesB : Map<NodeID, Node> = Map(ruleDiagram?.nodes || {}).filter((node, nodeID) => !isBoundaryNode(node))
@@ -294,7 +295,7 @@ export function matchSelectionToDiagram(
   // Same for mono-boundary links, but first we collect all possible candidates
   // TODO: here it assumes that all mono-wire boundary nodes are connected to at least one link (or this would not work)
   // Is there interesting cases where this might not be the case ?
-  const monoAnchorsCandidates = Set(linkSelection).flatMap(linkID => {
+  const monoAnchorsCandidates = Set(linkSelectionInDiagram).flatMap(linkID => {
     const link = assertNotUndefined(diagram?.linksWithID?.[linkID], `Selected link ${linkID} do not belong to the diagram`)
     return [link.from, link.to]
   })
@@ -323,7 +324,7 @@ export function matchSelectionToDiagram(
         // e.g. by filtering links with the same kinds of from/to anchors etc.
         // But I'm not sure if this will bring a huge improvement since anyway
         // that arrives basically at the leaves, so I don't think it creates much branching.
-        [linkID, linkSelectionIm]
+        [linkID, linkSelectionInDiagram]
       )
   )
 

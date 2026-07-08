@@ -489,14 +489,26 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
     }
   }
 
-  async function handleText(text: string) {
+  function handleText(text: string) : boolean {
+    const parsedText = (() => {
+      try {
+        return parse(text)
+      } catch (e) {
+        return undefined
+      }
+    })()
     try {
-      diagramConfClass.undoSnapshot()
-      diagramConfClass.setConfig(parse(text));
-      diagramConfClass.sendNotification("info", "Content pasted successfully.");
+      if (typeof parsedText === "object" && parsedText?.theories !== undefined) {
+        diagramConfClass.undoSnapshot()
+        diagramConfClass.setConfig(parsedText);
+        diagramConfClass.sendNotification("info", "Content pasted successfully.");
+        return true
+      }
     } catch (error) {
       diagramConfClass.sendNotification("error", `Error while parsing pasted content (${error}).`);
+      return false
     }
+    return false
   }
 
   function onPaste(e: ClipboardEvent) {
@@ -515,7 +527,11 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
       if (item.kind === "string") {
         item.getAsString((text) => {
           if (text.trim()) {
-            handleText(text);
+            const res = handleText(text);
+            if (res) {
+              // If we loaded a file, we don't continue to paste anything else
+              e.preventDefault()
+            }
           }
         });
         return;
