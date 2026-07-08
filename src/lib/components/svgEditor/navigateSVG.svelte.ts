@@ -1,7 +1,7 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
+import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-proofdiag-anchor]") !== null
@@ -265,6 +265,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
   if (diagramConfClass === undefined) {return}
 
   const pointers = new Map<number, PointerEvent>()
+  // Needed to check if we have travelled enough to create a self-loop (otherwise clicking an
+  // anchor creates a self-loop, really annoying). This is in client coordinate to be independent
+  // of zoom factor.
+  let startingPoint : Point = {x: 0, y: 0}
+  let travelledEnoughForSelfLoop = false
 
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
@@ -289,6 +294,8 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
         node.setPointerCapture(e.pointerId)
 
         if (pointers.size === 1) {
+          startingPoint = {x: e.clientX, y: e.clientY}
+          travelledEnoughForSelfLoop = false
           const {x, y} = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
           diagramConfClass.currentlyCreatedLink = { from: IDAnchorToFullAnchor(nodeName, anchor), to: {x, y}}
         }
@@ -304,6 +311,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
 
     // PAN (1 doigt)
     if (pointers.size === 1 && diagramConfClass.currentlyCreatedLink) {
+      const d = distance(
+        startingPoint,
+        {x: e.clientX, y: e.clientY}
+      )
+      travelledEnoughForSelfLoop = travelledEnoughForSelfLoop || d >= 30
       const {x, y} = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
       diagramConfClass.currentlyCreatedLink.to = {x, y}
     }
@@ -333,8 +345,13 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
           }
+          const to = IDAnchorToFullAnchor(nodeName, anchor)
+          // Check if self loop
+          if (from == to && !travelledEnoughForSelfLoop) {
+            return
+          }
           diagramConfClass.undoSnapshot()
-          diagramConfClass.addLink({from, to: IDAnchorToFullAnchor(nodeName, anchor)});
+          diagramConfClass.addLink({from, to});
           return
         }
       }

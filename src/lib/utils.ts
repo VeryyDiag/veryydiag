@@ -299,6 +299,14 @@ export function distanceEvent(a: {clientX: number, clientY: number }, b: {client
   )
 }
 
+/** Computes the distance between two event points */
+export function distance(a: Point, b: Point) {
+  return Math.hypot(
+    a.x - b.x,
+    a.y - b.y
+  )
+}
+
 /** Computes the center between two event points */
 export function centerEvent(a: PointerEvent, b: PointerEvent) {
   return {
