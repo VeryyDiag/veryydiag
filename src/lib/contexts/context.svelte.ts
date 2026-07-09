@@ -53,6 +53,7 @@ export class DiagramConfClass {
   notifications = $state<Notification[]>([])
 
   dontShowAgainWarningNotProofMode = false
+  dontShowAgainFailedCreationLinkLasso = false
 
   /** Undo/redo stack. When you perform a new action, do push on the undoStack, if you undo, pop from undo and push to redo. */
   undoStack : (() => void)[] = $state([])

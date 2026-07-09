@@ -813,7 +813,11 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
             })
           }).flat().filter(x => x !== undefined)
           if (allSelectedAnchors.length !== 2) {
-            console.log(`Warning, you should select 2 anchors to create a link but you selected ${allSelectedAnchors.length}`)
+            if (!diagramConfClass.dontShowAgainFailedCreationLinkLasso) {
+              diagramConfClass.sendNotification("warning", `If you close the lasso by releasing on the gray dot where you started the selection, instead of selecting we will create a link (practical if anchors are small and you have large fingers on mobile devices for instance). For this to work, you should select 2 anchors to create a link between these anchors (starting from the anchor closer to the starting point of the selection) but you selected ${allSelectedAnchors.length} anchor(s).`, {
+                buttons: [["Don't show again", () => diagramConfClass.dontShowAgainFailedCreationLinkLasso = true]]
+              })
+            }
           } else {
             // We sort them so that
             allSelectedAnchors.sort((a, b) =>
