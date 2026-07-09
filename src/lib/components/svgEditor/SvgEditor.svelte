@@ -3,7 +3,7 @@
   import Node from "$lib/components/Nodes/Node.svelte"
   import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo, drawLassoSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
+  import { warningIfClosingWithUnsavedData, panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo, drawLassoSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
   import { cm, randomID, cmToUnit } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
@@ -98,6 +98,7 @@
     overflow="hidden"
     viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
     xmlns="http://www.w3.org/2000/svg"
+    use:warningIfClosingWithUnsavedData={onlySvg ? undefined : diagramConfClass}
     use:panzoom={onlySvg ? undefined : diagramConfClass}
     use:drawLink={diagramConfClass}
     use:selectElement={onlySvg ? undefined : diagramConfClass}

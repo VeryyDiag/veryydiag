@@ -32,7 +32,9 @@
   <p class="mb-2">Either create nodes via:</p>
   <p class="mb-2"><Button onclick={() => createNodeTemplatePanel = true}>Create node from templates</Button></p>
   <p class="mb-2">… or create nodes from a pre-existing list of SVG (click on them to create a new node with this style)…</p>
-  <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
+  <!-- overscroll-x-contain is needed to prevent gesture navigation to change the page when
+       scrolling horizontally -->
+  <div class="min-w-0 overflow-x-auto overscroll-x-contain mb-2 p-2 pb-4">
     <div class="flex flex-nowrap w-max gap-2">
       {#each allDefaultSvgNames as svgName}
         <div class="m-1 p-2 border border-dashed" role="button" tabindex="0" onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}} onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addSVGNodeToTheory(svgName, {svgName})}}>

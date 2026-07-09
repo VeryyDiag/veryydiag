@@ -64,7 +64,9 @@
                               }}}
       >{ruleName}</ContentEditable>
   </p>
-  <div class="min-w-0 overflow-x-auto mb-2 p-2 pb-4">
+  <!-- overscroll-x-contain is needed to prevent gesture navigation to change the page when
+       scrolling horizontally -->
+  <div class="min-w-0 overflow-x-auto overscroll-x-contain mb-2 p-2 pb-4">
     <div class="flex flex-nowrap items-center w-max gap-2">
       <div class="grow-1">
         {#if subDiagramConfLhs === undefined}

@@ -66,7 +66,7 @@
     </div>
 
     <!-- Scroll bar is for this box -->
-    <div class="p-2 m-0 h-full overflow-auto mix-h-0 min-w-0 w-full">
+    <div class="p-2 m-0 h-full overflow-auto overscroll-contain mix-h-0 min-w-0 w-full">
 
       {#if !isEditingRules}
         <!-- ========== Nodes ========== -->

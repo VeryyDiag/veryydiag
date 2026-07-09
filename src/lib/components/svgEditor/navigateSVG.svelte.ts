@@ -8,6 +8,27 @@ function isPartOfAnchor(node: SVGGraphicsElement) {
 }
 
 
+/** Due to firefox gestures that forces swiping to go back to previous page etc… closing the
+ *  browser/tab by mistake etc, it is easy to lose lot's of data. Hence, if we detect unsaved
+ *  data, we warn the use that tries to change the page.
+ */
+export function warningIfClosingWithUnsavedData(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+  function beforeunload(e: BeforeUnloadEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (diagramConfClass.undoStack.length > 0) {
+      e.preventDefault();
+      e.returnValue = true; // Compatible older browsers
+    }
+  }
+  window.addEventListener("beforeunload", beforeunload)
+  return {
+    destroy() {
+      window.removeEventListener("beforeunload", beforeunload)
+    }
+  }
+}
+
 export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
   let dragging = false
