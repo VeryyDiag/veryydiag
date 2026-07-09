@@ -163,45 +163,41 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
 export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
 
-  let startPointer: { x: number; y: number } | null = null
-  let startPos: Point | null = null
+  let startPointer: { x: number; y: number } = {x: 0, y: 0}
   let dragging = false
   const dragThreshold = 3
-  let targetNodeID = $state<NodeID | undefined>(undefined)
+  let targetNodeIDs = $state<{startPos: Point, nodeID: NodeID}[]>([])
 
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    targetNodeIDs = []
     if (e?.target instanceof SVGGraphicsElement) {
       if (isPartOfAnchor(e.target)) {
         // If it is part of an anchor we want to create a link, not drag it
-        targetNodeID = undefined
         return
       }
       const nodeID = (e.target.closest("[data-proofdiag-node]") as SVGGraphicsElement)?.dataset?.proofdiagNode
       if (nodeID !== undefined) {
-        const pos = diagramConfClass.getPositionNode(nodeID)
-        if (!('message' in pos)) {
-          targetNodeID = nodeID
-          startPointer = { x: e.clientX, y: e.clientY }
-          startPos = { ...pos }
-          dragging = false
-          // IMPORTANT: we wait before capturing the pointer to check if we actually move
-        } else {
-          targetNodeID = undefined
-        }
-      } else {
-        targetNodeID = undefined
+        const nodeSelection = diagramConfClass.getNodeSelection()
+        console.log("nodeSelection", nodeSelection, nodeID, nodeSelection.includes(nodeID))
+        startPointer = { x: e.clientX, y: e.clientY };
+        (nodeSelection.includes(nodeID) ? nodeSelection : [nodeID]).forEach((currentNodeID) => {
+          console.log("loop for", currentNodeID)
+          const pos = diagramConfClass.getPositionNode(currentNodeID)
+          if (!('message' in pos)) {
+            targetNodeIDs.push({startPos: pos, nodeID: currentNodeID})
+            console.log("pushing", currentNodeID)
+            dragging = false
+            // IMPORTANT: we wait before capturing the pointer to check if we actually move
+          }
+        })
       }
-    } else {
-      targetNodeID = undefined
     }
   }
 
   function pointermove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
-    if (targetNodeID === undefined) return;
-
-    if (!startPointer || !startPos) return
+    if (targetNodeIDs.length === 0) return;
 
     const dx = e.clientX - startPointer.x
     const dy = e.clientY - startPointer.y
@@ -216,33 +212,34 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
 
     if (!dragging) return
 
-    const from = clientToSVGCoordInCm(node, e.clientX, e.clientY)
-    const to = clientToSVGCoordInCm(node, startPointer.x, startPointer.y)
-    if (from === undefined) {
-      console.log("Weird, 'from' is undefined?? Please report the bug.")
-      return
-    }
-    if (to === undefined) {
-      console.log("Weird, 'to' is undefined?? Please report the bug.")
-      return
-    }
+    targetNodeIDs.forEach(({nodeID: currentNodeID, startPos}) => {
+      const from = clientToSVGCoordInCm(node, e.clientX, e.clientY)
+      const to = clientToSVGCoordInCm(node, startPointer.x, startPointer.y)
+      if (from === undefined) {
+        console.log("Weird, 'from' is undefined?? Please report the bug.")
+        return
+      }
+      if (to === undefined) {
+        console.log("Weird, 'to' is undefined?? Please report the bug.")
+        return
+      }
 
-    diagramConfClass.moveNode(targetNodeID, {x: startPos.x + from.x - to.x, y: startPos.y + from.y - to.y})
+      diagramConfClass.moveNode(currentNodeID, {x: startPos.x + from.x - to.x, y: startPos.y + from.y - to.y})
+
+    })
   }
 
   function pointerup(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
-    if (targetNodeID === undefined) return;
+    if (targetNodeIDs === undefined) return;
     if (dragging) {
       e.preventDefault() // prevent click if we actually dragged
       e.stopPropagation()
       node.releasePointerCapture(e.pointerId)
     }
 
-    startPointer = null
-    startPos = null
     dragging = false
-    targetNodeID = undefined
+    targetNodeIDs = []
   }
 
   node.addEventListener("pointerdown", pointerdown)
