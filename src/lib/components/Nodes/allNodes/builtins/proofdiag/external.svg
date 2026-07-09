@@ -26,7 +26,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="14.838495"
-     inkscape:cx="19.105711"
+     inkscape:cx="19.038319"
      inkscape:cy="20.487253"
      inkscape:window-width="1920"
      inkscape:window-height="1006"
@@ -90,12 +90,8 @@
        default="1"
        type="string" />
     <proofdiag:newparam
-       name="namenb"
-       default="42"
-       type="integer" />
-    <proofdiag:newparam
        name="multipleWiresAllowed"
-       default="true"
+       default="false"
        type="boolean" />
   </metadata>
 </svg>
