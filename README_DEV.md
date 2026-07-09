@@ -116,6 +116,7 @@ let {
 - I need to understand why, but sometimes I have weird bugs (rule that don't apply, rule that displays poorly with missing links/nodes…) that disapear when I save and reload the file. I think this is due to malformed rules (e.g. because of renaming a node with different anchors?) that don't show up as corrupted in the list of rules. Need some investigation to reproduce.
 - It seems like the size of the dots is not consistent in the template. E.g. much smaller for circle, sqrt is big, and 0 is small
 - When exporting to SVG, the mono-wire boundary show as as multi-wire boundary. I guess I would need a higher timeout to allow multiple iterations, sadly this crashes the instance with errors saying that effects are reading and writing the same state.
+- Maybe use https://developer.mozilla.org/en-US/docs/Web/API/File_System_API on top of local storage to save to a precise local persistent file.
 
 ### More substantial changes
 

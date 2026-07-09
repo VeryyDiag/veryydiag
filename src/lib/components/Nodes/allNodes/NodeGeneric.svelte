@@ -26,6 +26,11 @@
   let paramSpecs = $derived(diagramConfClass.getParamSpecs(diagramConfClass.getCurrentTheoryName(), nodeKind))
   $effect(() => {
     if (svgGroupRef !== undefined && paramSpecs !== undefined) {
+      const svgElt = svgGroupRef.querySelector('svg')
+      // Allow texts like boundary names to overflow the svg boundary limit
+      if (svgElt) {
+        svgElt.style.overflow = "visible";
+      }
       Object.entries(paramSpecs).forEach(([paramName, paramSpec]) => {
         // Contents
         let toChange = svgGroupRef.querySelectorAll(`[data-proofdiag-param-content=${CSS.escape(paramName)}]`)

@@ -200,14 +200,11 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
       const nodeID = (e.target.closest("[data-proofdiag-node]") as SVGGraphicsElement)?.dataset?.proofdiagNode
       if (nodeID !== undefined) {
         const nodeSelection = diagramConfClass.getNodeSelection()
-        console.log("nodeSelection", nodeSelection, nodeID, nodeSelection.includes(nodeID))
         startPointer = { x: e.clientX, y: e.clientY };
         (nodeSelection.includes(nodeID) ? nodeSelection : [nodeID]).forEach((currentNodeID) => {
-          console.log("loop for", currentNodeID)
           const pos = diagramConfClass.getPositionNode(currentNodeID)
           if (!('message' in pos)) {
             targetNodeIDs.push({startPos: pos, nodeID: currentNodeID})
-            console.log("pushing", currentNodeID)
             dragging = false
             // IMPORTANT: we wait before capturing the pointer to check if we actually move
           }
