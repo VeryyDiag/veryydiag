@@ -22,6 +22,8 @@
     downloadPanel = false
   }
 
+  let isSaved = $derived(diagramConfClass.isSaved)
+
 </script>
 <div class={["absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center"]}>
 
@@ -83,7 +85,7 @@
 
     <!-- Load button -->
     <button id="reframeBtn"
-            title="Load diagram proof"
+            title="Load diagram"
             class={[styleButton, loadFilePanel ? styleButtonEnabled : styleButtonDisabled]}
             onclick={() => {closePanels(); loadFilePanel = !loadFilePanel}}
       >
@@ -92,10 +94,12 @@
 
 
     <!-- Download button -->
-    <button id="reframeBtn"
-            title="Download diagram/proof or download SVG"
-            class={[styleButton, downloadPanel ? styleButtonEnabled : styleButtonDisabled]}
-            onclick={() => {closePanels(); downloadPanel = !downloadPanel}}
+    <button
+      id="reframeBtn"
+      title="Download diagram/proof or download SVG"
+      class={[styleButton, isSaved ? "bg-green-100 hover:bg-green-200"
+              : (downloadPanel ? styleButtonEnabled : styleButtonDisabled)]}
+      onclick={() => {closePanels(); downloadPanel = !downloadPanel}}
       >
       <!-- Icon: fit / reset view -->
       <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>

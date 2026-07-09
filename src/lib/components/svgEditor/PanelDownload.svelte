@@ -10,6 +10,7 @@
   import { downloadStringAsFile } from "$lib/utils"
   import { stringify } from 'yaml'
   import {flushSync} from "svelte"
+  import { saveToLocalStorageFct } from '$lib/components/svgEditor/navigateSVG.svelte'
 
   let { downloadPanel = $bindable() } = $props()
 
@@ -91,5 +92,7 @@
     <Button onclick={() => downloadSVG({asInView: true, copy: copy})}>{copy ? "Copy" : "Download"} SVG like in view</Button>
     <Button onclick={() => downloadSVG({asInView: false, copy: copy})}>{copy ? "Copy" : "Download"} whole SVG</Button>
     <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended (better versionning, manual edit)" : "json variant, if yaml not supported"})</Button>
+    <p>If you want to quickly save regularly your work without exporting the whole file, you can also press Ctrl-S and it will save it in the localStorage of your browser (warning: this may be removed without notice by your browser, so always export it locally at the end). To reload it, go to the "Load diagram" tab.</p>
+    <Button onclick={() => saveToLocalStorageFct(diagramConfClass)}>Save in local storage</Button>
   </div>
 {/if}

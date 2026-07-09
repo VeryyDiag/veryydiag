@@ -1,7 +1,7 @@
 import type { Viewport, Point, NodeID } from "$lib/types/types"
 import { parse } from 'yaml'
 import type { DiagramConfClass } from "$lib/contexts/context.svelte"
-import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, keys, entries, cmToUnit, fullAnchorToIDAndAnchor } from '$lib/utils';
+import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, keys, entries, cmToUnit, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-proofdiag-anchor]") !== null
@@ -12,7 +12,7 @@ function isPartOfAnchor(node: SVGGraphicsElement) {
  *  browser/tab by mistake etc, it is easy to lose lot's of data. Hence, if we detect unsaved
  *  data, we warn the use that tries to change the page.
  */
-export function warningIfClosingWithUnsavedData(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function warningIfClosingWithUnsavedData(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
   function beforeunload(e: BeforeUnloadEvent) {
     if (diagramConfClass === undefined) {return}
@@ -647,7 +647,7 @@ export function pasteFile(node: HTMLElement, diagramConfClass: DiagramConfClass)
   };
 }
 
-export function selectAll(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function selectAll(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
 
   function keydown(e: KeyboardEvent) {
@@ -668,7 +668,7 @@ export function selectAll(node: SVGSVGElement, diagramConfClass: DiagramConfClas
 
 }
 
-export function undo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function undo(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
 
   function keydown(e: KeyboardEvent) {
@@ -689,7 +689,7 @@ export function undo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
 
 }
 
-export function redo(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function redo(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
   if (diagramConfClass === undefined) {return}
 
   function keydown(e: KeyboardEvent) {
@@ -893,5 +893,40 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
       node.removeEventListener("pointerleave", onPointerUp)
 
     },
+  }
+}
+
+// The current export mechanism is a bit heavy, I'd rather just do Ctrl-S and save in local
+// storage until I want to actually export later to a real file.
+// TODO: combine with https://developer.mozilla.org/en-US/docs/Web/API/File_System_API
+// to actually save to a real file
+export function saveToLocalStorageFct(diagramConfClass: DiagramConfClass) {
+  const t = new Date().toISOString()
+  localStorage.setItem(diagramConfClass.fileIDLocalStorage,
+                       JSON.stringify({
+                         kind: "proofdiagfile",
+                         fileName: t,
+                         saveTime: t,
+                         file: JSON.stringify($state.snapshot((diagramConfClass.getDiagramConfUser())))
+  }))
+  diagramConfClass.isSaved = true
+}
+
+export function saveToLocalStorage(node: HTMLElement, diagramConfClass: DiagramConfClass | undefined) {
+  if (diagramConfClass === undefined) {return}
+  function keydown(e: KeyboardEvent) {
+    if (diagramConfClass === undefined) {return}
+    if (e.key === "s" && e.ctrlKey) {
+      e.preventDefault()
+      saveToLocalStorageFct(diagramConfClass)
+    }
+  }
+
+  node.addEventListener('keydown', keydown, true)
+
+  return {
+    destroy() {
+      node.removeEventListener("keydown", keydown)
+    }
   }
 }

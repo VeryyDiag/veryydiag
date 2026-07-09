@@ -1,23 +1,43 @@
 <script lang="ts">
   /** Notification panel */
+  import { onMount } from 'svelte'
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import Button from '$lib/components/reusable/Button.svelte'
   import { parse } from 'yaml'
   import { stylePanel } from './commonStyles.svelte';
+  import ContentEditable from '../reusable/ContentEditable.svelte';
 
   let diagramConfClass = getContextDiagram()
 
   let { loadFilePanel = $bindable() } = $props()
 
   let isDragging = $state(false)
-  async function handleFile(file: File) {
+
+  let localStorageItems = $state<[string,string][]>([])
+  onMount(() => {
+    localStorageItems = Object.entries(localStorage)
+  })
+
+  function refreshlocalStorageItems() {
+    localStorageItems = Object.entries(localStorage)
+  }
+
+  async function handleStr(content: string) {
     try {
-      const content = await file.text();
       diagramConfClass.undoSnapshot();
       diagramConfClass.setConfig(parse(content));
       diagramConfClass.sendNotification("info", "The file was loaded with success.");
       loadFilePanel = false;
+    } catch (error) {
+      diagramConfClass.sendNotification("error", `Error while loading the file (${error}).`);
+    }
+  }
+
+  async function handleFile(file: File) {
+    try {
+      const content = await file.text();
+      handleStr(content)
     } catch (error) {
       diagramConfClass.sendNotification("error", `Error while loading the file (${error}).`);
     }
@@ -71,6 +91,33 @@
           </Button>
         </p>
       </div>
+    </div>
+    <h1 class="text-center text-lg font-normal text-body">Load from local storage</h1>
+    <div>
+      <p>When you press Ctrl-S, we automatically save your work in the local storage of your browser to allow you to save regularly without exporting the file every time (warning: the browser may remove it without warning). You can load it back here. <Button onclick={() => refreshlocalStorageItems()}>Refresh</Button> <Button onclick={() => {
+              localStorage.clear();
+              refreshlocalStorageItems()}}>Delete all backups</Button></p>
+      <ul>
+        {#each localStorageItems as [key, fStr]}
+          {@const f = (() => {try { return JSON.parse(fStr) } catch (e) {return ""}})()}
+          {#if f?.kind === "proofdiagfile" }
+            <li>
+              <ContentEditable
+                onedit={(newFileName) => {
+                         localStorage.setItem(key, JSON.stringify({...f, fileName: newFileName}));
+                         refreshlocalStorageItems()
+                         }}>
+                {f.fileName}
+              </ContentEditable>
+              <Button onclick={() => handleStr(f?.file)}>Load</Button>
+              <Button onclick={() => {
+                                localStorage.removeItem(key)
+                                refreshlocalStorageItems()
+                                }}>Delete</Button>
+            </li>
+          {/if}
+        {/each}
+      </ul>
     </div>
   </div>
 {/if}

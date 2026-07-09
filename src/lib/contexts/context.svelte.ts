@@ -55,6 +55,9 @@ export class DiagramConfClass {
   dontShowAgainWarningNotProofMode = false
   dontShowAgainFailedCreationLinkLasso = false
 
+  isSaved = $state(true)
+  fileIDLocalStorage = randomID()
+
   /** Undo/redo stack. When you perform a new action, do push on the undoStack, if you undo, pop from undo and push to redo. */
   undoStack : (() => void)[] = $state([])
   redoStack : (() => void)[] = $state([])
@@ -63,6 +66,7 @@ export class DiagramConfClass {
    *  them inside other functions without taking a snapshot), hence this is the role of each UI function to call undoSnapshot() before
    *  doing any action the user may want to undo latter. */
   undoSnapshot = (where = this.undoStack, cleanRedo = true) => {
+    this.isSaved = false
     const oldDiagramConf = $state.snapshot(this.diagramConf)
     const oldRelativeAnchorPos = $state.snapshot(this.relativeAnchorPos)
     const oldLinkSelection = $state.snapshot(this.linkSelection)
