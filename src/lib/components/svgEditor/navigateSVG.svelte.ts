@@ -711,7 +711,7 @@ export function redo(node: HTMLElement, diagramConfClass: DiagramConfClass | und
 export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
   // Parameters
   const maxDelay = 500
-  const distanceThreshold = 1500
+  const distanceThreshold = 30
 
   // Count pointers to avoid to start selection when panning
   //const pointers = new Map<number, PointerEvent>()
@@ -723,11 +723,10 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
   // We count the pointers to see if the user tried to pan
   const pointers = new Map<number, PointerEvent>()
 
-
   function onPointerDown(e: PointerEvent) {
+    console.log("Pointer down", lastDownPos)
     if (diagramConfClass === undefined) {return}
     pointers.set(e.pointerId, e)
-    debugger
     // We are zooming, cancelling selection
     if (pointers.size > 1) {
       lastDownPos = undefined
@@ -739,6 +738,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
 
     const isSecondClick = lastDownPos !== undefined && now - lastDownTime <= maxDelay && distance(lastDownPos, pos) <= distanceThreshold
+    console.log("Checking if isSecondClick valid", lastDownPos !== undefined, now - lastDownTime <= maxDelay, distance(lastDownPos || {x: 0, y: 0}, pos) <= distanceThreshold)
     // record this pointer down as a potential "click 1" for the *next* gesture
     lastDownPos = pos
     lastDownTime = e.timeStamp
@@ -769,7 +769,8 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
       // we trigger a selection. To avoid this we check that all intermediate points stay close
       if (lastDownPos !== undefined) {
         const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
-        if(distance(lastDownPos, pos) <= distanceThreshold) {
+        if(distance(lastDownPos, pos) > distanceThreshold) {
+          console.log("You moved too much", lastDownPos, pos, distanceThreshold)
           lastDownPos = undefined
           lastDownTime = 0
         }
@@ -873,6 +874,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     if (node.hasPointerCapture(e.pointerId)) {
       node.releasePointerCapture(e.pointerId)
     }
+    console.log("End of pointer up:", lastDownPos)
   }
 
   node.addEventListener('pointerdown', onPointerDown)
