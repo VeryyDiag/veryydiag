@@ -19,6 +19,7 @@
   import PanelProofMode from "./PanelProofMode.svelte";
   import { untrack } from "svelte";
   import PanelCreateNodeTemplate from "./PanelCreateNodeTemplate.svelte";
+  import PanelPlugins from "./PanelPlugins.svelte";
 
   /**
    * Interactive SVG editor component
@@ -190,6 +191,9 @@
 
     <!-- Proof mode panel -->
     <PanelProofMode bind:panelDetailsEnabled={panelDetailsEnabled} />
+
+    <!-- Errors -->
+    <PanelPlugins />
 
     <!-- Errors -->
     <PanelError />

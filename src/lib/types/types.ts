@@ -684,6 +684,8 @@ export type DiagramConf = {
   currentTab: Tab,
   /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
   theories: Record<TheoryID, Theory>,
+  /** List of loaded plugins */
+  plugins?: Plugin[],
 }
 
 
@@ -715,8 +717,18 @@ export type DiagramConfByUser = {
   viewport?: Viewport,
   /** Shortcuts for the "main" Viewport, when we are too lazy to define tabs… */
   svgSize?: SvgSize,
+  /** To add plugins */
+  plugins?: Plugin[],
 }
 
+export type Plugin = {
+  /** Name of the plugin written in the bottom box */
+  name: string,
+  /** To load a plugin, you can either provide the HTML source code (via code) or an url (via url) */
+  url?: string,
+  /** To load a plugin, you can either provide the HTML source code (via code) or an url (via url) */
+  code?: string,
+}
 
 export type NotificationKind = "error" | "info" | "warning"
 export type Notification = {
