@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { matchSelectionToDiagram } from './matching'
-import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
+import { VeryyDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
 import * as rulesTest from './rules.test'
 
 // Nice syntax to update nested objects in an immutable way via
@@ -39,14 +39,14 @@ describe('Test matching selection to diagram', () => {
 
   test('Matching fails if trivially different diagram ', () => {
     expect(() => matchSelectionToDiagram(["myA"], [], rulesTest.diagramA, rulesTest.diagramB, rulesTest.theoryABC))
-      .toThrow(ProofDiagError)
+      .toThrow(VeryyDiagError)
   })
 
   test('Fail if selection does not even exist in the diagram', () => {
     expect(() => matchSelectionToDiagram(["myB"], [], rulesTest.diagramA, rulesTest.diagramA, rulesTest.theoryABC))
-      .toThrow(ProofDiagError)
+      .toThrow(VeryyDiagError)
     expect(() => matchSelectionToDiagram(["myA"], [], rulesTest.diagramB, rulesTest.diagramA, rulesTest.theoryABC))
-      .toThrow(ProofDiagError)
+      .toThrow(VeryyDiagError)
   })
 
   // Test links
@@ -133,7 +133,7 @@ describe('Test matching selection to diagram', () => {
     expect(() => matchSelectionToDiagram(["myA"], [ "foo" ], editCopy(rulesTest.diagramAtoC, (draft: any) => {
       draft.linksWithID.Ishouldnotbehere = draft.linksWithID.foo
     }), rulesTest.diagramAprimetoAlice, rulesTest.theoryABC))
-      .toThrow(ProofDiagError)
+      .toThrow(VeryyDiagError)
   })
 
 

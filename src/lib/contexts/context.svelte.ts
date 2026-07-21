@@ -1,7 +1,7 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
 import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS, Plugin } from "$lib/types/types";
-import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, ProofDiagError, availableNodeToParsedSVG } from "$lib/types/types";
+import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, VeryyDiagError, availableNodeToParsedSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
 import { MapReduce } from '$lib/svelteRelatedUtils.svelte';
@@ -155,13 +155,13 @@ export class DiagramConfClass {
       if (currentStep === 0) {
         // For the original diagram, we can directly modify it, no need to proxy
         return {
-          diagram: this.derivedProofDiagrams.get(currentStep),
+          diagram: this.derivedVeryyDiagrams.get(currentStep),
           proofmode: true,
           currentStep: currentStep,
           proof: currentProof,
         }
       } else {
-        const diag = this.derivedProofDiagrams.get(currentStep)
+        const diag = this.derivedVeryyDiagrams.get(currentStep)
         const proofStep = assertNotUndefined(currentProof?.steps[currentStep-1], `You try to access the step ${currentStep} of the proof, but this does not exist`)
         const proxy = new Proxy(diag, {
           get(obj, prop, receiver) {
@@ -450,7 +450,7 @@ export class DiagramConfClass {
           else {
             const c = res?.componentName || "NodeGeneric"
             if (c == "NodeGeneric") {
-              throw new ProofDiagError(`No svg found with name ${res.svgName} when considering the node kind "${kind}"`);
+              throw new VeryyDiagError(`No svg found with name ${res.svgName} when considering the node kind "${kind}"`);
             } else {
               return res
             }
@@ -458,7 +458,7 @@ export class DiagramConfClass {
         } else {
           const c = res?.componentName || "NodeGeneric"
           if (c == "NodeGeneric") {
-            throw new ProofDiagError(`The node with kind ${kind} has no svgName nor svgString`);
+            throw new VeryyDiagError(`The node with kind ${kind} has no svgName nor svgString`);
           } else {
             // Different component, they may accept arbitrary stuff
             return res
@@ -466,7 +466,7 @@ export class DiagramConfClass {
         }
       }
     } else {
-      throw new ProofDiagError(`The configuration contains no availableNodes with kind ${kind}`);
+      throw new VeryyDiagError(`The configuration contains no availableNodes with kind ${kind}`);
     }
   }
 
@@ -878,11 +878,11 @@ export class DiagramConfClass {
     const id = diagID || this.getCurrentDiagramID()
     const node = this.diagramConf?.diagrams?.[id]?.nodes?.[nodeID]
     if (node === undefined) {
-      throw new ProofDiagError(`Node ${nodeID} does not exist in diagram ${id}`)
+      throw new VeryyDiagError(`Node ${nodeID} does not exist in diagram ${id}`)
     }
     const currentTheory = this.diagramConf?.diagrams?.[id]?.theory || "main"
     if (this.getParamSpecs(currentTheory, node.nodeKind)?.[paramName] === undefined) {
-      throw new ProofDiagError(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
+      throw new VeryyDiagError(`The parameter ${paramName} does not exist in node kind ${node.nodeKind} in theory ${currentTheory}`)
     }
     if (node?.params === undefined) {
       node.params = {}
@@ -956,7 +956,7 @@ export class DiagramConfClass {
   })
   #currentProofSteps = $derived<ProofStep[]>(this.#currentProof?.steps || [])
   startingDiagram = $derived<Diagram>(this.#currentProof?.startingDiagram || {})
-  derivedProofDiagrams = $derived(
+  derivedVeryyDiagrams = $derived(
     new MapReduce(this.#currentProofSteps,
                   (acc, x, i) => {
                     if (acc?.error !== undefined) {

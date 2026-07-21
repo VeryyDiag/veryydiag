@@ -4,7 +4,7 @@ import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger, unitToCm } from '$lib/utils';
 
 
-export class ProofDiagError extends Error {
+export class VeryyDiagError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options)
     this.name = "Error"
@@ -14,11 +14,11 @@ export class ProofDiagError extends Error {
 // A SVG file contains the node it represents, and it directly contains information about inputs, outputs… via data attribute
 // (easy to add in inkscape by selecting the node via Edit > XML Editor). In the following we describe only inputs, but outputs are
 // exactly identical except that 'input' is replaced with 'output'. Similarly 'inoutput' is used for nodes that can be treated as both inputs or outputs (this is done ZX-calculus where processes can be represented as undirected graphs).
-// - each input node should have a data-proofdiag-input="X" where X is an integer uniquely representing the name of the input, this number being used also when ordering inputs.
-// - data-proofdiag-input-name="My informal name" gives an informal name on the content of the input
-// - data-proofdiag-input-multi="{no,sorted,unsorted}" tells if we can connect multiple wires to this input (no, default), and if so if multiple outputs must be sorted or if only connectivity matters (unsorted). In our framework, inputs will typically be unsorted (wait until all input arrive) while outputs will be sorted (we activate them based on their ordering).
-// - data-proofdiag-input-type=
-// - data-proofdiag-input-type=
+// - each input node should have a data-veryydiag-input="X" where X is an integer uniquely representing the name of the input, this number being used also when ordering inputs.
+// - data-veryydiag-input-name="My informal name" gives an informal name on the content of the input
+// - data-veryydiag-input-multi="{no,sorted,unsorted}" tells if we can connect multiple wires to this input (no, default), and if so if multiple outputs must be sorted or if only connectivity matters (unsorted). In our framework, inputs will typically be unsorted (wait until all input arrive) while outputs will be sorted (we activate them based on their ordering).
+// - data-veryydiag-input-type=
+// - data-veryydiag-input-type=
 
 export type Point = {
   x: number,
@@ -230,14 +230,14 @@ export function isMultiWireBoundaryNodeID(nodeID: NodeID, diagram: Diagram, theo
 export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
   const node = diagram?.nodes?.[fullAnchorToIDAndAnchor(nodeID)[0]]
   if (node === undefined) {
-    throw new ProofDiagError(`The node ${nodeID} does not exist in the diagram`)
+    throw new VeryyDiagError(`The node ${nodeID} does not exist in the diagram`)
   }
   const boundaryName = getParam(node, theory, "boundaryName")
   if (boundaryName === undefined) {
     if (isBoundaryNodeID(nodeID, diagram)) {
-      throw new ProofDiagError(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
+      throw new VeryyDiagError(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
     } else {
-      throw new ProofDiagError(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
+      throw new VeryyDiagError(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
     }
   }
   return toString(boundaryName)
@@ -333,7 +333,7 @@ export function IDanchorPointedByMultiWireBoundaryLink(linkID: LinkID, diagram: 
     return [getBoundaryNameFromNode(fullAnchorToIDAndAnchor(linkFromLinkID(linkID, diagram)?.to)[0], diagram, theory),
             linkFromLinkID(linkID, diagram).from]
   } else if (nbLinks == 3) {
-    throw new ProofDiagError(`Links between two multi-wire boundary nodes are forbidden (no clear semantic)`)
+    throw new VeryyDiagError(`Links between two multi-wire boundary nodes are forbidden (no clear semantic)`)
   } else {
     return undefined
   }
@@ -747,22 +747,22 @@ export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : Diagr
 
 export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
   if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
-    throw new ProofDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
+    throw new VeryyDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
   }
   if (diagramConfByUser?.links && diagramConfByUser?.diagrams?.main) {
-    throw new ProofDiagError("The diagram has two main nodes (links and via diagrams.main)")
+    throw new VeryyDiagError("The diagram has two main nodes (links and via diagrams.main)")
   }
   if (diagramConfByUser?.viewport && diagramConfByUser?.diagrams?.main) {
-    throw new ProofDiagError("The diagram has two main nodes (viewport and via diagrams.main)")
+    throw new VeryyDiagError("The diagram has two main nodes (viewport and via diagrams.main)")
   }
   if (diagramConfByUser?.svgSize && diagramConfByUser?.diagrams?.main) {
-    throw new ProofDiagError("The diagram has two main nodes (svgSize and via diagrams.main)")
+    throw new VeryyDiagError("The diagram has two main nodes (svgSize and via diagrams.main)")
   }
   if (diagramConfByUser?.linksWithID && diagramConfByUser?.diagrams?.main) {
-    throw new ProofDiagError("The diagram has two main nodes (linksWithID and via diagrams.main)")
+    throw new VeryyDiagError("The diagram has two main nodes (linksWithID and via diagrams.main)")
   }
   if (diagramConfByUser?.availableNodes && diagramConfByUser?.theories?.main) {
-    throw new ProofDiagError("The diagram has two main theories (availableNodes and via theories.main)")
+    throw new VeryyDiagError("The diagram has two main theories (availableNodes and via theories.main)")
   }
 
   const {
@@ -792,7 +792,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     const ids = (links || []).map(v => v?.id).filter((id) => id !== undefined)
     const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
     if (duplicates.length > 0) {
-      throw new ProofDiagError(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
+      throw new VeryyDiagError(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
     }
     return {
       ...rest,
@@ -855,7 +855,7 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
 
   Object.entries(cleanedConfig.diagrams).forEach(([diagID, diag]) => {
     if (cleanedConfig.theories?.[diag?.theory || "main"] === undefined) {
-      throw new ProofDiagError(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
+      throw new VeryyDiagError(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
     }
   })
 
@@ -880,32 +880,32 @@ export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
   // Not possible to use CSS selectors because of the (mandatory) namespace…
   // We can only select elements irrespective of their namespace via CSS selectors.
   // https://stackoverflow.com/a/23047888/4987648
-  const allElements = doc.getElementsByTagNameNS("proofdiag", "newparam")
+  const allElements = doc.getElementsByTagNameNS("veryydiag", "newparam")
   return Object.fromEntries([...allElements].map(elt => {
     const name = elt.getAttribute("name")
     const type = elt.getAttribute("type")
     const def = elt.getAttribute("default")
     const unique = elt.getAttribute("unique")
     if (name === null) {
-      throw new ProofDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
+      throw new VeryyDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
     }
     if (type === null) {
-      throw new ProofDiagError(`No 'type' field was provided for the param '${name}'`)
+      throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`)
     }
     if (def === null) {
-      throw new ProofDiagError(`No 'def' field was provided for the param '${name}'`)
+      throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`)
     }
     assertTrue(isParamAvailableType(type),
                `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
     )
     if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
-      throw new ProofDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
+      throw new VeryyDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
     }
     if (type === "boolean" && !["true", "false"].includes(def)) {
-      throw new ProofDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
+      throw new VeryyDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
     }
     if (unique !== null && !["true", "false"].includes(unique)) {
-      throw new ProofDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
+      throw new VeryyDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
     }
     return [
       name,
@@ -938,7 +938,7 @@ function parseSvgLengthToPx(value: string) : number {
     case "pc": return num * DPI / 6;
     default:
       // ❗ needs context (viewport size)
-      throw new ProofDiagError(`Unit must be px/in/cm/mm/pt/pc, '${unit}' not supported`)
+      throw new VeryyDiagError(`Unit must be px/in/cm/mm/pt/pc, '${unit}' not supported`)
   }
 }
 
@@ -946,9 +946,9 @@ function parseSvgLengthToPx(value: string) : number {
  * To have a single source of trust for the nodes, all the node data are stored inside the SVG file (go to the
    XML editor in inkscape to modify them). More precisely we store:
  * - anchors: anchor are places where links can be connected. They are added via the attribute
-   data-proofdiag-anchor="name of your anchor", for instance via:
-   <circle … data-proofdiag-anchor="out.0"/>
- * - center: the x/y position of the center of the node (cm, in parent coordinates parent). If you don't want it to be centered, you need to create a circle with attribute data-proofdiag-center=true AT THE ROOT (not inside a group) and WITHOUT ANY TRANSFORM (to remove transforms, in inkscape you can click on the object, go to the Transform tab, uncheck "relative move" and click "apply")
+   data-veryydiag-anchor="name of your anchor", for instance via:
+   <circle … data-veryydiag-anchor="out.0"/>
+ * - center: the x/y position of the center of the node (cm, in parent coordinates parent). If you don't want it to be centered, you need to create a circle with attribute data-veryydiag-center=true AT THE ROOT (not inside a group) and WITHOUT ANY TRANSFORM (to remove transforms, in inkscape you can click on the object, go to the Transform tab, uncheck "relative move" and click "apply")
  * - width/height: the width/height of the svg image (cm, in parent coordinates). Note that it assumes that the SVG has a width, height, and viewBox parameter, all of them expressed in absolute units (no percentage, auto…).
  * - parameters: they can tune the node, for instance to derive multiple variants of a node. We use them notably
  *   in the boundary nodes to identify links accross equalities by adding them a name, and an option like
@@ -956,16 +956,16 @@ function parseSvgLengthToPx(value: string) : number {
  *   in a <metadata> group as a children of the <svg> component. For instance consider:
  *   <svg …>
  *     <metadata>
- *       <proofdiag:newparam
+ *       <veryydiag:newparam
  *          name="boundaryName"
  *          unique="true"
  *          default="1"
  *          type="string" />
- *       <proofdiag:newparam
+ *       <veryydiag:newparam
  *          name="namenb"
  *          default="42"
  *          type="integer" />
- *       <proofdiag:newparam
+ *       <veryydiag:newparam
  *          name="multipleWiresAllowed"
  *          default="true"
  *          type="boolean" />
@@ -979,29 +979,29 @@ export function parseSVG(svg: string): ParsedSVG {
   // Not possible to use CSS selectors because of the (mandatory) namespace…
   // We can only select elements irrespective of their namespace via CSS selectors.
   // https://stackoverflow.com/a/23047888/4987648
-  const allElements = doc.getElementsByTagNameNS("proofdiag", "newparam")
+  const allElements = doc.getElementsByTagNameNS("veryydiag", "newparam")
   const paramSpecs = Object.fromEntries([...allElements].map(elt => {
     const name = elt.getAttribute("name")
     const type = elt.getAttribute("type")
     const def = elt.getAttribute("default")
     const unique = elt.getAttribute("unique")
     if (name === null) {
-      throw new ProofDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
+      throw new VeryyDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
     }
     if (type === null) {
-      throw new ProofDiagError(`No 'type' field was provided for the param '${name}'`)
+      throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`)
     }
     if (def === null) {
-      throw new ProofDiagError(`No 'def' field was provided for the param '${name}'`)
+      throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`)
     }
     if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
-      throw new ProofDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
+      throw new VeryyDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
     }
     if (type === "boolean" && !["true", "false"].includes(def)) {
-      throw new ProofDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
+      throw new VeryyDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
     }
     if (unique !== null && !["true", "false"].includes(unique)) {
-      throw new ProofDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
+      throw new VeryyDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
     }
     assertTrue(isParamAvailableType(type),
                `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
@@ -1015,10 +1015,10 @@ export function parseSVG(svg: string): ParsedSVG {
       }
     ]
   }))
-  const anchorElements = doc.querySelectorAll<SVGElement>('[data-proofdiag-anchor]')
-  const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.proofdiagAnchor, {}]))
+  const anchorElements = doc.querySelectorAll<SVGElement>('[data-veryydiag-anchor]')
+  const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.veryydiagAnchor, {}]))
   // We also compute the position of the center by checking if a node is present with kind
-  // data-proofdiag-center. This node should be a circle (typically invisible) at the
+  // data-veryydiag-center. This node should be a circle (typically invisible) at the
   // top-level of the SVG (makes computations easier)
   const svgElt = doc.querySelector<SVGSVGElement>('svg')
   assertTrue(svgElt !== null,
@@ -1044,14 +1044,14 @@ export function parseSVG(svg: string): ParsedSVG {
     x: unitToCm(widthUnit/2),
     y: unitToCm(heightUnit/2)
   }
-  const centerElements = Array.from(doc.querySelectorAll<SVGElement>('[data-proofdiag-center]'))
+  const centerElements = Array.from(doc.querySelectorAll<SVGElement>('[data-veryydiag-center]'))
   if (centerElements.length === 1) {
     console.log("Interesting, something with a center!")
     const centerElement = centerElements[0]
     const cx = parseFloat(assertNotUndefined(centerElement.getAttribute("cx"),
-                                             `No cx attribute on the data-proofdiag-center element`))
+                                             `No cx attribute on the data-veryydiag-center element`))
     const cy = parseFloat(assertNotUndefined(centerElement.getAttribute("cy"),
-                                             `No cx attribute on the data-proofdiag-center element`))
+                                             `No cx attribute on the data-veryydiag-center element`))
     center.x = unitToCm((cx - x)/w * widthUnit)
     center.y = unitToCm((cy - y)/h * heightUnit)
     console.log("cx", cx, "x", x, "w", w, "widthUnit", widthUnit, "center.x", center.x)

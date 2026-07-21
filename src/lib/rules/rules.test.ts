@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { checkDiagram, checkRule, proofApplyRule } from './rules.svelte'
-import { ProofDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
+import { VeryyDiagError, type AvailableNode, type Diagram, type Theory, type ProofStepApplyRule } from '$lib/types/types'
 // Nice syntax to update nested objects in an immutable way via
 // const myobj2 = editCopy(myobj, draft => {draft.foo.bar.baz = 5})
 import { editCopy } from '$lib/utils'
@@ -684,7 +684,7 @@ describe('Test well formed diagrams/rules/…', () => {
             nodeKind: "missingKind"
           },
         },
-      }, theoryA)).toThrow(ProofDiagError)
+      }, theoryA)).toThrow(VeryyDiagError)
 
       expect(() => checkDiagram({
         nodes: {
@@ -692,7 +692,7 @@ describe('Test well formed diagrams/rules/…', () => {
             nodeKind: "A"
           },
         },
-      }, theoryA)).toThrow(ProofDiagError)
+      }, theoryA)).toThrow(VeryyDiagError)
 
       expect(() => checkDiagram(<any>{
         nodes: {
@@ -704,7 +704,7 @@ describe('Test well formed diagrams/rules/…', () => {
         availableNodes: {
           basicKind: {},
         },
-      })).toThrow(ProofDiagError)
+      })).toThrow(VeryyDiagError)
     })
 
 
@@ -716,30 +716,30 @@ describe('Test well formed diagrams/rules/…', () => {
       // Missing from
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.from = "whoAmI.out"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
 
       // Missing to
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.to = "whoAmI.in"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
     })
 
     test('Test broken anchors', () => {
       // Missing/bad anchor from
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.from = "myA"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.from = "myA.idontexist"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
 
       // Missing anchor to
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.to = "myC"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
       expect(() => checkDiagram(editCopy(diagramAtoC, (draft) => {
         draft.linksWithID.foo.to = "myC.idontexist"
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
     })
 
     test('Trivial diagram with a parameter (default value)', () => {
@@ -753,13 +753,13 @@ describe('Test well formed diagrams/rules/…', () => {
     test('Trivial broken diagram with a badly typed default parameter', () => {
       expect(() => checkDiagram(diagramB, editCopy(theoryABCparam, (draft: any) => {
         draft.availableNodes.B.parsedSVG.paramSpecs.gateName.default = false
-      }))).toThrow(ProofDiagError)
+      }))).toThrow(VeryyDiagError)
     })
 
     test('Trivial broken diagram with a badly typed parameter', () => {
       expect(() => checkDiagram(editCopy<Diagram>(diagramBparam, (draft) => {
         draft!.nodes!.myB!.params!.gateName!.value = false
-      }), theoryABCparam)).toThrow(ProofDiagError)
+      }), theoryABCparam)).toThrow(VeryyDiagError)
     })
 
     test('Trivial broken diagram with a non-existing parameter', () => {
@@ -768,7 +768,7 @@ describe('Test well formed diagrams/rules/…', () => {
           draft!.nodes!.myB!.params!.gateNamee = draft!.nodes!.myB!.params!.gateName
           delete draft!.nodes!.myB!.params!.gateName
         }),
-        theoryABCparam)).toThrow(ProofDiagError)
+        theoryABCparam)).toThrow(VeryyDiagError)
 
       expect(checkDiagram(
         editCopy<Diagram>(diagramBparam, (draft) => {
@@ -798,23 +798,23 @@ describe('Test well formed diagrams/rules/…', () => {
     test('Boundary nodes should have a single anchor called boundary', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft: any) => {
         draft.availableNodes.boundary.parsedSVG.anchors.shouldNotBeHere = {}
-      }))).toThrow(ProofDiagError)
+      }))).toThrow(VeryyDiagError)
     })
 
     test('Boundary nodes must have a boundary name', () => {
       expect(() => checkDiagram(diagramAtoAlice, editCopy(theoryABC, (draft : any) => {
         delete draft.availableNodes.boundary.parsedSVG.paramSpecs.boundaryName
-      }))).toThrow(ProofDiagError)
+      }))).toThrow(VeryyDiagError)
 
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         delete draft.nodes.aliceBoundary.params.boundaryName.value
       }), editCopy(theoryABC, (draft : any) => {
         delete draft.availableNodes.boundary.parsedSVG.paramSpecs.boundaryName
-      }))).toThrow(ProofDiagError)
+      }))).toThrow(VeryyDiagError)
 
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         delete draft.nodes.aliceBoundary.params.boundaryName.value
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
 
       expect(checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         // It is removed, but then we use the default value, so it's OK
@@ -827,7 +827,7 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         draft.nodes.aliceBoundary.params.multipleWiresAllowed = true;
         delete draft.linksWithID.foo
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
       // 2 links
       expect(() => checkDiagram(editCopy(diagramAtoAlice, (draft: any) => {
         draft.nodes.aliceBoundary.params.multipleWiresAllowed = true;
@@ -835,7 +835,7 @@ describe('Test well formed diagrams/rules/…', () => {
           from: "myA.out",
           to: "aliceBoundary.boundary"
         }
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
     })
 
     test('Mono-wire boundary nodes may have an arbitrary number of connected link', () => {
@@ -869,7 +869,7 @@ describe('Test well formed diagrams/rules/…', () => {
         // Rule
         lhs: diagramA,
         rhs: editCopy(diagramB, (draft: any) => {draft.nodes.myB.nodeKind = "BB"})
-      }, theoryABC)).toThrow(ProofDiagError)
+      }, theoryABC)).toThrow(VeryyDiagError)
     })
 
     test('Simple valid rule with one mono-wire boundary', () => {
@@ -901,7 +901,7 @@ describe('Test well formed diagrams/rules/…', () => {
         // Rule
         lhs: diagramAtoAlice,
         rhs: diagramA,
-      }, theoryABC)).toThrow(ProofDiagError)
+      }, theoryABC)).toThrow(VeryyDiagError)
     })
 
     test('Wrong rule with non unique boundaries', () => {
@@ -914,12 +914,12 @@ describe('Test well formed diagrams/rules/…', () => {
           draft.nodes.bobBoundary.params.boundaryName.value = "Alice"
         })
       };
-      expect(() => checkRule(rule, theoryABC)).toThrow(ProofDiagError)
+      expect(() => checkRule(rule, theoryABC)).toThrow(VeryyDiagError)
 
       expect(() => checkRule(editCopy<any>(rule, (draft) => {
         delete draft.lhs.nodes.bobBoundary
         delete draft.lhs.linksWithID.toBob
-      }), theoryABC)).toThrow(ProofDiagError)
+      }), theoryABC)).toThrow(VeryyDiagError)
 
       // If we delete both problematic elements we are good again
       expect(checkRule(editCopy<any>(rule, (draft) => {
@@ -935,7 +935,7 @@ describe('Test well formed diagrams/rules/…', () => {
         // Rule
         lhs: diagramAtoAlice,
         rhs: diagramA2toAliceMulti
-      }, theoryABC)).toThrow(ProofDiagError)
+      }, theoryABC)).toThrow(VeryyDiagError)
     })
 
 
@@ -963,14 +963,14 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(
         () => proofApplyRule(diagramAprime, // <-- should be diagramA to work
                                 proofStepAtoA2ViaPrime, theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
     })
 
     test('Trivial broken rule with links', () => {
       expect(
         () => proofApplyRule(diagramAtoC, // <-- this contains an extra link that breaks the proof
                              proofStepAtoA2, theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
     })
 
     test('Simple rule with one mono-wire link', () => {
@@ -1026,7 +1026,7 @@ describe('Test well formed diagrams/rules/…', () => {
                                   editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                     draft.nodeBijectionAB.idontexist = "myAprime"
                                   }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
       expect(() => proofApplyRule(
         diagramAtoC,
@@ -1034,14 +1034,14 @@ describe('Test well formed diagrams/rules/…', () => {
           draft.nodeBijectionAB.dontexist = draft.nodeBijectionAB.myA2prime
           delete draft.nodeBijectionAB.myA2prime
         }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
       // We just rename the links so that the matching does not work
       expect(() => proofApplyRule(editCopy(diagramAtoC,
                                            (draft) => {
                                              draft.linksWithID.foo.from = draft.linksWithID.foo.to}),
                                   proofStepAtoA2WithLinksViaPrime, theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
 
       // Mapping of boundary is important
@@ -1049,7 +1049,7 @@ describe('Test well formed diagrams/rules/…', () => {
                                   editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                                     draft.boundaryAnchorsBA = {}
                                }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
 
       // Bad boundary name (to)
@@ -1059,7 +1059,7 @@ describe('Test well formed diagrams/rules/…', () => {
                                       "aliceBoundary.boundary": "idontexist.in",
                                     }
                                   }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
       // Bad boundary name (from)
       expect(() => proofApplyRule(diagramAtoC,
@@ -1068,7 +1068,7 @@ describe('Test well formed diagrams/rules/…', () => {
                                       "idontexist.boundary": "myC.in",
                                     }
                                   }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
     })
 
@@ -1078,7 +1078,7 @@ describe('Test well formed diagrams/rules/…', () => {
       expect(() => proofApplyRule(diagramAtoCandA,
                                   proofStepAtoA2WithLinksViaPrime,
                                   theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
       // We updated the rule to add this extra internal link, now it works:
       expect(proofApplyRule(diagramAtoCandA,
@@ -1106,14 +1106,14 @@ describe('Test well formed diagrams/rules/…', () => {
       // With a mono-wire rule we expect an error:
       expect(() => proofApplyRule(diagramAtoCExtraLink,
                                   proofStepAtoA2WithLinksViaPrime, theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
       // An error should occur even if we map the extra link to the same link
       expect(() => proofApplyRule(diagramAtoCExtraLink,
                             editCopy(proofStepAtoA2WithLinksViaPrime, (draft: any) => {
                               draft.linkBijectionAB.extra = "fooPrime"
                             }), theoryABCrules)
-      ).toThrow(ProofDiagError)
+      ).toThrow(VeryyDiagError)
 
 
       // With a multi-wire rule we expect no errors:

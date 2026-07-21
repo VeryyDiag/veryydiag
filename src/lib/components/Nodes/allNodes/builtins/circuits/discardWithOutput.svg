@@ -63,7 +63,7 @@
        r="0.71957994"
        inkscape:label="input0"
        class="input0"
-       data-proofdiag-anchor="in.0"
+       data-veryydiag-anchor="in.0"
        transform="rotate(90)" />
     <circle
        style="fill:#aca793;stroke:none;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none"
@@ -72,7 +72,7 @@
        cy="-213.46916"
        inkscape:label="input0"
        class="input0"
-       data-proofdiag-anchor="out.0"
+       data-veryydiag-anchor="out.0"
        r="0.71957994"
        transform="rotate(90)" />
     <rect

@@ -190,7 +190,7 @@
         circ.setAttribute('cx', `${shapeFittingXYWH[0] + posX*shapeFittingXYWH[2]}`)
         circ.setAttribute('cy', `${shapeFittingXYWH[1] + posY*shapeFittingXYWH[3]}`)
         circ.setAttribute('r', `${radius * shapeXYWH[3] / height}`)
-        circ.setAttribute('data-proofdiag-anchor', name)
+        circ.setAttribute('data-veryydiag-anchor', name)
         circ.setAttribute('fill', color)
         svg.appendChild(circ)
       })

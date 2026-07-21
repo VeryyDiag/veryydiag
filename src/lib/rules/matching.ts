@@ -1,9 +1,9 @@
-// Functions in this file are not part of the "core" of ProofDiag since they are not involved when verifying the
+// Functions in this file are not part of the "core" of VeryyDiag since they are not involved when verifying the
 // proof itself, only used to generate them easily. Hence we don't include it in rules.ts
 
 import type { AnchorMap, Diagram, IDAnchor, LinkBijection, LinkID, NodeBijection, NodeID, Node, NodeKind, Theory, RuleName, ProofStepApplyRule } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering, type BiMap, biMapFromMap, biMapElectCandidate, biMapIntersectCandidates, mapSetFromEntriesDuplicate, biMapGetUnique, randomID} from "$lib/utils"
-import { ProofDiagError, getAnchorsNode, isBoundaryNode, isBoundaryNodeID, isMonoWireBoundaryNode, isMonoWireBoundaryNodeID, nbMultiWireBoundaryLink } from "$lib/types/types"
+import { VeryyDiagError, getAnchorsNode, isBoundaryNode, isBoundaryNodeID, isMonoWireBoundaryNode, isMonoWireBoundaryNodeID, nbMultiWireBoundaryLink } from "$lib/types/types"
 import { List, Map, Set } from "immutable"
 
 function logStr(depth: number, msg: string) {
@@ -70,7 +70,7 @@ function matchSelectionToDiagramLinkAux(
       const setB = Set([electFromIDAnchorTranslated, electToIDAnchorTranslated]
         .filter(x => x !== undefined))
       if (!setA.isSuperset(setB)) {
-        throw new ProofDiagError(`Different starting/ending points (${setA.toString()} != ${setB.toString()})`)
+        throw new VeryyDiagError(`Different starting/ending points (${setA.toString()} != ${setB.toString()})`)
       }
       // In some cases (two mono-wire boundary nodes) we need to try multiple assignments
       let newMonoAnchorsBimapBAToTry : BiMap<IDAnchor, IDAnchor>[] = []
@@ -146,7 +146,7 @@ function matchSelectionToDiagramLinkAux(
       log(logStr(depth, `Failed to assign the link ${linkIDtoElect} --> ${linkIDScandidate} (${e})`))
     }
   }
-  throw new ProofDiagError(`We found no way to match the links in the diagram`)
+  throw new VeryyDiagError(`We found no way to match the links in the diagram`)
 }
 
 // Attributes the nodes first
@@ -245,7 +245,7 @@ function matchSelectionToDiagramAux(
       log(logStr(depth+1,`Failed to assign the node ${nodeIDScandidate} --> ${nodeIDtoElect} (${e})`))
     }
   }
-  throw new ProofDiagError(`We found no way to match the selection to the diagram`)
+  throw new VeryyDiagError(`We found no way to match the selection to the diagram`)
 }
 
 
@@ -278,7 +278,7 @@ export function matchSelectionToDiagram(
   const nodeKindVsNumberB : Map<NodeKind, number> = groupsNBNodeKindsB.map((col) => col.size)
   const nodeKindVsNumberS : Map<NodeKind, number> = groupsNBNodeKindsS.map(col => col.size)
   if (!nodeKindVsNumberB.equals(nodeKindVsNumberS)) {
-    throw new ProofDiagError(`Impossible to match the selection to the rule as it must contain for each nodeKind the same number of elements and here we have: selection = ${nodeKindVsNumberS.toString()} != ${nodeKindVsNumberB.toString()} = rule`)
+    throw new VeryyDiagError(`Impossible to match the selection to the rule as it must contain for each nodeKind the same number of elements and here we have: selection = ${nodeKindVsNumberS.toString()} != ${nodeKindVsNumberB.toString()} = rule`)
   }
   // Create a node bimap, matching nodes in B to their candidates in A
   // The algorithm will then slowly restrict these candidates until finding one that

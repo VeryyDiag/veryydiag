@@ -46,12 +46,12 @@
     if (container === undefined) {
       return
     } else {
-      const anchorsEltsSelectors = `[data-proofdiag-anchor]`;
+      const anchorsEltsSelectors = `[data-veryydiag-anchor]`;
       const anchors = container.querySelectorAll<SVGGraphicsElement>(anchorsEltsSelectors);
       errorsAnchors = []
       const seenAnchors : Record<string, boolean> = {}
       anchors.forEach(anchorElt => {
-        const anchor = anchorElt.dataset?.proofdiagAnchor
+        const anchor = anchorElt.dataset?.veryydiagAnchor
         if (anchor == undefined) {
           errorsAnchors.push(`Weird, we should never get here (in ${props.id}), please report a bug.`);
           return
@@ -83,7 +83,7 @@
   registerErrors(uid, () => errors)
 </script>
 {#if Component !== undefined}
-  <g bind:this={container} transform="translate({cmToUnit((props.pos?.x || 0) - center.x)},{cmToUnit((props.pos?.y || 0) - center.y)})" data-proofdiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
+  <g bind:this={container} transform="translate({cmToUnit((props.pos?.x || 0) - center.x)},{cmToUnit((props.pos?.y || 0) - center.y)})" data-veryydiag-node={props.id} filter={selected ? "url(#selected)" : ""}>
     <Component svgGroupRef={container} {...({...props, ...availableNode})}/>
   </g>
 {/if}

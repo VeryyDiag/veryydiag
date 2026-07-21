@@ -48,7 +48,7 @@
                     }}
       >{nodeKind}</ContentEditable> <Button tiny title="Delete this available node in the theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeAvailableNodeKind(nodeKind)}}><Icon icon="mdi:trash-outline" width="15" height="15" /></Button>
   </p>
-  <div class="m-2 touch-none select-none" data-proofdiag-available-node={nodeKind}>
+  <div class="m-2 touch-none select-none" data-veryydiag-available-node={nodeKind}>
     <SvgEditor onlySvg={1.3} diagramConfParsed={subDiagramConf}/>
   </div>
 </div>

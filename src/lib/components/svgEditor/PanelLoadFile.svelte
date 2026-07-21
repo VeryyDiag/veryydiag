@@ -81,7 +81,7 @@
           <Button>
             <input
               type="file"
-              accept=".proofdiag,.yml,.yaml,.json"
+              accept=".veryydiag,.yml,.yaml,.json"
               onchange={async (e) => {
                        const files = (e.target as HTMLInputElement).files;
                        if (files?.length) {
@@ -100,7 +100,7 @@
       <ul>
         {#each localStorageItems as [key, fStr]}
           {@const f = (() => {try { return JSON.parse(fStr) } catch (e) {return ""}})()}
-          {#if f?.kind === "proofdiagfile" }
+          {#if f?.kind === "veryydiagfile" }
             <li>
               <ContentEditable
                 onedit={(newFileName) => {

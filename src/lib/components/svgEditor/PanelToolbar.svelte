@@ -57,7 +57,12 @@
   <div class={["flex gap-2 p-2 rounded-t-xl", stylePanel]}>
     <button id="reframeBtn"
             class="p-2 rounded-lg transition active:scale-95">
-      <b class="mr-0.25">Proof</b>Diag
+      <b class="">Ver
+        <!-- <span class="relative -ml-[.3ex] transform rotate-180 inline-block top-1 top-[.4ex]">λ</span>
+        --><!-- Supposed to look like a flipped lambda -->
+        <span class="inline-block scale-x-[-1] -ml-1">y</span>
+        <span class="-ml-[.2em]">y</span>
+      </b>Diag
     </button>
 
     <!-- Creation mode -->

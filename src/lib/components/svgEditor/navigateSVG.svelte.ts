@@ -4,7 +4,7 @@ import type { DiagramConfClass } from "$lib/contexts/context.svelte"
 import { distance, distanceEvent, centerEvent, IDAnchorToFullAnchor, clientToSVGCoord, clientToSVGCoordInCm, getParentLink, getParentNode, keys, entries, cmToUnit, fullAnchorToIDAndAnchor, randomID } from '$lib/utils';
 
 function isPartOfAnchor(node: SVGGraphicsElement) {
-  return node.closest("[data-proofdiag-anchor]") !== null
+  return node.closest("[data-veryydiag-anchor]") !== null
 }
 
 
@@ -197,7 +197,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
         // If it is part of an anchor we want to create a link, not drag it
         return
       }
-      const nodeID = (e.target.closest("[data-proofdiag-node]") as SVGGraphicsElement)?.dataset?.proofdiagNode
+      const nodeID = (e.target.closest("[data-veryydiag-node]") as SVGGraphicsElement)?.dataset?.veryydiagNode
       if (nodeID !== undefined) {
         const nodeSelection = diagramConfClass.getNodeSelection()
         startPointer = { x: e.clientX, y: e.clientY };
@@ -296,11 +296,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
       return
     }
     if (e?.target instanceof SVGGraphicsElement) {
-      const anchor = e.target.dataset?.proofdiagAnchor
+      const anchor = e.target.dataset?.veryydiagAnchor
       if (anchor === undefined) return;
-      const parent = e.target.closest("[data-proofdiag-node]")
+      const parent = e.target.closest("[data-veryydiag-node]")
       if (parent instanceof SVGGraphicsElement) {
-        const nodeName = parent.dataset?.proofdiagNode
+        const nodeName = parent.dataset?.veryydiagNode
         if (nodeName === undefined) {
           console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
           return;
@@ -353,11 +353,11 @@ export function drawLink(node: SVGSVGElement, diagramConfClass: DiagramConfClass
     for (const elt of document.elementsFromPoint(e.clientX, e.clientY)) {
       if (elt instanceof SVGGraphicsElement) {
         if (elt === node) return; // We don't want to go outside of the current SVG
-        const anchor = elt.dataset?.proofdiagAnchor
+        const anchor = elt.dataset?.veryydiagAnchor
         if (anchor === undefined) continue; // We released outside of any anchor
-        const parent = elt.closest("[data-proofdiag-node]")
+        const parent = elt.closest("[data-veryydiag-node]")
         if (parent instanceof SVGGraphicsElement) {
-          const nodeName = parent.dataset?.proofdiagNode
+          const nodeName = parent.dataset?.veryydiagNode
           if (nodeName === undefined) {
             console.log(`Weird, anchor ${anchor} has no parent node?? Please report this bug.`)
             continue;
@@ -417,8 +417,8 @@ export function selectElement(node: SVGSVGElement, diagramConfClass: DiagramConf
       return
     }
     if (e?.target instanceof SVGGraphicsElement) {
-      const parentLinkID = getParentLink(e.target)?.dataset?.proofdiagLink
-      const parentNodeID = getParentNode(e.target)?.dataset?.proofdiagNode
+      const parentLinkID = getParentLink(e.target)?.dataset?.veryydiagLink
+      const parentNodeID = getParentNode(e.target)?.dataset?.veryydiagNode
       if (parentLinkID) {
         diagramConfClass.undoSnapshot()
         diagramConfClass.toggleLinkSelection(parentLinkID)
@@ -479,9 +479,9 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
     // We try to find the wanted element under the cursor
     const target = e?.target
     if (!(target instanceof Element)) return
-    const targetAvailableNode = target?.closest("[data-proofdiag-available-node]")
+    const targetAvailableNode = target?.closest("[data-veryydiag-available-node]")
     if (!(targetAvailableNode instanceof HTMLElement)) return
-    const kind = targetAvailableNode.dataset.proofdiagAvailableNode
+    const kind = targetAvailableNode.dataset.veryydiagAvailableNode
     if (kind === undefined) return
 
     draggedKind = kind
@@ -535,7 +535,7 @@ export function addNodeToDiagram(node: HTMLElement, diagramConfClass: DiagramCon
       const target = document.elementFromPoint(e.clientX, e.clientY)
 
       if (target instanceof Element) {
-        const svg = target.closest("[data-proofdiag-main-svg]")
+        const svg = target.closest("[data-veryydiag-main-svg]")
 
         if (svg instanceof SVGSVGElement) {
           const pos = clientToSVGCoordInCm(svg, e.clientX, e.clientY)
@@ -797,7 +797,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
 
     if (armed) {
       if (currentlyDrawnLassoSelection === undefined) return
-      const selection = node.querySelector('[data-proofdiag-lasso]')
+      const selection = node.querySelector('[data-veryydiag-lasso]')
       if (selection === undefined || selection === null || !(selection instanceof SVGGeometryElement))
       {
         console.log("Weird, no valid selection was found…")
@@ -808,7 +808,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
       // that specifies that we want to create a link instead of selecting the elements
       const target = document.elementFromPoint(e.clientX, e.clientY)
       if (target instanceof Element) {
-        const targetCreateLink = target.closest("[data-proofdiag-lasso-create-link]")
+        const targetCreateLink = target.closest("[data-veryydiag-lasso-create-link]")
         // We simply select
         const currentDiagram = diagramConfClass.getCurrentDiagram()
         const theory = diagramConfClass.getCurrentTheory()
@@ -899,7 +899,7 @@ export function saveToLocalStorageFct(diagramConfClass: DiagramConfClass) {
   const t = new Date().toISOString()
   localStorage.setItem(diagramConfClass.fileIDLocalStorage,
                        JSON.stringify({
-                         kind: "proofdiagfile",
+                         kind: "veryydiagfile",
                          fileName: t,
                          saveTime: t,
                          file: JSON.stringify($state.snapshot((diagramConfClass.getDiagramConfUser())))

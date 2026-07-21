@@ -359,7 +359,7 @@ theories:
           anchors:
             in.0: {}
       boundary:
-        svgName: builtins.proofdiag.external
+        svgName: builtins.veryydiag.external
         parsedSVG:
           paramSpecs:
             boundaryName:
@@ -395,9 +395,9 @@ theories:
           xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1006"
           width="3827" height="1511" fill="white" stroke="black"
           stroke-width="100"/><circle cx="3527" cy="-250.5"
-          r="194.2714285714286" data-proofdiag-anchor="out.0"
+          r="194.2714285714286" data-veryydiag-anchor="out.0"
           fill="red"/><circle cx="-300" cy="-250.5" r="194.2714285714286"
-          data-proofdiag-anchor="in.0" fill="grey"/><defs><path
+          data-veryydiag-anchor="in.0" fill="grey"/><defs><path
           id="MJX-1-NCM-SS-1D5AA" d="M554 0L654 0L374 419L643 694L540 694L188
           333L188 694L96 694L96 0L188 0L188 227L314 358Z"/><path
           id="MJX-1-NCM-SS-1D5BE" d="M112 215L414 215C414 353 363 461 236
@@ -472,10 +472,10 @@ theories:
           xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1048"
           width="4265.4" height="1596" fill="white" stroke="black"
           stroke-width="100"/><circle cx="1832.6999999999998" cy="-1048"
-          r="205.2" data-proofdiag-anchor="in.0" fill="red"/><circle
+          r="205.2" data-veryydiag-anchor="in.0" fill="red"/><circle
           cx="3965.3999999999996" cy="-250" r="205.2"
-          data-proofdiag-anchor="out.0" fill="blue"/><circle cx="-300" cy="-250"
-          r="205.2" data-proofdiag-anchor="in.1" fill="green"/><defs><path
+          data-veryydiag-anchor="out.0" fill="blue"/><circle cx="-300" cy="-250"
+          r="205.2" data-veryydiag-anchor="in.1" fill="green"/><defs><path
           id="MJX-1-NCM-SS-1D5A4" d="M94 0L554 0L554 78L409 78C401 77 395 77 391
           77L189 77L189 325L514 325L514 393L189 393L189 620L321 620C325 620 331
           620 339 619L540 619L540 691L94 691Z"/><path id="MJX-1-NCM-SS-1D5C7"
@@ -592,9 +592,9 @@ theories:
           xmlns:xlink="http://www.w3.org/1999/xlink"><rect x="-300" y="-1048"
           width="3872.4" height="1596" fill="white" stroke="black"
           stroke-width="100"/><circle cx="1636.2" cy="-1048" r="205.2"
-          data-proofdiag-anchor="in.0" fill="red"/><circle cx="3572.4" cy="-250"
-          r="205.2" data-proofdiag-anchor="out.0" fill="green"/><circle
-          cx="-300" cy="-250" r="205.2" data-proofdiag-anchor="in.1"
+          data-veryydiag-anchor="in.0" fill="red"/><circle cx="3572.4" cy="-250"
+          r="205.2" data-veryydiag-anchor="out.0" fill="green"/><circle
+          cx="-300" cy="-250" r="205.2" data-veryydiag-anchor="in.1"
           fill="blue"/><defs><path id="MJX-1-NCM-SS-1D5A3" d="M359 0C448 0 522
           35 581 105C637 172 665 250 665 341C665 434 637 514 582 583C523 657 449
           694 358 694L96 694L96 0M336 631C411 631 470 600 514 539C553 485 572
@@ -719,11 +719,11 @@ theories:
           xlink:href="#MJX-1-NCM-N-2295"
           xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g><circle
           cx="-303.3788591251897" cy="-249" r="126.25714285714285"
-          data-proofdiag-anchor="in.0" fill="black"/><circle
+          data-veryydiag-anchor="in.0" fill="black"/><circle
           cx="1085.3788591251896" cy="-596.1894295625948" r="126.25714285714285"
-          data-proofdiag-anchor="out.0" fill="black"/><circle
+          data-veryydiag-anchor="out.0" fill="black"/><circle
           cx="1085.3788591251896" cy="98.18942956259491" r="126.25714285714285"
-          data-proofdiag-anchor="out.1" fill="black"/></svg>'
+          data-veryydiag-anchor="out.1" fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \oplus
@@ -804,9 +804,9 @@ theories:
           xlink:href="#MJX-1-NCM-SS-1D5C7"
           xmlns:xlink="http://www.w3.org/1999/xlink"
           transform="translate(2710,0)"/></g></g></g></g><circle cx="-300"
-          cy="-250.5" r="194.2714285714286" data-proofdiag-anchor="in.0"
+          cy="-250.5" r="194.2714285714286" data-veryydiag-anchor="in.0"
           fill="gray"/><circle cx="3527" cy="-250.5" r="194.2714285714286"
-          data-proofdiag-anchor="out.0" fill="red"/></svg>'
+          data-veryydiag-anchor="out.0" fill="red"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \mathsf{KeyGen}
@@ -918,11 +918,11 @@ theories:
           data-mml-node="mo" data-latex=")" transform="translate(3276.4,0)"><use
           data-c="29" xlink:href="#MJX-1-NCM-N-29"
           xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g><circle
-          cx="-300" cy="-250" r="205.2" data-proofdiag-anchor="in.0"
+          cx="-300" cy="-250" r="205.2" data-veryydiag-anchor="in.0"
           fill="green"/><circle cx="3965.3999999999996" cy="-250" r="205.2"
-          data-proofdiag-anchor="out.0" fill="blue"/><circle
+          data-veryydiag-anchor="out.0" fill="blue"/><circle
           cx="1832.6999999999998" cy="-1048" r="205.2"
-          data-proofdiag-anchor="in.1" fill="red"/></svg>'
+          data-veryydiag-anchor="in.1" fill="red"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \mathsf{Enc}_{\textcolor{red}{k}}(\textcolor{green}{m})
@@ -977,12 +977,12 @@ theories:
           data-latex="\rule{1cm}{.25cm}"><rect fill="black" x="0" y="0"
           width="2088.2" height="522"
           data-bgcolor="true"/></g></g></g></g></g></g><circle cx="0" cy="-970"
-          r="308.5714285714286" data-proofdiag-anchor="in.0"
+          r="308.5714285714286" data-veryydiag-anchor="in.0"
           fill="black"/><circle cx="0" cy="446" r="308.5714285714286"
-          data-proofdiag-anchor="in.1" fill="black"/><circle cx="2088.2"
-          cy="-970" r="308.5714285714286" data-proofdiag-anchor="out.0"
+          data-veryydiag-anchor="in.1" fill="black"/><circle cx="2088.2"
+          cy="-970" r="308.5714285714286" data-veryydiag-anchor="out.0"
           fill="black"/><circle cx="2088.2" cy="446" r="308.5714285714286"
-          data-proofdiag-anchor="out.1" fill="black"/></svg>'
+          data-veryydiag-anchor="out.1" fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \begin{matrix}\rule{1cm}{.25cm}\\\rule{1cm}{.25cm}\end{matrix}
@@ -1040,11 +1040,11 @@ theories:
           xlink:href="#MJX-1-NCM-N-3D"
           xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g><circle
           cx="-231.83975388178874" cy="-250" r="112.88571428571429"
-          data-proofdiag-anchor="in.0" fill="black"/><circle
+          data-veryydiag-anchor="in.0" fill="black"/><circle
           cx="1009.8397538817887" cy="-560.4198769408944" r="112.88571428571429"
-          data-proofdiag-anchor="out.0" fill="black"/><circle
+          data-veryydiag-anchor="out.0" fill="black"/><circle
           cx="1009.8397538817887" cy="60.41987694089437" r="112.88571428571429"
-          data-proofdiag-anchor="out.1" fill="black"/></svg>'
+          data-veryydiag-anchor="out.1" fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: =
@@ -1094,11 +1094,11 @@ theories:
           data-latex="\vphantom{\rule{1cm}{0.55cm}}" data-mjx-texclass="ORD"
           transform="translate(2088.2,0)"><g data-mml-node="mpadded"><g
           data-mml-node="mphantom"/></g></g></g></g><circle cx="0" cy="-1148.5"
-          r="147.6642857142857" data-proofdiag-anchor="in.0"
+          r="147.6642857142857" data-veryydiag-anchor="in.0"
           fill="grey"/><circle cx="0" cy="-114.84999999999991"
-          r="147.6642857142857" data-proofdiag-anchor="in.1"
+          r="147.6642857142857" data-veryydiag-anchor="in.1"
           fill="black"/><circle cx="2088.2" cy="-114.84999999999991"
-          r="147.6642857142857" data-proofdiag-anchor="out.0"
+          r="147.6642857142857" data-veryydiag-anchor="out.0"
           fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
@@ -1149,11 +1149,11 @@ theories:
           data-latex="\vphantom{\rule{1cm}{0.55cm}}" data-mjx-texclass="ORD"
           transform="translate(2088.2,0)"><g data-mml-node="mpadded"><g
           data-mml-node="mphantom"/></g></g></g></g><circle cx="2088.2"
-          cy="-1148.5" r="147.6642857142857" data-proofdiag-anchor="out.0"
+          cy="-1148.5" r="147.6642857142857" data-veryydiag-anchor="out.0"
           fill="grey"/><circle cx="0" cy="-114.84999999999991"
-          r="147.6642857142857" data-proofdiag-anchor="in.0"
+          r="147.6642857142857" data-veryydiag-anchor="in.0"
           fill="black"/><circle cx="2088.2" cy="-114.84999999999991"
-          r="147.6642857142857" data-proofdiag-anchor="out.1"
+          r="147.6642857142857" data-veryydiag-anchor="out.1"
           fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
@@ -1213,9 +1213,9 @@ theories:
           xlink:href="#MJX-1-NCM-N-24"
           xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g><circle
           cx="-390.6387437550121" cy="-347" r="116.48571428571428"
-          data-proofdiag-anchor="in.0" fill="grey"/><circle
+          data-veryydiag-anchor="in.0" fill="grey"/><circle
           cx="890.6387437550121" cy="-347" r="116.48571428571428"
-          data-proofdiag-anchor="out.0" fill="black"/></svg>'
+          data-veryydiag-anchor="out.0" fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \$
@@ -1286,11 +1286,11 @@ theories:
           xmlns:xlink="http://www.w3.org/1999/xlink"
           transform="translate(1114,0)"/></g></g></g></g></g></g><circle
           cx="-300" cy="-433.8" r="152.84571428571428"
-          data-proofdiag-anchor="in.0" fill="grey"/><circle cx="-300"
+          data-veryydiag-anchor="in.0" fill="grey"/><circle cx="-300"
           cy="160.5999999999999" r="152.84571428571428"
-          data-proofdiag-anchor="in.1" fill="grey"/><circle cx="2055.7"
+          data-veryydiag-anchor="in.1" fill="grey"/><circle cx="2055.7"
           cy="-136.60000000000002" r="152.84571428571428"
-          data-proofdiag-anchor="out.0" fill="blue"/></svg>'
+          data-veryydiag-anchor="out.0" fill="blue"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \sigma_{\mathsf{Enc}}
@@ -1400,11 +1400,11 @@ theories:
           xmlns:xlink="http://www.w3.org/1999/xlink"
           transform="translate(3564,0)"/></g></g></g></g></g></g><circle
           cx="-300" cy="-433.8" r="152.84571428571428"
-          data-proofdiag-anchor="in.0" fill="grey"/><circle cx="-300"
+          data-veryydiag-anchor="in.0" fill="grey"/><circle cx="-300"
           cy="160.5999999999999" r="152.84571428571428"
-          data-proofdiag-anchor="in.1" fill="grey"/><circle cx="3788.1"
+          data-veryydiag-anchor="in.1" fill="grey"/><circle cx="3788.1"
           cy="-136.60000000000002" r="152.84571428571428"
-          data-proofdiag-anchor="out.0" fill="blue"/></svg>'
+          data-veryydiag-anchor="out.0" fill="blue"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \sigma_{\mathsf{CombEnc}}
@@ -1486,10 +1486,10 @@ theories:
           xlink:href="#MJX-1-NCM-I-1D466"
           xmlns:xlink="http://www.w3.org/1999/xlink"/></g></g></g></g><circle
           cx="-300" cy="-650" r="205.71428571428572"
-          data-proofdiag-anchor="in.0" fill="green"/><circle cx="-300" cy="150"
-          r="205.71428571428572" data-proofdiag-anchor="in.1"
+          data-veryydiag-anchor="in.0" fill="green"/><circle cx="-300" cy="150"
+          r="205.71428571428572" data-veryydiag-anchor="in.1"
           fill="blue"/><circle cx="1760" cy="-250" r="205.71428571428572"
-          data-proofdiag-anchor="out.0" fill="black"/></svg>'
+          data-veryydiag-anchor="out.0" fill="black"/></svg>'
         svgGenerationMethod:
           method: builtin.createNodeTemplate
           tex: \textcolor{green}{x} \|\textcolor{blue}{y}

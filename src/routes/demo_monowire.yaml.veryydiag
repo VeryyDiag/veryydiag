@@ -49,7 +49,7 @@ theories:
           anchors:
             in.0: {}
       boundary:
-        svgName: builtins.proofdiag.external
+        svgName: builtins.veryydiag.external
         parsedSVG:
           paramSpecs:
             boundaryName:

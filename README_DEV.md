@@ -106,6 +106,7 @@ let {
 
 ### Small bugs/features to correct/add quickly
 
+- Viewport reset seems to be broken
 - For now just clicking an anchor creates an invisible self-looping link. Add a minimal distance to travel so that a self link is added.
 - If you paste, e.g., a number when editing an input zone, it resets the whole diagram!!
 - Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.

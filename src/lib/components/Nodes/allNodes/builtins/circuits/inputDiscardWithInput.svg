@@ -64,7 +64,7 @@
        inkscape:label="input0"
        class="input0"
        transform="rotate(-90)"
-       data-proofdiag-anchor="out.0" />
+       data-veryydiag-anchor="out.0" />
     <circle
        style="fill:#aca793;stroke:none;stroke-width:0.693985;stroke-linecap:round;stroke-dasharray:none"
        id="path6-3"
@@ -73,7 +73,7 @@
        inkscape:label="input0"
        class="input0"
        transform="rotate(-90)"
-       data-proofdiag-anchor="in.0"
+       data-veryydiag-anchor="in.0"
        r="0.71957994" />
     <rect
        style="fill:#ff0000;fill-opacity:0;stroke:none;stroke-width:0.156961;stroke-linecap:round"

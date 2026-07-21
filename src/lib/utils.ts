@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { AnchorName, IDAnchor, NodeID, Point, ParamValue, Error } from './types/types';
-import { ProofDiagError } from './types/types';
+import { VeryyDiagError } from './types/types';
 import { List, Map, Set as SetIm, Collection } from "immutable"
 
 // This file contains generic utils functions
@@ -29,14 +29,14 @@ export function errToUndef<T>(x: () => T) : T | undefined {
 
 export function assertTrue(x: boolean, m: string): asserts x {
   if (!x) {
-    throw new ProofDiagError(m)
+    throw new VeryyDiagError(m)
   }
 }
 
 
 export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new ProofDiagError(m)
+    throw new VeryyDiagError(m)
   } else {
     return x
   }
@@ -47,7 +47,7 @@ export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<
  */
 export function assertNotUndefinedNR<T>(x: T | undefined, m: string): asserts x is NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new ProofDiagError(m)
+    throw new VeryyDiagError(m)
   }
 }
 
@@ -55,13 +55,13 @@ export function assertDontThrow<T>(f: () => T, m: string): T {
   try {
     return f()
   } catch (e) {
-    throw new ProofDiagError(`${m}: (${e})`, { cause: e })
+    throw new VeryyDiagError(`${m}: (${e})`, { cause: e })
   }
 }
 
 // Use on pattern matching to ensure we never arrive here.
 export function assertNever(x: never, m: string = `We should never enter this case`): never {
-  throw new ProofDiagError(`${m}: ${x}`);
+  throw new VeryyDiagError(`${m}: ${x}`);
 }
 
 export function exceptionToErrorMessage<A>(f: () => A) : A | Error {
@@ -79,16 +79,16 @@ export function toBoolean(x: string | boolean | number | undefined) {
     } else if (x === "false") {
       return false
     } else {
-      throw new ProofDiagError(`Impossible to convert string "${x}" into a boolean`)
+      throw new VeryyDiagError(`Impossible to convert string "${x}" into a boolean`)
     }
   } else if (typeof x === 'number') {
-    throw new ProofDiagError("Expecting a boolean but got a number ${x}")
+    throw new VeryyDiagError("Expecting a boolean but got a number ${x}")
   } else if (typeof x === 'boolean') {
     return x
   } else if (x === undefined) {
     return false
   } else {
-    throw new ProofDiagError(`Can't turn type ${typeof x} into a boolean`)
+    throw new VeryyDiagError(`Can't turn type ${typeof x} into a boolean`)
   }
 }
 
@@ -100,7 +100,7 @@ export function toString(x: ParamValue) : string {
   } else if (typeof x === 'boolean') {
     return x ? "true" : "false"
   } else {
-    throw new ProofDiagError(`The type "${typeof x}" is not string, number or boolean.`)
+    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`)
   }
 }
 
@@ -115,7 +115,7 @@ export function toInteger(x: ParamValue) : number {
                `${x} is not integer`)
     return x
   } else {
-    throw new ProofDiagError(`The type "${typeof x}" is not string, number or boolean.`)
+    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`)
   }
 }
 
@@ -132,7 +132,7 @@ export function recordIsBijection(x: Record<string,string>,
 export function listHasNoDuplicateE(a: string[]) : true {
   const seen = a.filter((s => v => s.has(v) || !s.add(v))(new Set));
   if (seen.length !== 0) {
-    throw new ProofDiagError(`The list has some duplicated values ${JSON.stringify(seen)}`)
+    throw new VeryyDiagError(`The list has some duplicated values ${JSON.stringify(seen)}`)
   }
   return true
 }
@@ -177,7 +177,7 @@ export function areSetsEqualThrow<T>(a: Set<T>, b: Set<T>) : true {
   } else {
     const adiff = Array.from(a.difference(b))
     const bdiff = Array.from(b.difference(a))
-    throw new ProofDiagError(`The sets are different: first set contains the values ${JSON.stringify(adiff)} not contained in second set, and second set contains ${JSON.stringify(bdiff)} not contained in first set`)
+    throw new VeryyDiagError(`The sets are different: first set contains the values ${JSON.stringify(adiff)} not contained in second set, and second set contains ${JSON.stringify(bdiff)} not contained in first set`)
   }
 }
 
@@ -195,10 +195,10 @@ export function listsAreUniqueAndIdenticalSetsThrow(a: string[], b: string[]) : 
   const bSet = new Set(b)
   const sb = bSet.size
   if (sa !== a.length) {
-    throw new ProofDiagError(`The first lists contains redundant items ${JSON.stringify(a.filter(x => aSet.has(x)))}`)
+    throw new VeryyDiagError(`The first lists contains redundant items ${JSON.stringify(a.filter(x => aSet.has(x)))}`)
   }
   if (sb !== b.length) {
-    throw new ProofDiagError(`The second lists contains redundant items ${JSON.stringify(b.filter(x => bSet.has(x)))}`)
+    throw new VeryyDiagError(`The second lists contains redundant items ${JSON.stringify(b.filter(x => bSet.has(x)))}`)
   }
   return areSetsEqualThrow(aSet, bSet)
 }
@@ -325,7 +325,7 @@ export function centerEvent(a: PointerEvent, b: PointerEvent) {
 
 /** Returns the SVG parent element that is a link */
 export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-proofdiag-link]")
+  const p = elt.closest("[data-veryydiag-link]")
   if (p instanceof SVGGraphicsElement) {
     return p
   }
@@ -333,7 +333,7 @@ export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | un
 
 /** Returns the SVG parent element that is a node */
 export function getParentNode(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-proofdiag-node]")
+  const p = elt.closest("[data-veryydiag-node]")
   if (p instanceof SVGGraphicsElement) {
     return p
   }
@@ -428,7 +428,7 @@ export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X
         assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
         const newXs = xs.delete(x)
         if (newXs.isEmpty() && bm.mustHaveInverse) {
-          throw new ProofDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later.`)
+          throw new VeryyDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later.`)
         }
         return newXs
       }
@@ -457,7 +457,7 @@ export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<
       assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
       const newXs = xs.delete(x)
       if (newXs.isEmpty() && bm.mustHaveInverse) {
-        throw new ProofDiagError(`When trying to assign ${x} -> ${ys.toString()} during an intersection operation, the element '${cand}' in Y becomes impossible to match later.`)
+        throw new VeryyDiagError(`When trying to assign ${x} -> ${ys.toString()} during an intersection operation, the element '${cand}' in Y becomes impossible to match later.`)
       }
       return newXs
     }))

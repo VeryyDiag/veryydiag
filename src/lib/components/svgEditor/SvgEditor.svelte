@@ -106,9 +106,9 @@
     use:removeSelection={onlySvg ? undefined : diagramConfClass}
     use:drawLassoSelection={onlySvg ? undefined : diagramConfClass}
     style="touch-action: none;"
-    data-proofdiag-app="true"
-    data-proofdiag-main-svg={onlySvg ? undefined : "true"}
-    data-proofdiag-uid={uid}
+    data-veryydiag-app="true"
+    data-veryydiag-main-svg={onlySvg ? undefined : "true"}
+    data-veryydiag-uid={uid}
     role="toolbar"
     tabindex="0" >
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
@@ -134,7 +134,7 @@
       <Node id={id} {...node} />
     {/each}
     {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined && diagramConfClass.currentlyDrawnLassoSelection.length > 0}
-      <path data-proofdiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
+      <path data-veryydiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
         <!-- It is very hard to draw links with touch devices (and sometimes with the mouse as well)
              since we need to click exactly on the small anchor with a big finger. Hence, we provide
              another way to create links: if we end our lasso where we started on the circle, it
@@ -146,7 +146,7 @@
           r="5"
           fill="grey"
           stroke="dodgerblue"
-          data-proofdiag-lasso-create-link="true"
+          data-veryydiag-lasso-create-link="true"
         />
         <!-- To select nodes we show the center of the node that must be selected -->
         {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}

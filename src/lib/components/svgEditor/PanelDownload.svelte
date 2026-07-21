@@ -63,14 +63,14 @@
         navigator.clipboard.writeText(str)
       }
       else {
-        downloadStringAsFile(str, "application/json", "diagram.json.proofdiag")
+        downloadStringAsFile(str, "application/json", "diagram.json.veryydiag")
       }
     } else {
       const str = stringify(diagramConfClass.getDiagramConfUser())
       if (copy) {
         navigator.clipboard.writeText(str)
       } else {
-           downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.proofdiag")
+           downloadStringAsFile(str, "application/x-yaml", "diagram.yaml.veryydiag")
       }
     }
   }

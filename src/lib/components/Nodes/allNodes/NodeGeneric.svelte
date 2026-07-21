@@ -20,9 +20,9 @@
   registerErrors(uid, () => allErrorsComponent)
 
   // Parameters can change the content of a node. For now node containing:
-  // - data-proofdiag-param-content="someparam": their content will be replaced with the value of "someparam".
-  // - data-proofdiag-param-hide="someparam": hide this element when someparam is true, show otherwise
-  // - data-proofdiag-param-show="someparam": show this element when someparam is true, hide otherwise
+  // - data-veryydiag-param-content="someparam": their content will be replaced with the value of "someparam".
+  // - data-veryydiag-param-hide="someparam": hide this element when someparam is true, show otherwise
+  // - data-veryydiag-param-show="someparam": show this element when someparam is true, hide otherwise
   let paramSpecs = $derived(diagramConfClass.getParamSpecs(diagramConfClass.getCurrentTheoryName(), nodeKind))
   $effect(() => {
     if (svgGroupRef !== undefined && paramSpecs !== undefined) {
@@ -33,19 +33,19 @@
       }
       Object.entries(paramSpecs).forEach(([paramName, paramSpec]) => {
         // Contents
-        let toChange = svgGroupRef.querySelectorAll(`[data-proofdiag-param-content=${CSS.escape(paramName)}]`)
+        let toChange = svgGroupRef.querySelectorAll(`[data-veryydiag-param-content=${CSS.escape(paramName)}]`)
         toChange.forEach((elt) => {
           elt.innerHTML = `${params?.[paramName]?.value || paramSpec.default}`
         })
         // Hide
-        toChange = svgGroupRef.querySelectorAll(`[data-proofdiag-param-show=${CSS.escape(paramName)}]`)
+        toChange = svgGroupRef.querySelectorAll(`[data-veryydiag-param-show=${CSS.escape(paramName)}]`)
         toChange.forEach((elt) => {
           elt.setAttribute("visibility", toBoolean(
             (params?.[paramName]?.value !== undefined) ? params[paramName].value : paramSpec.default
           ) ? "visible" : "hidden")
         })
         // Show
-        toChange = svgGroupRef.querySelectorAll(`[data-proofdiag-param-hide=${CSS.escape(paramName)}]`)
+        toChange = svgGroupRef.querySelectorAll(`[data-veryydiag-param-hide=${CSS.escape(paramName)}]`)
         toChange.forEach((elt) => {
           elt.setAttribute("visibility", !toBoolean(
             (params?.[paramName]?.value !== undefined) ? params[paramName].value : paramSpec.default
@@ -60,7 +60,7 @@
 
 <style>
   /* We don't want SVG text to show a different cursor and be selectable */
-  :global([data-proofdiag-app] text) {
+  :global([data-veryydiag-app] text) {
       cursor: default;
       user-select: none;
   }

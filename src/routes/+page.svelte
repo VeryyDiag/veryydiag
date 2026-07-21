@@ -3,7 +3,7 @@
   import type { DiagramConfByUser } from "$lib/types/types";
 
   import { parse } from 'yaml'
-  import demoYml from "./demo.yaml.proofdiag?raw"
+  import demoYml from "./demo.yaml.veryydiag?raw"
 
   const diagram : DiagramConfByUser = parse(demoYml)
 </script>

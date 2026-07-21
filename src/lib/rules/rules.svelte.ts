@@ -1,6 +1,6 @@
 import type { Diagram, ProofStepApplyRule, Theory, NodeBijection, Node, NodeID, LinkID, Link, LinkBijection, NodeKind, Rule, BoundaryName, IDAnchor, BoundaryLinks, ProofStepMove, ProofStep, AnchorName, AnchorMap, Point } from "$lib/types/types"
 import { assertNotUndefined, assertNotUndefinedNR, assertDontThrow, fullAnchorToIDAndAnchor, assertTrue, listsAreBijection, values, keys, entries, inverseBijection, listsAreUniqueAndIdenticalSets, listIsUnique, IDAnchorToFullAnchor, errToUndef, listsAreUniqueAndIdenticalSetsThrow, assertNever, listsAreNotOverlapping, listHasNoDuplicateE, listsAreEqualUpToOrdering } from "$lib/utils"
-import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, ProofDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID, getParam, subtractPoints, addPoints } from "$lib/types/types"
+import { isBoundaryNodeID, nodeKindBoundaries, getBoundaryName, nbBoundaryLink, getBoundaryNameFromNode, paramAvailableTypes, checkParamType, VeryyDiagError, isBoundaryNode, equivalentNodes, nbMultiWireBoundaryLink, isMonoWireBoundaryNode, isMultiWireBoundaryNodeID, isMultiWireBoundaryNode, multiWireBoundaryNameToIdAnchor, nbMonoWireBoundaryLink, idAnchorToMultiWireBoundaryName, isMonoWireBoundaryNodeID, getParam, subtractPoints, addPoints } from "$lib/types/types"
 // MAYBETODO: rewrite this with OCaml and/or rust to link it with Rocq/Lean/…
 
 export function checkTheory(theory: Theory) : true {
@@ -459,7 +459,7 @@ export function proofApplyRule(diagramOrig: Diagram, proofStep: ProofStepApplyRu
       } else if (n === 2) { // to is boundary link
         return [getBoundaryNameFromNode(link.to, ruleFrom, theory), link.from]
       } else {
-        throw new ProofDiagError(`The link ${linkID} points to two multi-wire nodes which is not supported (no clear and useful semantic defined)`)
+        throw new VeryyDiagError(`The link ${linkID} points to two multi-wire nodes which is not supported (no clear and useful semantic defined)`)
     }}).filter((x) => x !== undefined))
   }
   // List of anchors in B connected to a multi-wire node
