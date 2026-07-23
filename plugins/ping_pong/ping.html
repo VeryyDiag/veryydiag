@@ -1,0 +1,137 @@
+<html>
+  <body>
+    <script>
+      // ====== Minimalist MCP 2 client (you can copy/paste it in your own plugin or use an actual SDK client)
+      const _callRPC = (id, method, params) => {
+        window.parent.postMessage({
+          jsonrpc: "2.0",
+          id: id,
+          method,
+          params: {...params,
+                   _meta: {...{
+                     "io.github.veryydiag/pluginMessage": true,
+                     "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                     "io.modelcontextprotocol/clientCapabilities": {},
+                   }, ...params._meta || {}},
+          },
+        }, '*')
+      }
+
+      // Call this to call plugin messages
+      // Very basic implementation of the MCP protocol
+      async function callTool(toolName, args = {}, ifUnstructuredTryGetText = true) {
+        const id = crypto.randomUUID()
+        _callRPC(id, "tools/call",
+                 {
+                   name: toolName,
+                   arguments: args
+                 }
+        )
+        // Listen for messages
+        return new Promise(function(resolve, reject) {
+          window.addEventListener("message", myCallback = (e) => {
+            const data = e?.data
+            if (data?.id === id) {
+              window.removeEventListener("message", myCallback);
+              if (data?.result?.isError) {
+                reject(data)
+              } else {
+                resolve(data?.result?.structuredContent || (
+                  ifUnstructuredTryGetText ? (
+                    data?.result?.content?.filter(x => x.type === 'text')?.[0]?.text || data?.result?.content
+                  ) : data?.result?.content)
+                )
+              }
+            }
+          })
+        })
+      }
+
+      async function getResource(uri, tryGetText = true) {
+        const id = crypto.randomUUID()
+        console.log("[ping] calling resources/read")
+        _callRPC(id, "resources/read", { uri })
+        console.log("[ping] returned from resources/read")
+        // Listen for messages
+        return new Promise(function(resolve, reject) {
+          window.addEventListener("message", myCallback = (e) => {
+            console.log("[ping] I received a message back", e)
+            const data = e?.data
+            if (data?.id === id) {
+              console.log("And it's for me!")
+              window.removeEventListener("message", myCallback);
+              if (data?.result?.isError) {
+                reject(data)
+              } else {
+                resolve(tryGetText ? (data?.result?.contents?.filter(x => x?.text !== undefined && x.uri === uri)?.[0]?.text || data?.result?.contents)
+                      : data?.result?.contents)
+              }
+            }
+          })
+        })
+      }
+
+      async function getJSONResource(uri, tryGetText = true) {
+        const res = await getResource(uri, tryGetText)
+        return JSON.parse(res)
+      }
+
+      async function subscriptionListen(notifications, callback) {
+        const id = crypto.randomUUID()
+        _callRPC(id, "subscriptions/listen", {
+          notifications: notifications,
+        }, '*')
+        // Listen for messages
+        return new Promise(function(resolve, reject) {
+          window.addEventListener("message", (e) => {
+            const data = e?.data
+            if (data?.params?._meta?.["io.modelcontextprotocol/subscriptionId"] === id) {
+              console.log("Receiving a subscription notification!", data)
+              callback(data?.params?.uri)
+            }
+          })
+        })
+      }
+
+      async function subscribeResource(uri, callback) {
+        await subscriptionListen({
+          "resourceSubscriptions": ["file:///project/config.json"]
+        }, callback)
+      }
+
+      async function subscribeAndFetchResource(uri, callback) {
+        await subscriptionListen({
+          "resourceSubscriptions": ["file:///project/config.json"]
+        }, async (uri) => {
+          const res = getResource(uri)
+          callback(uri)
+        })
+      }
+
+      // ====== end of the minimalist MCP 2 client. Actual plugin content begins
+
+      async function ping() {
+        console.log("[ping] Ping!")
+        const res = await callTool("ping")
+        document.getElementById("pong").innerHTML += `${res}<br/>`
+      }
+
+      async function checkPluginVisibility() {
+        console.log("[ping] Checking visibility")
+        const res = await getJSONResource("veryydiag://current-plugin/visibility")
+        console.log("[ping] Got visibility", res)
+        document.getElementById("pong").innerHTML += `${res}<br/>`
+      }
+
+      subscribeAndFetchResource("veryydiag://current-plugin/visibility", (newContent) => {
+        document.getElementById("pong").innerHTML += `Visibility changed to ${newContent}<br/>`
+      })
+
+    </script>
+    <h1>Demo Ping Pong</h1>
+    <p>Demo plugin: each time you press the bellow "ping" button, you will receive a message back from the main instance of VeryyDiag below:</p>
+    <p><button onclick="ping()">Ping</button></p>
+    <p><button onclick="checkPluginVisibility()">Check visibility</button></p>
+    <code id="pong"></code>
+  </body>
+</html>

@@ -18,8 +18,6 @@
     close: () => void
   } = $props()
 
-  const mcpServer = createServer(diagramConfClass)
-  let iframeRef : HTMLIFrameElement | null
   // onMount(() => {
   //   if (iframeRef) {
   //     iframeRef.contentWindow?.postMessage({
@@ -42,6 +40,8 @@
   //     }, '*')
   //   }
   // })
+
+  let iframeRef : HTMLIFrameElement | null
 
   class IframeTransport implements Transport {
     onclose = () => {};
@@ -72,9 +72,17 @@
       console.log("Closing the transport")
       this.onclose?.();
     }
+
+    protocolVersion?: string;
+
+    setProtocolVersion(version: string): void {
+      this.protocolVersion = version;
+    }
   }
   const iframeTransport = new IframeTransport()
+  const mcpServer = createServer(diagramConfClass, {getVisibility: () => visible, transport: iframeTransport})
   await mcpServer.connect(iframeTransport)
+  console.log("onmessage after connect:", iframeTransport.onmessage.toString())
 
   // Listen to plugins messages
   onMount(() => {
@@ -82,7 +90,6 @@
       if (e.source === iframeRef?.contentWindow) {
         // Received a message from the current plugin
         console.log("Received a message from a plugin", e)
-        // Not sure how to avoid cast here?
         iframeTransport.onmessage(e.data)
       }
     })

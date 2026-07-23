@@ -31,6 +31,9 @@
     })
   }
 
+  // Plugin with a visible window
+  let visiblePlugin : number | undefined = $state(undefined)
+
   function addPlugin() {
     diagramConfClass.undoSnapshot();
     diagramConfClass.addPlugin(
@@ -39,19 +42,12 @@
         ...(newPluginCode === "" ? {} : {code: newPluginCode}),
         name: newPluginName
     })
+    newPluginName = ""
+    newPluginMethod = "file"
+    newPluginURL = ""
+    newPluginCode = ""
+    createPluginWindow = false
   }
-
-  // Plugin with a visible window
-  let visiblePlugin : number | undefined = $state(undefined)
-
-  // Listen to plugins messages
-  onMount(() => {
-    window.addEventListener("message", (e) => {
-      if (e.data.isProofdiagMsg) {
-        console.log("Received a veryydiag message", e)
-      }
-    })
-  })
 </script>
 
 {#each diagramConfClass.getConfig()?.plugins || [] as plugin, i}
