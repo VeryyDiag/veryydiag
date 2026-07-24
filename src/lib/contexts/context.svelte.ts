@@ -155,13 +155,13 @@ export class DiagramConfClass {
       if (currentStep === 0) {
         // For the original diagram, we can directly modify it, no need to proxy
         return {
-          diagram: this.derivedVeryyDiagrams.get(currentStep),
+          diagram: this.derivedProofDiagrams.get(currentStep),
           proofmode: true,
           currentStep: currentStep,
           proof: currentProof,
         }
       } else {
-        const diag = this.derivedVeryyDiagrams.get(currentStep)
+        const diag = this.derivedProofDiagrams.get(currentStep)
         const proofStep = assertNotUndefined(currentProof?.steps[currentStep-1], `You try to access the step ${currentStep} of the proof, but this does not exist`)
         const proxy = new Proxy(diag, {
           get(obj, prop, receiver) {
@@ -226,8 +226,16 @@ export class DiagramConfClass {
     return this.getCurrentDiagramAndProofInfo().diagram
   }
 
+  getCurrentOrStartingDiagram = () : Diagram => {
+    if (this.isInProofMode()) {
+      return this.startingDiagram
+    } else {
+      return this.getCurrentDiagramAndProofInfo().diagram
+    }
+  }
+
   getCurrentTab = () : Tab => {
-      return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
+    return this.diagramConf?.currentTab || { tabKind: "tabDiagram", diagramID: "main" }
   }
 
   getTabObject = (tab: Tab) : Diagram | Proof => {
@@ -251,18 +259,14 @@ export class DiagramConfClass {
   }
 
   getCurrentTheoryName = () : string => {
-    if (!this.isInProofMode) {
-      return this.getCurrentDiagram()?.theory || "main"
-    } else {
-      // We don't want to rely on getCurrentDiagram in proof mode since this would rely on infinite loop:
-      // For instance, the diagrams in the rule panel are re-generated when their theory is changed,
-      // but this.getCurrentDiagram() gets a diagram that changes whenever the rules change,
-      // so if the theory is obtained via this.getCurrentDiagram() we have an infinite loop
-      // (debug with $inspect.trace() at the beginning of the effect + untrack elements one by one until you
-      // find the problematic dependency).
-      // Here, the starting diagram is independent of the rules, so we avoid the infinite loop
-      return this.startingDiagram?.theory || "main"
-    }
+    // We don't want to rely on getCurrentDiagram in proof mode since this would rely on infinite loop:
+    // For instance, the diagrams in the rule panel are re-generated when their theory is changed,
+    // but this.getCurrentDiagram() gets a diagram that changes whenever the rules change,
+    // so if the theory is obtained via this.getCurrentDiagram() we have an infinite loop
+    // (debug with $inspect.trace() at the beginning of the effect + untrack elements one by one until you
+    // find the problematic dependency).
+    // Here, the starting diagram is independent of the rules, so we avoid the infinite loop
+    return this.getCurrentOrStartingDiagram()?.theory || "main"
   }
 
   getCurrentTheory = () : Theory => {
@@ -652,21 +656,21 @@ export class DiagramConfClass {
     }
   }
 
-
-  addTheory = (theoryID: TheoryID | undefined = undefined, theory : Theory = {}) => {
+  /** Create a new theory. If undefined, it duplicates the current theory. */
+  addTheory = (theoryID: TheoryID | undefined = undefined, theory : Theory | undefined = undefined) => {
     const id : TheoryID = theoryID || randomID()
     this.diagramConf.theories[id] = {
-      ...(this.getCurrentTheory()),
+      ...(theory || $state.snapshot(this.getCurrentTheory())),
+      // TODO: rename theory in rules, or don't rely on them
       ...({
         theoryName: "Click to edit",
       }),
-      ...theory
     }
-    this.getCurrentDiagram().theory = id
+    this.getCurrentOrStartingDiagram().theory = id
   }
 
   changeTheory = (theoryID: TheoryID) => {
-    this.getCurrentDiagram().theory = theoryID
+    this.getCurrentOrStartingDiagram().theory = theoryID
   }
 
   removeTheory = (theoryID: TheoryID | undefined = undefined) => {
@@ -676,7 +680,7 @@ export class DiagramConfClass {
       this.addTheory("main", {theoryName: "Main theory"})
     }
     if (this.getCurrentTheoryName() === id) {
-      this.getCurrentDiagram().theory = Object.keys(this.diagramConf.theories)[0]
+      this.getCurrentOrStartingDiagram().theory = Object.keys(this.diagramConf.theories)[0]
     }
   }
 
@@ -956,7 +960,7 @@ export class DiagramConfClass {
   })
   #currentProofSteps = $derived<ProofStep[]>(this.#currentProof?.steps || [])
   startingDiagram = $derived<Diagram>(this.#currentProof?.startingDiagram || {})
-  derivedVeryyDiagrams = $derived(
+  derivedProofDiagrams = $derived(
     new MapReduce(this.#currentProofSteps,
                   (acc, x, i) => {
                     if (acc?.error !== undefined) {
@@ -968,7 +972,7 @@ export class DiagramConfClass {
                         `The theory ${this.startingDiagram?.theory || "main"} does not exist`)
                       // We need to take a snapshot of everything including the theory because
                       // when nodes are copied from a rule to the new diagram we
-                      return proofApplyOneStep($state.snapshot(acc), x, theory)
+                      return proofApplyOneStep($state.snapshot(acc), x, $state.snapshot(theory))
                     } catch (e) {
                       console.log(e)
                       return { error: `Error when applying the ${i+1}-th proof step (${e}).` }

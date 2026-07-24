@@ -21,7 +21,7 @@
             ]}>
   <!-- Tabs for theories -->
   <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current diagram" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeTheory()}}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeTheory()}}>
       <Icon icon="mdi:minus" width="20" height="20"/>
     </button>
     {#each Object.entries(diagramConfClass.getConfig()?.theories) as [theoryID, theory] (theoryID)}
@@ -39,8 +39,11 @@
         {diagramConfClass.getConfig()?.theories[theoryID]?.theoryName || "No name"}
       </span>
     {/each}
-    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addTheory()}}>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Create empty theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addTheory(undefined, {})}}>
       <Icon icon="mdi:plus" width="20" height="20"/>
+    </button>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addTheory()}}>
+      <Icon icon="famicons:duplicate-outline" width="20" height="20"/>
     </button>
   </div>
 

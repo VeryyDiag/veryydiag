@@ -106,15 +106,13 @@ let {
 
 ### Small bugs/features to correct/add quickly
 
+- Fix TODO TODO: rename theory in rules, or don't rely on them
 - Viewport reset seems to be broken
-- For now just clicking an anchor creates an invisible self-looping link. Add a minimal distance to travel so that a self link is added.
-- If you paste, e.g., a number when editing an input zone, it resets the whole diagram!!
 - Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.
-- In the node template, anchors should be placed above the text, not below.
+- In the node template, anchors should be placed above the text (z-index), not below.
 - Allow an option to re-edit a node created via the template.
 - Renaming an available node does not rename the nodes in the rule
 - Selection local to a diagram? Or clean selection? (but practical to keep selection when changing tab) At least avoid error "selection do not belong to the diagram" when applying a rule after changing tab.
-- I need to understand why, but sometimes I have weird bugs (rule that don't apply, rule that displays poorly with missing links/nodes…) that disapear when I save and reload the file. I think this is due to malformed rules (e.g. because of renaming a node with different anchors?) that don't show up as corrupted in the list of rules. Need some investigation to reproduce.
 - It seems like the size of the dots is not consistent in the template. E.g. much smaller for circle, sqrt is big, and 0 is small
 - When exporting to SVG, the mono-wire boundary show as as multi-wire boundary. I guess I would need a higher timeout to allow multiple iterations, sadly this crashes the instance with errors saying that effects are reading and writing the same state.
 - Maybe use https://developer.mozilla.org/en-US/docs/Web/API/File_System_API on top of local storage to save to a precise local persistent file.

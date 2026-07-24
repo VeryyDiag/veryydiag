@@ -17,7 +17,7 @@
   import PanelToolbar from "./PanelToolbar.svelte";
   import PanelDetails from "./PanelDetails.svelte";
   import PanelProofMode from "./PanelProofMode.svelte";
-  import { untrack } from "svelte";
+  import { onMount, untrack } from "svelte";
   import PanelCreateNodeTemplate from "./PanelCreateNodeTemplate.svelte";
   import PanelPlugins from "./PanelPlugins.svelte";
 
@@ -77,9 +77,26 @@
     diagramConfClass.setSvg(svgRef)
   })
 
-  $effect(() => {
+  $effect(async () => {
     if (onlySvg !== undefined) {
+      // Let them some time before refreshing the viewport, otherwise errors won't show-up
+      await (async () => {})();
       resetViewport()
+    }
+  })
+
+  // For debug
+  onMount(() => {
+    if (!onlySvg) {
+      // @ts-ignore We modify the windows only for debugging
+      if (window?.diagramConfClass === undefined) {
+        // @ts-ignore We modify the windows only for debugging
+        window.diagramConfClass = diagramConfClass
+      } else {
+        console.warn("A diagram window.diagramConfClass already existed (i.e. you loaded multiple diagrams in the same page). We overwrote it, but beware if you use it to debug!")
+        // @ts-ignore We modify the windows only for debugging
+        window.diagramConfClass = diagramConfClass
+      }
     }
   })
 
@@ -93,6 +110,7 @@
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
+  {@const nbErrors = Object.entries(allErrors).length}
   <svg bind:this={svgRef}
     width={width}
     height={height}
@@ -154,6 +172,18 @@
             <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />
           {/if}
         {/each}
+    {/if}
+    {#if onlySvg !== undefined && nbErrors > 0}
+      <text x="0" y="0" style="fill:red; font: bold 15px sans-serif;">
+        <title>
+          {#each Object.entries(allErrors) as [uid, errors]}
+            {#each errors as error}
+              - Error: {error}
+            {/each}
+          {/each}
+        </title>
+        {nbErrors} ERROR(s) (hover me)
+      </text>
     {/if}
   </svg>
 {/snippet}

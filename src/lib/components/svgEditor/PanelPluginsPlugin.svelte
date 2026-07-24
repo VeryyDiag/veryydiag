@@ -3,9 +3,10 @@
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { McpServer, type JSONRPCMessage, type Transport } from '@modelcontextprotocol/server';
+  import { serveStdio } from '@modelcontextprotocol/server/stdio';
 
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
-  import { createServer } from "$lib/mcp/mcp_server_browser";
+  import { createServer } from "$lib/mcp/mcp_server_browser.svelte";
   let diagramConfClass = getContextDiagram()
 
   let {
@@ -51,7 +52,7 @@
     }
 
     onmessage = (message: JSONRPCMessage) => {
-      console.log("We just received a message from the plugin, the rest is handled by the SDK that overwrites this function")
+      console.log(`We just received a message from the plugin, the rest is handled by the SDK that overwrites this function ${JSON.stringify(message)}`, message)
     }
 
     start = async () => {
@@ -60,7 +61,7 @@
     }
 
     send = async (message: JSONRPCMessage): Promise<void> => {
-      console.log("Sending the message to the plugin", message)
+      console.log(`Sending the message to the plugin ${JSON.stringify(message)}`, message)
       if (iframeRef) {
         iframeRef.contentWindow?.postMessage(message, '*')
       } else {
@@ -80,16 +81,22 @@
     }
   }
   const iframeTransport = new IframeTransport()
-  const mcpServer = createServer(diagramConfClass, {getVisibility: () => visible, transport: iframeTransport})
-  await mcpServer.connect(iframeTransport)
-  console.log("onmessage after connect:", iframeTransport.onmessage.toString())
+  // const mcpServer = createServer(diagramConfClass, {getVisibility: () => visible, transport: iframeTransport})
+  // await mcpServer.connect(iframeTransport)
+  // console.log("onmessage after connect:", iframeTransport.onmessage.toString())
+  serveStdio(reqCtx => {
+    return createServer(diagramConfClass, {getVisibility: () => visible, reqCtx})
+  }, {
+    transport: iframeTransport
+  })
+
 
   // Listen to plugins messages
   onMount(() => {
     window.addEventListener("message", (e) => {
       if (e.source === iframeRef?.contentWindow) {
         // Received a message from the current plugin
-        console.log("Received a message from a plugin", e)
+        console.log(`Received a message from a plugin ${JSON.stringify(e?.data)}`, e?.data)
         iframeTransport.onmessage(e.data)
       }
     })

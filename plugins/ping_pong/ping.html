@@ -12,6 +12,10 @@
                      "io.github.veryydiag/pluginMessage": true,
                      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
                      "io.modelcontextprotocol/clientCapabilities": {},
+                     "io.modelcontextprotocol/clientInfo": {
+                       "name": "pingPlugin",
+                       "version": "1.0",
+                     },
                    }, ...params._meta || {}},
           },
         }, '*')
@@ -49,16 +53,12 @@
 
       async function getResource(uri, tryGetText = true) {
         const id = crypto.randomUUID()
-        console.log("[ping] calling resources/read")
         _callRPC(id, "resources/read", { uri })
-        console.log("[ping] returned from resources/read")
         // Listen for messages
         return new Promise(function(resolve, reject) {
           window.addEventListener("message", myCallback = (e) => {
-            console.log("[ping] I received a message back", e)
             const data = e?.data
             if (data?.id === id) {
-              console.log("And it's for me!")
               window.removeEventListener("message", myCallback);
               if (data?.result?.isError) {
                 reject(data)
@@ -86,8 +86,9 @@
           window.addEventListener("message", (e) => {
             const data = e?.data
             if (data?.params?._meta?.["io.modelcontextprotocol/subscriptionId"] === id) {
-              console.log("Receiving a subscription notification!", data)
-              callback(data?.params?.uri)
+              if (data?.method === "notifications/resources/updated") {
+                callback(data?.params?.uri)
+              }
             }
           })
         })
@@ -95,31 +96,28 @@
 
       async function subscribeResource(uri, callback) {
         await subscriptionListen({
-          "resourceSubscriptions": ["file:///project/config.json"]
+          "resourceSubscriptions": [uri]
         }, callback)
       }
 
       async function subscribeAndFetchResource(uri, callback) {
         await subscriptionListen({
-          "resourceSubscriptions": ["file:///project/config.json"]
+          "resourceSubscriptions": [uri]
         }, async (uri) => {
-          const res = getResource(uri)
-          callback(uri)
+          const res = await getResource(uri)
+          callback(res, uri)
         })
       }
 
       // ====== end of the minimalist MCP 2 client. Actual plugin content begins
 
       async function ping() {
-        console.log("[ping] Ping!")
         const res = await callTool("ping")
         document.getElementById("pong").innerHTML += `${res}<br/>`
       }
 
       async function checkPluginVisibility() {
-        console.log("[ping] Checking visibility")
         const res = await getJSONResource("veryydiag://current-plugin/visibility")
-        console.log("[ping] Got visibility", res)
         document.getElementById("pong").innerHTML += `${res}<br/>`
       }
 

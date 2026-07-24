@@ -65,6 +65,49 @@
       </b>Diag
     </button>
 
+    <!-- Load button -->
+    <button id="reframeBtn"
+            title="Load diagram"
+            class={[styleButton, loadFilePanel ? styleButtonEnabled : styleButtonDisabled]}
+            onclick={() => {closePanels(); loadFilePanel = !loadFilePanel}}
+      >
+      <Icon icon="material-symbols:file-open-outline" width="25" height="25"/>
+    </button>
+
+    <!-- Download button -->
+    <button
+      id="reframeBtn"
+      title="Download diagram/proof or download SVG"
+      class={[styleButton, isSaved ? "bg-green-100 hover:bg-green-200"
+              : (downloadPanel ? styleButtonEnabled : styleButtonDisabled)]}
+      onclick={() => {closePanels(); downloadPanel = !downloadPanel}}
+      >
+      <!-- Icon: fit / reset view -->
+      <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
+    </button>
+
+
+    <!-- Undo -->
+    <button class={[styleButton, styleButtonDisabled]}
+      onclick={diagramConfClass.undo}
+      title="Undo"
+    >
+      <Icon icon="material-symbols:undo" width="25" height="25"
+        class={diagramConfClass.undoStack.length > 0 ? "" : "text-gray-300"} />
+    </button>
+
+    <!-- Redo -->
+    <button class={[styleButton, styleButtonDisabled]}
+      onclick={diagramConfClass.redo}
+      title="Redo"
+    >
+      <Icon icon="material-symbols:redo" width="25" height="25"
+        class={diagramConfClass.redoStack.length > 0 ? "" : "text-gray-300"} />
+    </button>
+
+    <!-- ========== Divider for generic tools ========== -->
+    <div class={dividerStyle}></div>
+
     <!-- Creation mode -->
     <button
       class={[styleButton, styleButtonEnabled]} title="Diagram creation mode" >
@@ -88,29 +131,6 @@
     <!-- <div class="h-10 border-l border-dashed border-gray-300 mx-1"></div> -->
     <!-- <div class="w-px h-5 bg-gradient-to-b from-transparent via-gray-500 to-transparent mx-1"></div> -->
 
-    <!-- Load button -->
-    <button id="reframeBtn"
-            title="Load diagram"
-            class={[styleButton, loadFilePanel ? styleButtonEnabled : styleButtonDisabled]}
-            onclick={() => {closePanels(); loadFilePanel = !loadFilePanel}}
-      >
-      <Icon icon="material-symbols:file-open-outline" width="25" height="25"/>
-    </button>
-
-
-    <!-- Download button -->
-    <button
-      id="reframeBtn"
-      title="Download diagram/proof or download SVG"
-      class={[styleButton, isSaved ? "bg-green-100 hover:bg-green-200"
-              : (downloadPanel ? styleButtonEnabled : styleButtonDisabled)]}
-      onclick={() => {closePanels(); downloadPanel = !downloadPanel}}
-      >
-      <!-- Icon: fit / reset view -->
-      <Icon icon="material-symbols:sim-card-download-outline" width="25" height="25"/>
-    </button>
-
-
     <!-- Reframe button -->
     <button class={[styleButton, styleButtonDisabled]}
             onclick={() => {diagramConfClass.undoSnapshot(); resetViewport}}
@@ -132,28 +152,18 @@
       <Icon icon="fluent:select-all-on-16-regular" width="25" height="25"/>
     </button>
 
-    <!-- Undo -->
-    <button class={[styleButton, styleButtonDisabled]}
-      onclick={diagramConfClass.undo}
-      title="Undo"
-    >
-      <Icon icon="material-symbols:undo" width="25" height="25"
-        class={diagramConfClass.undoStack.length > 0 ? "" : "text-gray-300"} />
-    </button>
-
-    <!-- Redo -->
-    <button class={[styleButton, styleButtonDisabled]}
-      onclick={diagramConfClass.redo}
-      title="Redo"
-    >
-      <Icon icon="material-symbols:redo" width="25" height="25"
-        class={diagramConfClass.redoStack.length > 0 ? "" : "text-gray-300"} />
+    <!-- Remove tool -->
+    <button
+      class={[ styleButton, styleButtonDisabled ]}
+      onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeSelection()}}
+      title="Delete selection (click to select)"
+      >
+      <Icon icon="mdi:trash-outline" width="25" height="25" />
     </button>
 
     <!-- ========== Divider for mode-specific tools ========== -->
     <div class={dividerStyle}></div>
 
-    <!-- Add tool -->
     <button
       class={[
             styleButton,
@@ -166,7 +176,6 @@
       <Icon icon="mdi:plus" width="25" height="25"/>
     </button>
 
-    <!-- Add tool -->
     <button
       class={[
             styleButton,
@@ -176,15 +185,6 @@
       title="Show/hide detail panel when selecting a node"
       >
       <Icon icon="mdi:card-account-details-outline" width="30" height="30"/>
-    </button>
-
-    <!-- Remove tool -->
-    <button
-      class={[ styleButton, styleButtonDisabled ]}
-      onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeSelection()}}
-      title="Delete selection (click to select)"
-      >
-      <Icon icon="mdi:trash-outline" width="25" height="25" />
     </button>
   </div>
 

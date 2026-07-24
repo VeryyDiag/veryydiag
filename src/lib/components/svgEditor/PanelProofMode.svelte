@@ -79,7 +79,7 @@
         </li>
         {#each (currentProof?.steps || []) as proofStep, i}
           {@const kind = proofStep?.kind}
-          {@const error = diagramConfClass.derivedVeryyDiagrams.get(i+1)?.error}
+          {@const error = diagramConfClass.derivedProofDiagrams.get(i+1)?.error}
           <li>
             {@render dotStep(i+1)}
             {#if error !== undefined}
