@@ -17,15 +17,16 @@
     if (rule?.lhs === undefined) {
       return undefined
     } else {
+      const currentTheoryName = diagramConfClass.getCurrentTheoryName()
       return {
         diagrams: {
-          main: rule?.lhs
+          main: {...rule?.lhs, theory: currentTheoryName} // May differ if we have renamed the theory etc.
         },
         proofs: {},
         tabs: [{ tabKind: "tabDiagram", diagramID: "main" }],
         currentTab: { tabKind: "tabDiagram", diagramID: "main" },
         theories: {
-          [`${diagramConfClass.getCurrentTheoryName()}`]: diagramConfClass.getCurrentTheory()
+          [`${currentTheoryName}`]: diagramConfClass.getCurrentTheory()
         },
       }
     }
@@ -35,16 +36,16 @@
     if (rule?.rhs === undefined) {
       return undefined
     } else {
+      const currentTheoryName = diagramConfClass.getCurrentTheoryName()
       return {
         diagrams: {
-          main: rule?.rhs
+          main: {...rule?.rhs, theory: currentTheoryName},
         },
         proofs: {},
         tabs: [{ tabKind: "tabDiagram", diagramID: "main" }],
         currentTab: { tabKind: "tabDiagram", diagramID: "main" },
         theories: {
-          // Issue: we can't
-          [`${diagramConfClass.getCurrentTheoryName()}`]: diagramConfClass.getCurrentTheory()
+          [`${currentTheoryName}`]: diagramConfClass.getCurrentTheory()
         },
       }
     }

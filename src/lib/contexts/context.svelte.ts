@@ -661,7 +661,6 @@ export class DiagramConfClass {
     const id : TheoryID = theoryID || randomID()
     this.diagramConf.theories[id] = {
       ...(theory || $state.snapshot(this.getCurrentTheory())),
-      // TODO: rename theory in rules, or don't rely on them
       ...({
         theoryName: "Click to edit",
       }),

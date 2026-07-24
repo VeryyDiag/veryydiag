@@ -106,7 +106,6 @@ let {
 
 ### Small bugs/features to correct/add quickly
 
-- Fix TODO TODO: rename theory in rules, or don't rely on them
 - Viewport reset seems to be broken
 - Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.
 - In the node template, anchors should be placed above the text (z-index), not below.
@@ -116,11 +115,11 @@ let {
 - It seems like the size of the dots is not consistent in the template. E.g. much smaller for circle, sqrt is big, and 0 is small
 - When exporting to SVG, the mono-wire boundary show as as multi-wire boundary. I guess I would need a higher timeout to allow multiple iterations, sadly this crashes the instance with errors saying that effects are reading and writing the same state.
 - Maybe use https://developer.mozilla.org/en-US/docs/Web/API/File_System_API on top of local storage to save to a precise local persistent file.
+- Copy/paste parts of the diagram
 
 ### More substantial changes
 
 - Create ordered anchors that accept multiple ordered wires. Add an option to specify that the order may be arbitrary (needed when applying the rule), and make it work with boundaries, including multi-wire ones.
-- Copy/paste parts of the diagram
 - Redefine the Node type so that it is distinct from AvailableNode
 - Implement selection and operations on selection (drag, delete…)
 - Visual tests https://itnext.io/you-dont-need-chromatic-ded8f5797de3

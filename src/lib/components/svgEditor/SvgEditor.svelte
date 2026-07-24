@@ -77,11 +77,10 @@
     diagramConfClass.setSvg(svgRef)
   })
 
-  $effect(async () => {
+  $effect(() => {
     if (onlySvg !== undefined) {
       // Let them some time before refreshing the viewport, otherwise errors won't show-up
-      await (async () => {})();
-      resetViewport()
+      setTimeout(() => resetViewport(), 0)
     }
   })
 
