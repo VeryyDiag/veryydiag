@@ -40,6 +40,7 @@
               if (data?.result?.isError) {
                 reject(data)
               } else {
+                console.log("Received the data", data)
                 resolve(data?.result?.structuredContent || (
                   ifUnstructuredTryGetText ? (
                     data?.result?.content?.filter(x => x.type === 'text')?.[0]?.text || data?.result?.content
