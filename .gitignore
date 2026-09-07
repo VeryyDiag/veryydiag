@@ -32,5 +32,8 @@ test-results
 *storybook.log
 storybook-static
 
+# Generated files
+src/lib/types/typesSchema.ts
+
 debug/
 test_proofs/

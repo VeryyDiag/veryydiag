@@ -7,6 +7,18 @@ function isPartOfAnchor(node: SVGGraphicsElement) {
   return node.closest("[data-veryydiag-anchor]") !== null
 }
 
+/** Don't trigger shortcut when we are on an <input>, a <textarea>, or a contentEditable element*/
+function isEditable(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+
+  const tag = target.tagName.toLowerCase()
+
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    target.isContentEditable
+  )
+}
 
 /** Due to firefox gestures that forces swiping to go back to previous page etc… closing the
  *  browser/tab by mistake etc, it is easy to lose lot's of data. Hence, if we detect unsaved
@@ -649,7 +661,11 @@ export function selectAll(node: HTMLElement, diagramConfClass: DiagramConfClass 
 
   function keydown(e: KeyboardEvent) {
     if (diagramConfClass === undefined) {return}
-    if (e.key === "a" && e.ctrlKey) {
+
+    // Skip if user is typing in an input or editable area
+    if (isEditable(e.target)) return
+
+    if (e.key === "a" && (e.ctrlKey || e.metaKey)) { // metaKey is for MacOS
       diagramConfClass.selectAll()
       e.preventDefault() // Otherwise ctrl-A select also all texts
     }
@@ -670,7 +686,11 @@ export function undo(node: HTMLElement, diagramConfClass: DiagramConfClass | und
 
   function keydown(e: KeyboardEvent) {
     if (diagramConfClass === undefined) {return}
-    if (e.key === "z" && e.ctrlKey) {
+
+    // Skip if user is typing in an input or editable area
+    if (isEditable(e.target)) return
+
+    if (e.key === "z" && (e.ctrlKey || e.metaKey)) { // metaKey is for MacOS
       diagramConfClass.undo()
       e.preventDefault() // Otherwise ctrl-A select also all texts
     }
@@ -691,7 +711,11 @@ export function redo(node: HTMLElement, diagramConfClass: DiagramConfClass | und
 
   function keydown(e: KeyboardEvent) {
     if (diagramConfClass === undefined) {return}
-    if (e.key === "y" && e.ctrlKey) {
+
+    // Skip if user is typing in an input or editable area
+    if (isEditable(e.target)) return
+
+    if (e.key === "y" && (e.ctrlKey || e.metaKey)) { // metaKey is for MacOS
       diagramConfClass.redo()
       e.preventDefault() // Otherwise ctrl-A select also all texts
     }
@@ -911,7 +935,11 @@ export function saveToLocalStorage(node: HTMLElement, diagramConfClass: DiagramC
   if (diagramConfClass === undefined) {return}
   function keydown(e: KeyboardEvent) {
     if (diagramConfClass === undefined) {return}
-    if (e.key === "s" && e.ctrlKey) {
+
+    // Skip if user is typing in an input or editable area
+    if (isEditable(e.target)) return
+
+    if (e.key === "s" && (e.ctrlKey || e.metaKey)) { // metaKey is for MacOS
       e.preventDefault()
       saveToLocalStorageFct(diagramConfClass)
     }

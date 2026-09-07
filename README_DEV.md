@@ -116,6 +116,7 @@ let {
 - When exporting to SVG, the mono-wire boundary show as as multi-wire boundary. I guess I would need a higher timeout to allow multiple iterations, sadly this crashes the instance with errors saying that effects are reading and writing the same state.
 - Maybe use https://developer.mozilla.org/en-US/docs/Web/API/File_System_API on top of local storage to save to a precise local persistent file.
 - Copy/paste parts of the diagram
+- Manage shortcut from single code to avoid many listeners
 
 ### More substantial changes
 
@@ -138,3 +139,8 @@ let {
 - Implement cherry-picking to import only a theory/diagram/rule/… from a different diagram.
 - Define "well formed" diagram, e.g. to avoid loops in circuits.
 - Snap to the grid. Center nodes (and/or allow a custom center) instead of positionning them based on their top/right position.
+- Export to tikz
+
+### See if change interesting
+
+- Export to GraphML https://en.wikipedia.org/wiki/GraphML

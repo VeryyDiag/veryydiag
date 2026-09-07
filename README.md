@@ -24,3 +24,9 @@ If you want to contribute to this project, see [the file `README_DEV.md`](./READ
 ## To know
 
 - Gwenview [does not support nested SVG](https://bugs.kde.org/show_bug.cgi?id=518490), so don't be surprised if you open the diagram there and all nodes are gone. Open them with a browser, inkscape, another image viewer, emacs…
+
+## Related projects
+
+- [Gephi]() Visualize huge graphs, no web, not related to math.
+- [yED](https://www.yworks.com/yed-live/) Create generic diagrams, not related to math at all. Can't apply rules etc. [The software and SDK yFiles](https://www.yfiles.com/) is also not open source.
+- See softwares listed in https://en.wikipedia.org/wiki/Gephi
