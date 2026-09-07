@@ -4,7 +4,7 @@
   import Link from "$lib/components/Links/Link.svelte"
   import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
   import { warningIfClosingWithUnsavedData, saveToLocalStorage, panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo, drawLassoSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID, cmToUnit } from "$lib/utils"
+  import { cm, randomID, cmToUnit, range } from "$lib/utils"
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
   import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
 
@@ -138,6 +138,14 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <!-- Grid -->
+    {#if !onlySvg}
+      {#each range(Math.floor(diagramConfClass.getViewport().x - 1.5*diagramConfClass.getViewport().w), Math.ceil(diagramConfClass.getViewport().x + 2.5*diagramConfClass.getViewport().w), 1) as x }
+        {#each range(Math.floor(diagramConfClass.getViewport().y - diagramConfClass.getViewport().h), Math.ceil(diagramConfClass.getViewport().y + diagramConfClass.getViewport().h), 1) as y }
+          <circle cx={cm(x)} cy={cm(y)} r={cm(0.03)} fill="#DDDDDD" />
+        {/each}
+      {/each}
+    {/if}
     {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
       <circle r="10000%" fill="red"/>
     {/if}

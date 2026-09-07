@@ -109,14 +109,14 @@
     method: "builtin.createNodeTemplate",
     tex: "\\sqrt{\\cdot}",
     /** Height in cm */
-    height: 0.7,
+    height: 0.4,
     /** For the preview */
     scale: 1,
     mainNodeColor: "white",
     anchors: [],
-    extraSpacingAroundText: 300,
-    strokeWidth: 100,
-    extraSpacingAroundMargin: 300,
+    extraSpacingAroundText: 0.15,
+    strokeWidth: 0.02,
+    extraSpacingAroundMargin: 0.1,
     shape: "rectangle",
   }
   let svgParameters = $state<SvgParameters>(structuredClone(defaultSvgParameters))
@@ -127,6 +127,18 @@
       const x = $state.snapshot(svgParameters)
       const { tex, height, scale, mainNodeColor, anchors, extraSpacingAroundText, strokeWidth, extraSpacingAroundMargin, shape } = svgParameters;
 
+      // Height is the height of the latex itself, excluding the drawn line and anchors
+      // +--viewport-----+                                        ^
+      // | +--drawn----+ |          ^                             |
+      // | | +-------+ | | ^        |                             |
+      // | | | LaTeX | | | | height | + 2*extraSpacingAroundText  | + 2*extraSpacingAroundMargin
+      // | | +-------+ | | v        |                             |
+      // | +--border---+ |          v                             |
+      // +---------------+                                        v
+      // Note that extraSpacingAroundMargin and extraSpacingAroundText must be large enough to account for
+      // the strokeWidth.
+      // When the shape is a circle, we add margin to the LaTeX until it is a square, then we make sure
+      // this square has the height 'height', then we draw a circle fitting this square.
       const texSvg = await getSvgImage(tex, {display: true})
       const distMultiplier = shape === "circle" ? Math.sqrt(2) : 1
 
@@ -146,16 +158,19 @@
         const m = Math.max(viewBox[2], viewBox[3])
         viewBox = [viewBox[0]-(m-viewBox[2])/2, viewBox[1]-(m-viewBox[3])/2, m, m]
       }
+      // We need to convert between both coordinate systems (cm vs viewport)
+      // using the fact that: viewBox_height = height * cmToVBCoord
+      const cmToVBCoord = viewBox[3] / height
 
-      // We create the shape
+      // We create the drawn shape
       let shapeSVG : SVGElement = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
       let shapeXYWH = [0,0,0,0]
       let shapeFittingXYWH = [0,0,0,0]
       if (shape === "rectangle") {
-        shapeXYWH = [viewBox[0] - extraSpacingAroundText,
-                     viewBox[1] - extraSpacingAroundText,
-                     viewBox[2] + 2*extraSpacingAroundText,
-                     viewBox[3] + 2*extraSpacingAroundText]
+        shapeXYWH = [viewBox[0] - extraSpacingAroundText * cmToVBCoord,
+                     viewBox[1] - extraSpacingAroundText * cmToVBCoord,
+                     viewBox[2] + 2 * extraSpacingAroundText * cmToVBCoord,
+                     viewBox[3] + 2 * extraSpacingAroundText * cmToVBCoord]
         shapeFittingXYWH = shapeXYWH
         shapeSVG.setAttribute('x', `${shapeXYWH[0]}`)
         shapeSVG.setAttribute('y', `${shapeXYWH[1]}`)
@@ -163,12 +178,12 @@
         shapeSVG.setAttribute('height', `${shapeXYWH[3]}`)
         shapeSVG.setAttribute('fill', mainNodeColor) // This way we can select the shape
         shapeSVG.setAttribute('stroke', 'black')
-        shapeSVG.setAttribute('stroke-width', `${strokeWidth}`)
+        shapeSVG.setAttribute('stroke-width', `${strokeWidth * cmToVBCoord}`)
       } else if (shape === "circle") {
-        shapeXYWH = [viewBox[0] - extraSpacingAroundText,
-                     viewBox[1] - extraSpacingAroundText,
-                     viewBox[2] + 2*extraSpacingAroundText,
-                     viewBox[3] + 2*extraSpacingAroundText]
+        shapeXYWH = [viewBox[0] - extraSpacingAroundText * cmToVBCoord,
+                     viewBox[1] - extraSpacingAroundText * cmToVBCoord,
+                     viewBox[2] + 2 * extraSpacingAroundText * cmToVBCoord,
+                     viewBox[3] + 2 * extraSpacingAroundText * cmToVBCoord]
         const [centerShapeX, centerShapeY] = [shapeXYWH[0] + shapeXYWH[2]/2,
                                               shapeXYWH[1] + shapeXYWH[3]/2]
         const r = shapeXYWH[2]*Math.sqrt(2)/2
@@ -181,7 +196,7 @@
         shapeSVG.setAttribute('r', `${shapeXYWH[3] * distMultiplier/2}`)
         shapeSVG.setAttribute('fill', mainNodeColor) // This way we can select the shape
         shapeSVG.setAttribute('stroke', 'black')
-        shapeSVG.setAttribute('stroke-width', `${strokeWidth}`)
+        shapeSVG.setAttribute('stroke-width', `${strokeWidth * cmToVBCoord}`)
       }
 
       // Add anchors
@@ -189,7 +204,7 @@
         const circ = doc.createElementNS('http://www.w3.org/2000/svg', 'circle')
         circ.setAttribute('cx', `${shapeFittingXYWH[0] + posX*shapeFittingXYWH[2]}`)
         circ.setAttribute('cy', `${shapeFittingXYWH[1] + posY*shapeFittingXYWH[3]}`)
-        circ.setAttribute('r', `${radius * shapeXYWH[3] / height}`)
+        circ.setAttribute('r', `${radius * cmToVBCoord}`)
         circ.setAttribute('data-veryydiag-anchor', name)
         circ.setAttribute('fill', color)
         svg.appendChild(circ)
@@ -199,14 +214,14 @@
       svg.prepend(shapeSVG)
 
       // Setting the final viewbox
-      const delta = strokeWidth/2 + extraSpacingAroundMargin
-      const viewboxXYWH = [shapeFittingXYWH[0] - delta,
-                           shapeFittingXYWH[1] - delta,
-                           shapeFittingXYWH[2] + 2*delta,
-                           shapeFittingXYWH[3] + 2*delta]
+      const viewboxXYWH = [shapeFittingXYWH[0] - extraSpacingAroundMargin * cmToVBCoord,
+                           shapeFittingXYWH[1] - extraSpacingAroundMargin * cmToVBCoord,
+                           shapeFittingXYWH[2] + 2 * extraSpacingAroundMargin * cmToVBCoord,
+                           shapeFittingXYWH[3] + 2 * extraSpacingAroundMargin * cmToVBCoord]
+      const finalHeight = shapeFittingXYWH[3] / cmToVBCoord + 2 * extraSpacingAroundMargin
       svg.setAttribute('viewBox', `${viewboxXYWH[0]} ${viewboxXYWH[1]} ${viewboxXYWH[2]} ${viewboxXYWH[3]}`)
-      svg.setAttribute('height', `${scale*cm(height)}`)
-      svg.setAttribute('width', `${scale*cm(svgParameters.height * viewBox[2] / viewBox[3])}`)
+      svg.setAttribute('height', `${scale*cm(finalHeight)}`)
+      svg.setAttribute('width', `${scale*cm(finalHeight * viewboxXYWH[2] / viewboxXYWH[3])}`)
 
       const newSvg = new XMLSerializer().serializeToString(svg)
       return newSvg
@@ -227,7 +242,7 @@
         posX,
         posY: (2*i+1)*dh,
         color: "black",
-        radius: 0.09
+        radius: 0.05
       }
       svgParameters.anchors.push(a)
     })
@@ -252,11 +267,15 @@
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
     <h1 class="text-center text-lg font-normal text-body">Create node <input class={styleInput} bind:value={nodeKind} /></h1>
-    <p>{@html await createSvg({...svgParameters, scale: 2.5})}</p>
+    <p>
+      <span class="bg-gray-100 block">
+        {@html await createSvg({...svgParameters, scale: 1.5})}
+      </span>
+    </p>
     <p>
       Text (LaTeX): <input class={styleInput} bind:value={svgParameters.tex} />
     </p>
-    <p>Height: <input class={styleInput} bind:value={svgParameters.height} /> cm
+    <p>Text height: <input class={styleInput} bind:value={svgParameters.height} type="number" step="0.1" /> cm
       <span class="mr-4"></span>
       Shape: <select class={styleInput} bind:value={svgParameters.shape}>
       <option value="rectangle">Rectangle</option>
@@ -271,15 +290,15 @@
       {#each svgParameters.anchors as anchor, i}
         <li class="list-disc">
           Name: <input class={`${styleInput} w-15`} bind:value={anchor.name} />
-          x in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posX} />
-          y in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posY} />
+          x in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posX} type="number" step="0.1" />
+          y in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posY} type="number" step="0.1"/>
           Color: <input class={`${styleInput} w-15`} bind:value={anchor.color} />
-          Radius: <input class={`${styleInput} w-15`} bind:value={anchor.radius} />
+          Radius: <input class={`${styleInput} w-15`} bind:value={anchor.radius} type="number" step="0.01"/>
           <Button onclick={() => svgParameters.anchors.splice(i, 1)}><Icon icon="mdi:trash-outline" width="25" height="25" /></Button>
         </li>
       {/each}
     </ul>
-    <p>Spacing around text <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundText} type="number" />, margin <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundMargin} type="number" /> and stroke width <input class={`${styleInput} w-15`} bind:value={svgParameters.strokeWidth} type="number" /></p>
+    <p>Spacing around text <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundText} type="number" step="0.05"/>, margin <input class={`${styleInput} w-15`} bind:value={svgParameters.extraSpacingAroundMargin} type="number" step="0.05"/> and stroke width <input class={`${styleInput} w-15`} bind:value={svgParameters.strokeWidth} type="number" step="0.01" /></p>
     <p>
       Add <input class={`${styleInput} w-15`} bind:value={nbElementsToAdd} type="number" />
       <Button onclick={() => addNAnchors("in.", 0, nbElementsToAdd)}>

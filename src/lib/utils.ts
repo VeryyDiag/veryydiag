@@ -474,3 +474,9 @@ export function biMapGetUnique<X, Y>(bm: BiMap<X, Y>, x: X) : Y {
   assertTrue(candidates.size === 1, `Weird, we expect exactly one candidate`)
   return assertNotUndefined(candidates.first(), `Impossible, report a bug`)
 }
+
+/** Generates an array with numbers from start to end with wanted step */
+export function range(start: number, end: number, step: number = 1) {
+  const len = Math.floor((end - start) / step) + 1;
+  return Array.from({ length: len }, (_, i) => start + i * step);
+}
