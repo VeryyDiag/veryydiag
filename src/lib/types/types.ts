@@ -1,4 +1,5 @@
 // File containing most of the types and some helper to translate from one type to another
+//
 
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger, unitToCm } from '$lib/utils';
@@ -39,9 +40,10 @@ export function subtractPoints(a: Point, b: Point) : Point {
  *  importantly it allows nice graphical designs (I do prefer to see "XOR" than a huge graph encoding the string "XOR").
  */
 export type ParamName = string
+export type paramAvailableTypesTS = "integer" | "string" | "boolean"
 /** Parameter specification */
-export const paramAvailableTypes = ["integer", "string", "boolean"] as const // as const needed, otherwise it types as string[]
-export type paramAvailableTypesTS = typeof paramAvailableTypes[number]
+export const paramAvailableTypes : paramAvailableTypesTS[] = ["integer", "string", "boolean"] as const // as const needed, otherwise it types as string[]. Need duplication due to https://github.com/fabien0102/ts-to-zod/issues/368, but anyway it seems like if I forget a type in this list it is catched by a later bug
+
 export type paramAvailableTypesJS = number | string | boolean
 /** Check if a string has the appropriate type (either integer/string/boolean) */
 export function isParamAvailableType(type: string): type is paramAvailableTypesTS {

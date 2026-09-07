@@ -25,7 +25,7 @@
         <!-- Floating close icon -->
         <button
           class={["absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
-          aria-label="Close download panel"
+          title="Close download panel"
           onclick={() => diagramConfClass.removeNotification(notif)}
           >
           <Icon icon="material-symbols:close-rounded" width="20" height="20" />

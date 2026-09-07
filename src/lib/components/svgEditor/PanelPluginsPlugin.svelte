@@ -10,13 +10,14 @@
   let diagramConfClass = getContextDiagram()
 
   let {
-    name, url, code, visible, close
+    name, url, code, visible, close, deletePlugin
   } : {
     name: string,
     url?: string,
     code?: string,
     visible: boolean,
-    close: () => void
+    close: () => void,
+    deletePlugin: () => void,
   } = $props()
 
   // onMount(() => {
@@ -104,14 +105,22 @@
 </script>
 
 <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4/10 h-7/10 flex flex-col items-center gap-2 p-7 overflow-x-auto overflow-y-auto", stylePanel, !visible ? "invisible" : "" ]}>
+  <!-- Floating delete icon (different size so that we don't accidently click it) -->
+  <button
+    class={["absolute top-2 left-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
+    title="Delete plugin"
+    onclick={deletePlugin}
+    >
+    <Icon icon="mdi:trash-outline" width="20" height="20" />
+  </button>
   <!-- Floating close icon -->
   <button
     class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
-    aria-label="Close plugin window"
+    title="Close plugin window"
     onclick={close}
   >
     <Icon icon="material-symbols:close-rounded" width="20" height="20" />
   </button>
   <h1 class="text-center text-lg font-normal text-body">Plugin</h1>
-  <iframe width="100%" height="100%" srcdoc={code} src={url} bind:this={iframeRef} title={`Plugin iframe ${name}`} sandbox="allow-scripts allow-popups allow-forms"></iframe>
+  <iframe width="100%" height="100%" srcdoc={code} src={url} bind:this={iframeRef} title={`Plugin iframe ${name}`} sandbox="allow-scripts allow-popups allow-forms allow-same-origin"></iframe>
 </div>

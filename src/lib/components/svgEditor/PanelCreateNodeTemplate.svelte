@@ -246,7 +246,7 @@
     <!-- Floating close icon -->
     <button
       class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
-      aria-label="Close download panel"
+      title="Close download panel"
       onclick={() => createNodeTemplatePanel = false}
       >
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />

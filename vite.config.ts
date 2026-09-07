@@ -8,9 +8,53 @@ import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
+import { exec } from 'child_process';
+
+function tsToZodPlugin({input, output}: {input: string, output: string}) {
+  const inputAbs = path.resolve(__dirname, input)
+  const outputAbs = path.resolve(__dirname, output)
+  const runTsToZod = async () => {
+    console.log('\n[ts-to-zod] Generating schemas...');
+    return new Promise((resolve, error) => {
+      exec(`ts-to-zod "${input}" "${output}"`, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`[ts-to-zod] Error: ${stderr}`);
+          error(err);
+        }
+        console.log(`[ts-to-zod] Schemas generated successfully.`);
+        return resolve(stdout)
+      });
+    })
+  };
+
+  return {
+    name: 'vite-plugin-ts-to-zod',
+
+    // Runs once when the dev server starts or before production build
+    async buildStart() {
+      await runTsToZod();
+    },
+
+    // Watches for changes in dev mode
+    async handleHotUpdate({ file }: {file: string}) {
+      if (file === inputAbs) {
+        await runTsToZod();
+        return []
+      }
+    }
+  };
+}
+
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
+  plugins: [
+    tsToZodPlugin({
+      input: "src/lib/types/types.ts",
+      output: "src/lib/types/typesSchema.ts",
+    }),
+    tailwindcss(),
+    sveltekit()
+  ],
   test: {
     expect: {
       requireAssertions: true

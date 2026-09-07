@@ -13,9 +13,13 @@
   let createPluginWindow = $state(false)
 
   let newPluginName = $state("")
-  let newPluginMethod : "url" | "code" | "file" = $state("file")
+  let newPluginMethod : "url" | "builtins" | "code" | "file" = $state("builtins")
   let newPluginURL = $state("")
   let newPluginCode = $state("")
+
+  const builtinsPlugins = [
+    {name: "ZX-calculus", url: "plugins/zx-calculus", description: ""},
+  ]
 
   let isDraggingPluginFile = $state(false)
   async function handlePluginFile(files: FileList) {
@@ -35,11 +39,22 @@
   let visiblePlugin : number | undefined = $state(undefined)
 
   function addPlugin() {
+    if (newPluginName === "") {
+      diagramConfClass.sendNotification("error", `Enter a non-empty plugin name.`)
+      return
+    }
+    if (["url", "builtins"].includes(newPluginMethod) && newPluginURL === "") {
+      diagramConfClass.sendNotification("error", `Enter a non-empty URL, file or code to create a new plugin.`)
+      return
+    } else if (!["url", "builtins"].includes(newPluginMethod) && newPluginCode === "") {
+      diagramConfClass.sendNotification("error", `Enter a non-empty URL, file or code to create a new plugin.`)
+      return
+    }
     diagramConfClass.undoSnapshot();
     diagramConfClass.addPlugin(
       {
-        ...(newPluginURL === "" ? {} : {url: newPluginURL}),
-        ...(newPluginCode === "" ? {} : {code: newPluginCode}),
+        ...(!["url", "builtins"].includes(newPluginMethod) || newPluginURL === "" ? {} : {url: newPluginURL}),
+        ...(["url", "builtins"].includes(newPluginMethod) || newPluginCode === "" ? {} : {code: newPluginCode}),
         name: newPluginName
     })
     newPluginName = ""
@@ -50,8 +65,8 @@
   }
 </script>
 
-{#each diagramConfClass.getConfig()?.plugins || [] as plugin, i}
-  <PanelPluginsPlugin visible={visiblePlugin === i} close={() => visiblePlugin = undefined} {...plugin} />
+{#each diagramConfClass.getConfig()?.plugins || [] as plugin, i (plugin.name)}
+  <PanelPluginsPlugin visible={visiblePlugin === i} close={() => visiblePlugin = undefined} deletePlugin={() => diagramConfClass.getConfig()?.plugins?.splice(i, 1)} {...plugin} />
 {/each}
 
 <!-- Panel to create plugins -->
@@ -60,23 +75,33 @@
     <!-- Floating close icon -->
     <button
       class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
-      aria-label="Close plugin window"
+      title="Close plugin window"
       onclick={() => createPluginWindow = false}
       >
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
     <h1 class="text-center text-lg font-normal text-body">Add plugin</h1>
-    <p>Name: <input class={`${styleInput} w-30`} bind:value={newPluginName} /></p>
     <p>Choose the method to add a new plugin:</p>
     <p>
       <select class={styleInput} bind:value={newPluginMethod}>
+        <option value="builtins">Builtins plugins</option>
         <option value="file">By uploading its HTML file</option>
         <option value="url">Via its URL</option>
         <option value="code">By writting its HTML code</option>
       </select>
     </p>
+    {#if newPluginMethod === "builtins"}
+      <p>You can choose below from a list of plugins embeded into VeryyDiag:</p>
+      <ul class="list-disc">
+        {#each builtinsPlugins as plugin}
+          <li>{plugin.name} <Button tiny={true} title={`Add the ${plugin.name} plugin`} ><Icon icon="mdi:plus" width="15" height="15" onclick={() => {newPluginName = plugin.name; newPluginURL = plugin.url; addPlugin()}} /></Button></li>
+        {/each}
+      </ul>
+    {:else}
+      <p>Name: <input class={`${styleInput} w-30`} bind:value={newPluginName} /></p>
+    {/if}
     {#if newPluginMethod === "url"}
-      <p>URL: <input class={`${styleInput} w-30`} bind:value={newPluginURL} /></p>
+      <p>URL: <input class={`${styleInput} w-30`} bind:value={newPluginURL} onblur={(e) => {newPluginName = (e.currentTarget as HTMLInputElement).value.replace(/\/$/, "").split('/').pop()?.replace(/\..*$/, "") || newPluginName}} /></p>
     {/if}
     {#if newPluginMethod === "code"}
       <p>Code:</p>
@@ -121,7 +146,9 @@
         </p>
       </div>
     {/if}
-    <Button onclick={addPlugin}><Icon icon="mdi:plus" width="25" height="25" class="inline" /> Add plugin</Button>
+    {#if newPluginMethod !== "builtins"}
+      <Button onclick={addPlugin}><Icon icon="mdi:plus" width="25" height="25" class="inline" /> Add plugin</Button>
+    {/if}
   </div>
 {/if}
 

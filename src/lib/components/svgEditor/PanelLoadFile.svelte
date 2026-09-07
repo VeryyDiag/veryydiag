@@ -49,7 +49,7 @@
     <!-- Floating close icon -->
     <button
       class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
-      aria-label="Close load file panel"
+      title="Close load file panel"
       onclick={() => loadFilePanel = false}
       >
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />
