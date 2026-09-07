@@ -121,6 +121,11 @@
   >
     <Icon icon="material-symbols:close-rounded" width="20" height="20" />
   </button>
-  <h1 class="text-center text-lg font-normal text-body">Plugin</h1>
-  <iframe width="100%" height="100%" srcdoc={code} src={url} bind:this={iframeRef} title={`Plugin iframe ${name}`} sandbox="allow-scripts allow-popups allow-forms allow-same-origin"></iframe>
+  <h1 class="text-center text-lg font-normal text-body">{name} plugin</h1>
+  <!--
+     - allow-popups: external links in plugins can be opened in new tab
+     - allow-popups-to-escape-sandbox: without this, we get an error NS_ERROR_DOM_COOP_FAILED when a plugin tries to open a link in a new tab.
+     - allow-same-origin: without this, plugins can't fetch external libs etc. Even a basic URL plugin with a svelte backend won't be able to run JS.
+  -->
+  <iframe width="100%" height="100%" srcdoc={code} src={url} bind:this={iframeRef} title={`Plugin iframe ${name}`} sandbox="allow-scripts allow-popups allow-forms allow-same-origin allow-popups-to-escape-sandbox"></iframe>
 </div>

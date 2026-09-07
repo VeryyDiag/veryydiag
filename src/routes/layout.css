@@ -5,4 +5,8 @@
   .text-muted {
     @apply text-gray-600;
   }
+
+  .mytext a {
+    @apply text-blue-400
+  }
 }
