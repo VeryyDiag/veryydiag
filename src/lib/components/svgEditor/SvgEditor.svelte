@@ -21,6 +21,8 @@
   import PanelCreateNodeTemplate from "./PanelCreateNodeTemplate.svelte";
   import PanelPlugins from "./PanelPlugins.svelte";
 
+  let disableDrag = $state({disableDrag: false})
+
   /**
    * Interactive SVG editor component
    */
@@ -119,9 +121,9 @@
     use:panzoom={onlySvg ? undefined : diagramConfClass}
     use:drawLink={diagramConfClass}
     use:selectElement={onlySvg ? undefined : diagramConfClass}
-    use:drag={onlySvg ? undefined : diagramConfClass}
+    use:drag={{diagramConfClass: (onlySvg ? undefined : diagramConfClass), disableDrag}}
     use:removeSelection={onlySvg ? undefined : diagramConfClass}
-    use:drawLassoSelection={onlySvg ? undefined : diagramConfClass}
+    use:drawLassoSelection={{diagramConfClass: (onlySvg ? undefined : diagramConfClass), disableDrag}}
     style="touch-action: none;"
     data-veryydiag-app="true"
     data-veryydiag-main-svg={onlySvg ? undefined : "true"}

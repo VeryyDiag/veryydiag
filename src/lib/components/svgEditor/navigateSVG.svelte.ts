@@ -188,12 +188,7 @@ export function panzoom(node: SVGSVGElement, diagramConfClass: DiagramConfClass 
   }
 }
 
-/**
- * Drag a <g> element in SVG coordinates, compatible with pan/zoom
- * pos: { x, y } reactive state
- * diagramConfClass: DiagramConfClass (for current viewport)
- */
-export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function drag(node: SVGSVGElement, {diagramConfClass, disableDrag}: {diagramConfClass: DiagramConfClass | undefined, disableDrag: {disableDrag: boolean}}) {
   if (diagramConfClass === undefined) {return}
 
   let startPointer: { x: number; y: number } = {x: 0, y: 0}
@@ -203,6 +198,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
 
   function pointerdown(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
+    if (disableDrag.disableDrag) {return}
     targetNodeIDs = []
     if (e?.target instanceof SVGGraphicsElement) {
       if (isPartOfAnchor(e.target)) {
@@ -228,6 +224,7 @@ export function drag(node: SVGSVGElement, diagramConfClass: DiagramConfClass | u
   function pointermove(e: PointerEvent) {
     if (diagramConfClass === undefined) {return}
     if (targetNodeIDs.length === 0) return;
+    if (disableDrag.disableDrag) {return}
 
     const dx = e.clientX - startPointer.x
     const dy = e.clientY - startPointer.y
@@ -732,7 +729,7 @@ export function redo(node: HTMLElement, diagramConfClass: DiagramConfClass | und
 }
 
 
-export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: DiagramConfClass | undefined) {
+export function drawLassoSelection(node: SVGSVGElement, {diagramConfClass, disableDrag}: {diagramConfClass: DiagramConfClass | undefined, disableDrag: {disableDrag: boolean}}) {
   // Parameters
   const maxDelay = 500
   const distanceThreshold = 30
@@ -742,8 +739,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
   let lastDownTime = 0
   let lastDownPos: Point | undefined = undefined
 
-  let armed = false      // we're inside a potential "2nd click"
-
+  disableDrag.disableDrag = false  // we're inside a potential "2nd click".
   // We count the pointers to see if the user tried to pan
   const pointers = new Map<number, PointerEvent>()
 
@@ -753,7 +749,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     // We are zooming, cancelling selection
     if (pointers.size > 1) {
       lastDownPos = undefined
-      armed = false
+      disableDrag.disableDrag = false
       diagramConfClass.currentlyDrawnLassoSelection = undefined
       return
     }
@@ -767,13 +763,13 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
 
 
     if (isSecondClick) {
-      armed = true
+      disableDrag.disableDrag = true
       node.setPointerCapture(e.pointerId)
       // prevent text selection / default double-click behavior
       e.preventDefault()
       diagramConfClass.currentlyDrawnLassoSelection = []
     } else {
-      armed = false
+      disableDrag.disableDrag = false
     }
   }
 
@@ -782,11 +778,11 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     // We are zooming, cancelling selection
     if (pointers.size > 1) {
       lastDownPos = undefined
-      armed = false
+      disableDrag.disableDrag = false
       diagramConfClass.currentlyDrawnLassoSelection = undefined
       return
     }
-    if (!armed) {
+    if (!disableDrag.disableDrag) {
       // If we pan like twice but put the finger at the same position to restart (fairly common)
       // we trigger a selection. To avoid this we check that all intermediate points stay close
       if (lastDownPos !== undefined) {
@@ -810,16 +806,16 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
     pointers.delete(e.pointerId)
     // We are zooming, cancelling selection
     const currentlyDrawnLassoSelection = diagramConfClass?.currentlyDrawnLassoSelection
-    if (pointers.size > 1 || (armed && (currentlyDrawnLassoSelection === undefined
-                                     || currentlyDrawnLassoSelection?.length < 1))) {
+    if (pointers.size > 1 || (disableDrag.disableDrag && (currentlyDrawnLassoSelection === undefined
+                                                            || currentlyDrawnLassoSelection?.length < 1))) {
       lastDownPos = undefined
-      armed = false
+      disableDrag.disableDrag = false
       diagramConfClass.currentlyDrawnLassoSelection = undefined
       return
     }
     const pos = clientToSVGCoord(node, e.clientX, e.clientY) || {x: 0, y: 0}
 
-    if (armed) {
+    if (disableDrag.disableDrag) {
       if (currentlyDrawnLassoSelection === undefined) return
       const selection = node.querySelector('[data-veryydiag-lasso]')
       if (selection === undefined || selection === null || !(selection instanceof SVGGeometryElement))
@@ -889,7 +885,7 @@ export function drawLassoSelection(node: SVGSVGElement, diagramConfClass: Diagra
       lastDownPos = undefined
     }
 
-    armed = false
+    disableDrag.disableDrag = false
     diagramConfClass.currentlyDrawnLassoSelection = undefined
 
     if (node.hasPointerCapture(e.pointerId)) {
