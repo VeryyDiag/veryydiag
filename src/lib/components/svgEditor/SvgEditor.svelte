@@ -130,6 +130,17 @@
     data-veryydiag-uid={uid}
     role="toolbar"
     tabindex="0" >
+    <defs>
+      <pattern
+        id="grid"
+        patternUnits="userSpaceOnUse"
+        width={cm(1)}
+        height={cm(1)}
+        patternTransform="translate({diagramConfClass.getViewport().x % cm(1)}, {diagramConfClass.getViewport().y % cm(1)})"
+      >
+        <circle cx={cm(1) / 2} cy={cm(1) / 2} r={cm(0.03)} fill="#DDDDDD" />
+      </pattern>
+    </defs>
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
     <filter id="selected" x="-450%" y="-450%" width="1000%" height="1000%">
       <feGaussianBlur stdDeviation="4" result="blur"/>
@@ -140,16 +151,11 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <!-- Grid -->
     {#if !onlySvg}
-      {#each range(Math.floor(diagramConfClass.getViewport().x - 1.5*diagramConfClass.getViewport().w), Math.ceil(diagramConfClass.getViewport().x + 2.5*diagramConfClass.getViewport().w), 1) as x }
-        {#each range(Math.floor(diagramConfClass.getViewport().y - diagramConfClass.getViewport().h), Math.ceil(diagramConfClass.getViewport().y + diagramConfClass.getViewport().h), 1) as y }
-          <circle cx={cm(x)} cy={cm(y)} r={cm(0.03)} fill="#DDDDDD" />
-        {/each}
-      {/each}
+      <circle x={diagramConfClass.getViewport().x} y={diagramConfClass.getViewport().y} r="10000%" fill="url(#grid)" style="pointer-events: none;"/>
     {/if}
     {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
-      <circle r="10000%" fill="red"/>
+      <circle r="10000%" x={diagramConfClass.getViewport().x} y={diagramConfClass.getViewport().y} fill="red"/>
     {/if}
     {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
       <Link {...link} id={linkID}  />

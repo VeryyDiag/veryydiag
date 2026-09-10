@@ -117,6 +117,7 @@ let {
 - Maybe use https://developer.mozilla.org/en-US/docs/Web/API/File_System_API on top of local storage to save to a precise local persistent file.
 - Copy/paste parts of the diagram
 - Manage shortcut from single code to avoid many listeners
+- Use https://github.com/unplugin/unplugin-icons instead since iconify does not allow bundling inside the app (no offline support)
 
 ### More substantial changes
 

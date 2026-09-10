@@ -7,6 +7,7 @@
   import ContentEditable from '../reusable/ContentEditable.svelte';
   import { toBoolean } from '$lib/utils';
   import Button from '../reusable/Button.svelte';
+  import Help from '../reusable/Help.svelte';
 
   let diagramConfClass = getContextDiagram()
 
@@ -89,6 +90,7 @@
               </li>
               <li>From: <code>{link?.from}</code></li>
               <li>To: <code>{link?.to}</code></li>
+              <li>Type: {link?.linkTypeID || "None"} <Help text="To change the type, go in the 'Types' menu in your theory, go to your wanted type, and click 'Apply to selection'."/></li>
             </ul>
             <Button title="Select only this link" tiny={true} ss="text-sm" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.clearSelection(); diagramConfClass.addLinkSelection(linkID)}}>
               <Icon icon="hugeicons:cursor-add-selection-02" width="18" height="18" />

@@ -412,7 +412,9 @@ export type Link = {
   to: IDAnchor,
   /** Optional ID selected by the user (temporarily ID selected by this software will starts with : and may not be saved
    * as it is used only internally to remove/select/… links easily) */
-  id?: string
+  id?: string,
+  /** Type */
+  linkTypeID?: LinkTypeID,
 }
 
 export type Error = {
@@ -632,10 +634,29 @@ export type Proof = {
   currentStep?: number,
 }
 
+/** ID identifying a link type */
+export type LinkTypeID = string
+
+/** Describes how a link type is drawn in the SVG export */
+export type TypeLook = {
+  color: string, // svg color of the link
+}
+
+/** Describe the type of a link (e.g. to create integer, complex… types) */
+export type LinkType = {
+  /** Description, only used to help the user to understand its use case. */
+  description?: string,
+  /** Specifies if the link is a directed link (like in directed graph) or not. If unspecified, equivalent to directed=false. */
+  directed?: boolean,
+  /** Look of the type in the SVG. If unspecified, defaults to black. */
+  look?: TypeLook,
+}
+
 /** Theory contains nodes and rules we can apply on the nodes */
 export type Theory = {
   theoryName?: string,
   availableNodes?: Record<NodeKind, AvailableNode>,
+  linkTypes?: Record<LinkTypeID, LinkType>,
   rules?: Record<RuleName, Rule>,
 }
 

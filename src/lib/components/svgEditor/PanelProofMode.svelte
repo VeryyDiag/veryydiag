@@ -9,6 +9,7 @@
 	import Button from '../reusable/Button.svelte';
 	import type { ProofStep, ProofStepApplyRule, ProofStepMove, ProofStepGroupStart } from '$lib/types/types';
   import ContentEditable from '../reusable/ContentEditable.svelte';
+  import Collapsable from '../reusable/Collapsable.svelte';
 
   let diagramConfClass = getContextDiagram()
 
@@ -88,54 +89,69 @@
               </div>
             {/if}
             {#if kind === "applyRule"}
-              Apply rule
-              <ul class={styleLists}>
-                <li>Rule name: {proofStep?.ruleName}</li>
-                <li>Description: {@render description(i, proofStep)}</li>
-                <li>Direction: {proofStep?.direction}</li>
-                <li>nodeBijectionAB:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.nodeBijectionAB) as [nodeIDA, nodeIDB]}
-	                    <li>{nodeIDA} → {nodeIDB}</li>
-                    {/each}
-                  </ul>
-                </li>
-                <li>boundaryAnchorsBA:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.boundaryAnchorsBA) as [nodeIDB, nodeIDA]}
-	                    <li>{nodeIDB} → {nodeIDA}</li>
-                    {/each}
-                  </ul>
-                </li>
-                <li>linkBijectionAB:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.linkBijectionAB) as [linkIDA, linkIDB]}
-	                    <li>{linkIDA} → {linkIDB}</li>
-                    {/each}
-                  </ul>
-                </li>
-                <li>nodeBijectionCD:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.nodeBijectionCD) as [nodeIDA, nodeIDB]}
-	                    <li>{nodeIDA} → {nodeIDB}</li>
-                    {/each}
-                  </ul>
-                </li>
-                <li>linkBijectionCD:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.linkBijectionCD) as [linkIDA, linkIDB]}
-	                    <li>{linkIDA} → {linkIDB}</li>
-                    {/each}
-                  </ul>
-                </li>
-                <li>move:
-                  <ul class={styleLists}>
-                    {#each entries(proofStep?.move) as [nodeID, point]}
-	                    <li>{nodeID} → x: {point?.x} y: {point?.y}</li>
-                    {/each}
-                  </ul>
-                </li>
-              </ul>
+              <div class="mb-1">Apply rule "{proofStep?.ruleName}"</div>
+              <div>{@render description(i, proofStep)}</div>
+              <Collapsable text="Details">
+                <ul class={styleLists}>
+                  <li>Rule name: </li>
+                  <li>Description: </li>
+                  <li>Direction: {proofStep?.direction}</li>
+                  <li>
+                    <Collapsable text="nodeBijectionAB:">
+                      <ul class={styleLists}>
+                        {#each entries(proofStep?.nodeBijectionAB) as [nodeIDA, nodeIDB]}
+	                        <li>{nodeIDA} → {nodeIDB}</li>
+                        {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                  <li>
+                    <Collapsable text="boundaryAnchorsBA:">
+                      <ul class={styleLists}>
+                        {#each entries(proofStep?.boundaryAnchorsBA) as [nodeIDB, nodeIDA]}
+	                        <li>{nodeIDB} → {nodeIDA}</li>
+                        {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                  <li>
+                    <Collapsable text="linkBijectionAB:">
+                      <ul class={styleLists}>
+                        {#each entries(proofStep?.linkBijectionAB) as [linkIDA, linkIDB]}
+	                        <li>{linkIDA} → {linkIDB}</li>
+                        {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                  <li>
+                    <Collapsable text="nodeBijectionCD:">
+                      <ul class={styleLists}>
+                        {#each entries(proofStep?.nodeBijectionCD) as [nodeIDA, nodeIDB]}
+	                        <li>{nodeIDA} → {nodeIDB}</li>
+                        {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                  <li>
+                    <Collapsable text="linkBijectionCD:">
+                      <ul class={styleLists}>
+                        {#each entries(proofStep?.linkBijectionCD) as [linkIDA, linkIDB]}
+	                        <li>{linkIDA} → {linkIDB}</li>
+                        {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                  <li>
+                    <Collapsable text="move:">
+                      <ul class={styleLists}>
+                      {#each entries(proofStep?.move) as [nodeID, point]}
+	                      <li>{nodeID} → x: {point?.x} y: {point?.y}</li>
+                      {/each}
+                      </ul>
+                    </Collapsable>
+                  </li>
+                </ul>
+              </Collapsable>
               {@render addMoveStep(i+1)}
             {:else if kind === "move"}
               Move

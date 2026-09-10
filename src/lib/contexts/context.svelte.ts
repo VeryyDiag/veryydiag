@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS, Plugin } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS, Plugin, LinkTypeID, LinkType } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, VeryyDiagError, availableNodeToParsedSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
@@ -355,7 +355,6 @@ export class DiagramConfClass {
     }
   }
 
-
   clearSelection = () => {
     this.linkSelection = []
     this.nodeSelection = []
@@ -407,6 +406,13 @@ export class DiagramConfClass {
     const theory = this.getCurrentTheory()
     if (theory?.availableNodes?.[nodeKind] !== undefined) {
       delete theory.availableNodes[nodeKind]
+    }
+  }
+
+  removeAvailableLinkTypeID = (linkTypeID: LinkTypeID) => {
+    const theory = this.getCurrentTheory()
+    if (theory?.linkTypes?.[linkTypeID] !== undefined) {
+      delete theory.linkTypes[linkTypeID]
     }
   }
 
@@ -540,6 +546,18 @@ export class DiagramConfClass {
     return this.getCurrentDiagram()?.nodes || {}
   }
 
+  setLinkTypeToSelection = (linkTypeID: LinkTypeID) => {
+    const diagAndProof = this.getCurrentDiagramAndProofInfo()
+    if (diagAndProof.proofmode && diagAndProof.currentStep > 0) {
+      this.sendNotification("error", "Can't change type in proof mode.")
+    }
+    this.linkSelection.forEach((linkID) => {
+      const link = diagAndProof.diagram?.linksWithID?.[linkID]
+      if (link) {
+        link.linkTypeID = linkTypeID
+      }
+    })
+  }
 
   moveNode = (nodeID: NodeID, newPos: Point) : Error | undefined => {
     const info = this.getCurrentDiagramAndProofInfo()
@@ -780,6 +798,48 @@ export class DiagramConfClass {
     delete diagram.linksWithID[oldLinkID]
     // We also update the selection
     this.linkSelection = this.linkSelection.map(linkID => linkID === oldLinkID ? newLinkID : linkID)
+  }
+
+  renameLinkTypeID = (oldLinkTypeID: LinkTypeID, newLinkTypeID: LinkTypeID, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    if (oldLinkTypeID === newLinkTypeID) {
+      return true
+    }
+    if (this.diagramConf.theories[id]?.linkTypes === undefined) {
+      this.diagramConf.theories[id].linkTypes = {}
+    }
+    if (this.diagramConf?.theories[id]?.linkTypes?.[newLinkTypeID] !== undefined) {
+      this.sendNotification("error", `In theory ${this.diagramConf?.theories[id].theoryName} the link type ${newLinkTypeID} already exists.`)
+      return false
+    }
+    this.diagramConf.theories[id].linkTypes[newLinkTypeID] = this.diagramConf.theories[id].linkTypes[oldLinkTypeID]
+    delete this.diagramConf.theories[id].linkTypes[oldLinkTypeID];
+    // We also rename all references to this in all diagrams refering to this theory
+    entries(this.diagramConf?.diagrams).forEach(([diagramID, diag]) => {
+      entries(diag?.linksWithID).forEach(([linkID, link]) => {
+        if (link.linkTypeID === oldLinkTypeID) {
+          link.linkTypeID = newLinkTypeID
+        }
+      })
+    })
+    return true
+  }
+
+  createLinkType = (linkTypeID: LinkTypeID | undefined = undefined, linkType: LinkType = {}, theoryID: TheoryID | undefined = undefined) => {
+    console.log("Start")
+    const id = theoryID || this.getCurrentTheoryName()
+    let newLinkTypeID = linkTypeID || "My type (click me to edit)"
+    let nb = 0
+    if (this.diagramConf.theories[id]?.linkTypes === undefined) {
+      this.diagramConf.theories[id].linkTypes = {}
+    }
+    // Try to find an available linkType name
+    while (this.diagramConf?.theories[id]?.linkTypes?.[`${newLinkTypeID}${nb == 0 ? "" : nb}`] !== undefined) {
+      nb++
+    }
+    this.diagramConf.theories[id].linkTypes[`${newLinkTypeID}${nb == 0 ? "" : nb}`] = linkType
+    console.log("Created", `${newLinkTypeID}${nb == 0 ? "" : nb}`)
+    return `${newLinkTypeID}${nb == 0 ? "" : nb}`
   }
 
   createRule = (ruleName: RuleName | undefined = undefined, rule: Rule = {}, theoryID: TheoryID | undefined = undefined,) => {

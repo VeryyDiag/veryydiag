@@ -7,12 +7,15 @@
   import { stylePanel, styleSelected, styleTitleInTheoryPanel } from "./commonStyles.svelte"
 	import Button from '../reusable/Button.svelte';
 	import PanelTheoryRule from './PanelTheoryRule.svelte';
+  import Collapsable from '../reusable/Collapsable.svelte';
+  import PanelTheoryLinkType from './PanelTheoryLinkType.svelte';
+  import { keys } from '$lib/utils';
 
   let diagramConfClass = getContextDiagram()
-
+  let allLinkTypes = $derived(diagramConfClass.getCurrentTheory()?.linkTypes || {})
   let { addPanelCollapsed = $bindable(), createNodeTemplatePanel = $bindable() } = $props()
 
-  let isEditingRules = $state(false)
+  let currentTheoryTab = $state<"nodes" | "types" | "rules">("nodes")
 
 </script>
 <div class={[
@@ -54,15 +57,21 @@
     <!-- Tabs to switch node <-> rules mode -->
     <div class="flex w-full overflow-hidden border-b border-gray-200 shrink-0 mb-0">
       <button class={["w-1/2 py-2 text-sm font-medium border-r border-gray-200",
-                    styleSelected(!isEditingRules)
-                    ]}
-              onclick={() => isEditingRules = false}>
+                      styleSelected(currentTheoryTab === "nodes")
+                      ]}
+        onclick={() => currentTheoryTab = "nodes"}>
         Nodes
       </button>
+      <button class={["w-1/2 py-2 text-sm font-medium border-r border-gray-200",
+                      styleSelected(currentTheoryTab === "types")
+                      ]}
+        onclick={() => currentTheoryTab = "types"}>
+        Types
+      </button>
       <button class={["w-1/2 py-2 text-sm font-medium",
-                    styleSelected(isEditingRules)
-                    ]}
-              onclick={() => isEditingRules = true}
+                      styleSelected(currentTheoryTab === "rules")
+                      ]}
+        onclick={() => currentTheoryTab = "rules"}
         >
         Rules
       </button>
@@ -71,7 +80,7 @@
     <!-- Scroll bar is for this box -->
     <div class="p-2 m-0 h-full overflow-auto overscroll-contain mix-h-0 min-w-0 w-full">
 
-      {#if !isEditingRules}
+      {#if currentTheoryTab === "nodes"}
         <!-- ========== Nodes ========== -->
         <h1 class={styleTitleInTheoryPanel}>Available nodes</h1>
         <p class="text-sm mb-3 text-gray-600">
@@ -84,6 +93,25 @@
         </ul>
 
         <CreateNodes bind:createNodeTemplatePanel={createNodeTemplatePanel} />
+      {:else if currentTheoryTab === "types"}
+        <h1 class={styleTitleInTheoryPanel}>Available types</h1>
+        <p class="text-sm mb-3 text-gray-600">
+          <Collapsable text="Links can be tagged with a type.">
+            This type (integer, bit string…) helps to provide a very basic typing system to verify that a diagram has the right shape, and also to guide the user when building diagrams. For now, types accept no input. Hence, for more complex types that accept parameters (e.g. you want to specify in the type the size of the matrix…), you can introduce a new node, where one or two anchors (depending on whether the type is directed) are reserved for the link itself, and other anchors are reserved for the parameters. Typing of these more complex types may be performed later via rewriting rules once we implement specialization (TODO).
+          </Collapsable>
+        </p>
+        <ul class="list-disc">
+          {#each keys(allLinkTypes) as linkTypeID (linkTypeID)}
+            <li><PanelTheoryLinkType linkTypeID={linkTypeID} bind:linkType={allLinkTypes[linkTypeID]} /></li>
+          {/each}
+        </ul>
+
+        <p class="text-center w-full">
+          <Button onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.createLinkType()}}>
+            <Icon icon="mdi:plus" width="20" height="20" class="mr-2" />
+            New link type
+          </Button>
+        </p>
       {:else}
         <!-- ========== Rules ========== -->
         <h1 class={styleTitleInTheoryPanel}>Available rules</h1>
@@ -105,3 +133,4 @@
     </div>
   </div>
 </div>
+<div id="myportal" class="absolute top-0 left-0 z-500"></div>
