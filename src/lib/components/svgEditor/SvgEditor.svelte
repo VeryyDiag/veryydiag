@@ -243,14 +243,8 @@
     <!-- Proof mode panel -->
     <PanelProofMode bind:panelDetailsEnabled={panelDetailsEnabled} />
 
-    <!-- Errors -->
+    <!-- Plugins -->
     <PanelPlugins />
-
-    <!-- Errors -->
-    <PanelError />
-
-    <!-- Notifications -->
-    <PanelNotifications />
 
     <!-- Load file panel -->
     <PanelLoadFile bind:loadFilePanel={loadFilePanel} />
@@ -260,6 +254,12 @@
 
     <!-- Download panel -->
     <PanelCreateNodeTemplate bind:createNodeTemplatePanel={createNodeTemplatePanel} />
+
+    <!-- Errors -->
+    <PanelError />
+
+    <!-- Notifications -->
+    <PanelNotifications />
 
   </div>
 {/if}

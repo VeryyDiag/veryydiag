@@ -108,7 +108,6 @@ let {
 
 - Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.
 - In the node template, anchors should be placed above the text (z-index), not below.
-- Allow an option to re-edit a node created via the template.
 - Renaming an available node does not rename the nodes in the rule
 - Selection local to a diagram? Or clean selection? (but practical to keep selection when changing tab) At least avoid error "selection do not belong to the diagram" when applying a rule after changing tab.
 - It seems like the size of the dots is not consistent in the template. E.g. much smaller for circle, sqrt is big, and 0 is small

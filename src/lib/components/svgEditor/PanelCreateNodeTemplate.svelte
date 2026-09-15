@@ -1,6 +1,8 @@
 <script lang="ts">
   /** Panel to create more complex nodes from templates (e.g. based on LaTeX) */
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
+  import type { SvgParameters } from '$lib/types/types'
+  import { svgParametersSchema } from '$lib/types/typesSchema'
   import { getContextDiagram } from "$lib/contexts/context.svelte";
   import Button from '$lib/components/reusable/Button.svelte'
   import { stylePanel, styleInput } from './commonStyles.svelte';
@@ -92,19 +94,6 @@
   }
   // ---------
 
-  type SvgParameters = {
-    method: "builtin.createNodeTemplate",
-    tex: string,
-    height: number,
-    scale: number,
-    mainNodeColor: string,
-    anchors: {name: string, posX: number, posY: number, color: string, radius: number}[]
-    extraSpacingAroundText: number,
-    strokeWidth: number,
-    extraSpacingAroundMargin: number,
-    shape: "rectangle" | "circle"
-  }
-
   const defaultSvgParameters : SvgParameters = {
     method: "builtin.createNodeTemplate",
     tex: "\\sqrt{\\cdot}",
@@ -119,7 +108,21 @@
     extraSpacingAroundMargin: 0.1,
     shape: "rectangle",
   }
+  const defaultRadiusAnchors = 0.05
   let svgParameters = $state<SvgParameters>(structuredClone(defaultSvgParameters))
+
+  /** Allow other UI to */
+  diagramConfClass.setStartNodeTemplate((newNodeKind, newSvgParameters) => {
+    createNodeTemplatePanel = true;
+    nodeKind = newNodeKind;
+    let newParam = structuredClone(defaultSvgParameters)
+    try {
+      newParam = svgParametersSchema.parse(newSvgParameters)
+    } catch (err) {
+      diagramConfClass.sendNotification("error", `The node '${newNodeKind}' that you want to edit can't be parsed as a node created via createNodeTemplate. Hence we can't pre-populate the fields with older values, but you can still edit the node here. Received options were ${JSON.stringify(newSvgParameters)}. Parsing error: <code>${err}</code>`)
+    }
+    svgParameters = newParam
+  })
 
   async function createSvg(svgParameters: SvgParameters) {
     try {
@@ -231,6 +234,18 @@
     }
   }
 
+  function resetLengths() {
+    svgParameters.height = defaultSvgParameters.height
+    svgParameters.scale = defaultSvgParameters.scale
+    svgParameters.extraSpacingAroundText = defaultSvgParameters.extraSpacingAroundText
+    svgParameters.extraSpacingAroundMargin = defaultSvgParameters.extraSpacingAroundMargin
+    svgParameters.strokeWidth = defaultSvgParameters.strokeWidth
+    svgParameters.anchors = svgParameters.anchors.map(anchor => ({
+      ...anchor,
+      radius: defaultRadiusAnchors
+    }))
+  }
+
   let nbElementsToAdd = $state(1)
 
   function addNAnchors(prefix: string, posX: number, nbElementsToAdd: number) {
@@ -242,16 +257,16 @@
         posX,
         posY: (2*i+1)*dh,
         color: "black",
-        radius: 0.05
+        radius: defaultRadiusAnchors
       }
       svgParameters.anchors.push(a)
     })
   }
 
   let nodeKind = $state("myNode")
-  async function addNode() {
+  async function addNode(force=false) {
     const svg = await createSvg(svgParameters)
-    diagramConfClass.addSVGNodeToTheory(nodeKind, {svgString: svg, svgGenerationMethod: $state.snapshot(svgParameters)});
+    diagramConfClass.addSVGNodeToTheory(nodeKind, {svgString: svg, svgGenerationMethod: $state.snapshot(svgParameters)}, undefined, undefined, force);
   }
 
 </script>
@@ -310,7 +325,9 @@
     </p>
     <p>
       <Button onclick={() => {diagramConfClass.undoSnapshot(); addNode()}}>Create new node</Button>
+      <Button onclick={() => {diagramConfClass.undoSnapshot(); addNode(true)}}>Overwrite current node</Button>
       <Button onclick={() => {svgParameters = defaultSvgParameters}}>Reset</Button>
+      <Button onclick={resetLengths}>Reset lengths</Button>
     </p>
   </div>
 {/if}

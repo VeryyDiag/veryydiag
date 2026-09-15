@@ -1093,3 +1093,57 @@ export function availableNodeToParsedSVG(availableNode: AvailableNode) : ParsedS
   }
   return undefined
 }
+
+// Creation of new nodes
+
+export type SvgParameters = {
+  method: "builtin.createNodeTemplate",
+  tex: string,
+  /**
+   * @schema coerce.number()
+   * @default 0.4
+   */
+  height: number,
+  /**
+   * @schema coerce.number()
+   * @default 1
+   */
+  scale: number,
+  /**
+   * @default "white"
+   */
+  mainNodeColor: string,
+  anchors: {
+    name: string,
+    /**
+     * @schema coerce.number()
+     */
+    posX: number,
+    /**
+     * @schema coerce.number()
+     */
+    posY: number,
+    color: string,
+    /**
+     * @schema coerce.number()
+     */
+    radius: number
+  }[]
+  /**
+   * @schema coerce.number().transform((val) => Math.min(val, 2))
+   * @max 2
+   */
+  extraSpacingAroundText: number,
+  /**
+   * @schema coerce.number().transform((val) => Math.min(val, 2))
+   */
+  strokeWidth: number,
+  /**
+   * @schema coerce.number().transform((val) => Math.min(val, 2))
+   */
+  extraSpacingAroundMargin: number,
+  /**
+   * @default "rectangle"
+   */
+  shape: "rectangle" | "circle"
+}

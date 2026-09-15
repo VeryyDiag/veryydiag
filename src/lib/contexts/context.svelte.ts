@@ -1,6 +1,6 @@
 // https://svelte.dev/docs/svelte/context
 import { createContext, onDestroy } from 'svelte';
-import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS, Plugin, LinkTypeID, LinkType } from "$lib/types/types";
+import type { AvailableNode, DiagramConf, Diagram, Theory, DiagramConfByUser, IDAnchor, Point, Error, Viewport, AnchorName, Node, NodeID, LinkID, Link, NodeKind, NotificationKind, Notification, DiagramID, TheoryID, Rule, RuleName, Params, ParamSpecs, Param, ParamName, Tab, Proof, ProofID, ProofStep, paramAvailableTypesJS, Plugin, LinkTypeID, LinkType, SvgParameters } from "$lib/types/types";
 import { diagramConfToDiagramConfByUser, diagramConfByUserToDiagramConf, extractNodeParamSpecsFromSVG, VeryyDiagError, availableNodeToParsedSVG } from "$lib/types/types";
 import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
 import { cmToUnit, unitToCm, IDAnchorToFullAnchor, fullAnchorToIDAndAnchor, randomID, assertNever, assertTrue, isDeepEqual, log, assertNotUndefined, entries, assertNotUndefinedNR, keys } from '$lib/utils';
@@ -705,6 +705,7 @@ export class DiagramConfClass {
                         availableNode : AvailableNode,
                         nodeKind: NodeKind | undefined = undefined,
                         theoryID: TheoryID | undefined = undefined,
+                        force: boolean = false
   ) => {
     const id = theoryID || this.getCurrentTheoryName()
     let newNodeKind = name || "nodekind (click to edit)"
@@ -712,9 +713,11 @@ export class DiagramConfClass {
     if (this.diagramConf.theories[id]?.availableNodes === undefined) {
       this.diagramConf.theories[id].availableNodes = {}
     }
-    // Try to find an available node kind
-    while (this.diagramConf?.theories[id]?.availableNodes?.[`${newNodeKind}${nb == 0 ? "" : nb}`] !== undefined) {
-      nb++
+    if (!force) {
+      // Try to find an available node kind
+      while (this.diagramConf?.theories[id]?.availableNodes?.[`${newNodeKind}${nb == 0 ? "" : nb}`] !== undefined) {
+        nb++
+      }
     }
     availableNode.parsedSVG = availableNodeToParsedSVG(availableNode)
     this.diagramConf.theories[id].availableNodes[`${newNodeKind}${nb == 0 ? "" : nb}`] = availableNode
@@ -1150,6 +1153,22 @@ export class DiagramConfClass {
           proof.currentStep = proof.steps.length // Current step counts also the first element
         }
       }
+    }
+  }
+
+  /** UI-related (sometimes easier to use this object to interact between different components) */
+
+  _startNodeTemplate : undefined | ((nodeKind: NodeKind, svgParameters: unknown) => void) = undefined
+  setStartNodeTemplate = (f : ((nodeKind: NodeKind, svgParameters: unknown) => void)) => {
+    this._startNodeTemplate = f
+  }
+
+  editNodeTemplate = (nodeKind: NodeKind, node: AvailableNode) => {
+    if (this._startNodeTemplate === undefined) {
+      this.sendNotification("error", "Weird, _startNodeTemplate is undefined, which should not occur (or only when loading the software). If the problem persists after a few seconds, please report a bug.")
+    }
+    else {
+      this._startNodeTemplate(nodeKind, node?.svgGenerationMethod)
     }
   }
 

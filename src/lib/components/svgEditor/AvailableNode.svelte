@@ -46,7 +46,9 @@
                       t.innerText = nodeKind
                     }
                     }}
-      >{nodeKind}</ContentEditable> <Button tiny title="Delete this available node in the theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeAvailableNodeKind(nodeKind)}}><Icon icon="mdi:trash-outline" width="15" height="15" /></Button>
+      >{nodeKind}</ContentEditable>
+    <Button tiny title="Delete this available node in the theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeAvailableNodeKind(nodeKind)}}><Icon icon="mdi:trash-outline" width="15" height="15" /></Button>
+    <Button tiny title="Edit the node using the builtin template system" onclick={() => {diagramConfClass.editNodeTemplate(nodeKind, node)}}><Icon icon="bi:vector-pen" width="15" height="15" /></Button>
   </p>
   <div class="m-2 touch-none select-none" data-veryydiag-available-node={nodeKind}>
     <SvgEditor onlySvg={1.3} diagramConfParsed={subDiagramConf}/>
