@@ -503,7 +503,7 @@ export class DiagramConfClass {
           minimumHeight = minimumHeight || 5
           minimumWidth = minimumWidth || 7
         }
-        const bbox = this.svg.getBBox();
+        const bbox = (this.svg.querySelector("[data-veryydiag-svg-bounding-box]") as SVGGraphicsElement)?.getBBox();
         // Set the viewport with these bounds
         const origW = unitToCm(bbox.width)
         const origH = unitToCm(bbox.height)

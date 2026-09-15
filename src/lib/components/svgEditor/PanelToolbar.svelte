@@ -133,7 +133,7 @@
 
     <!-- Reframe button -->
     <button class={[styleButton, styleButtonDisabled]}
-            onclick={() => {diagramConfClass.undoSnapshot(); resetViewport}}
+            onclick={() => {diagramConfClass.undoSnapshot(); resetViewport()}}
             title="Reset view"
     >
       <!-- Icon: fit / reset view -->

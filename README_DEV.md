@@ -106,7 +106,6 @@ let {
 
 ### Small bugs/features to correct/add quickly
 
-- Viewport reset seems to be broken
 - Sometimes it seems like some nodes generated via the template are cut in the preview (e.g. with $\mathsf{KeyGen}$). Similarly, renaming a node (Enc) breaks the viewport.
 - In the node template, anchors should be placed above the text (z-index), not below.
 - Allow an option to re-edit a node created via the template.

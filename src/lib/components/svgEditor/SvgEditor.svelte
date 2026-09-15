@@ -157,15 +157,33 @@
     {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
       <circle r="10000%" x={diagramConfClass.getViewport().x} y={diagramConfClass.getViewport().y} fill="red"/>
     {/if}
-    {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
-      <Link {...link} id={linkID}  />
-    {/each}
-    {#if diagramConfClass?.currentlyCreatedLink !== undefined}
-      <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
-    {/if}
-    {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
-      <Node id={id} {...node} />
-    {/each}
+    <!--
+         We create a group to be able to get bounding box reliably (no grid, selection etc). We do take
+         text errors so that they display properly in the rule menu.
+    -->
+    <g data-veryydiag-svg-bounding-box="true">
+      {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
+        <Link {...link} id={linkID}  />
+      {/each}
+      {#if diagramConfClass?.currentlyCreatedLink !== undefined}
+        <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
+      {/if}
+      {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
+        <Node id={id} {...node} />
+      {/each}
+      {#if onlySvg !== undefined && nbErrors > 0}
+        <text x="0" y="0" style="fill:red; font: bold 15px sans-serif;">
+          <title>
+            {#each Object.entries(allErrors) as [uid, errors]}
+              {#each errors as error}
+                - Error: {error}
+              {/each}
+            {/each}
+          </title>
+          {nbErrors} ERROR(s) (hover me)
+        </text>
+      {/if}
+    </g>
     {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined && diagramConfClass.currentlyDrawnLassoSelection.length > 0}
       <path data-veryydiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
         <!-- It is very hard to draw links with touch devices (and sometimes with the mouse as well)
@@ -187,18 +205,6 @@
             <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />
           {/if}
         {/each}
-    {/if}
-    {#if onlySvg !== undefined && nbErrors > 0}
-      <text x="0" y="0" style="fill:red; font: bold 15px sans-serif;">
-        <title>
-          {#each Object.entries(allErrors) as [uid, errors]}
-            {#each errors as error}
-              - Error: {error}
-            {/each}
-          {/each}
-        </title>
-        {nbErrors} ERROR(s) (hover me)
-      </text>
     {/if}
   </svg>
 {/snippet}
