@@ -847,6 +847,18 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
     }} : theories,
   }
 
+  // Force remove viewport on import to recompute it. A bit dirty, TODO: find a better fix.
+  entries(cleanedConfig?.theories).forEach(([theoryID, theory]) => {
+    entries(theory?.rules).forEach(([ruleName, rule]) => {
+      if (rule?.lhs?.viewport) {
+        delete rule.lhs.viewport
+      }
+      if (rule?.rhs?.viewport) {
+        delete rule.rhs.viewport
+      }
+    })
+  })
+
   const isValidTab = (tab: Tab, tabDetails: string) => {
     const tabKind = tab.tabKind
     switch (tabKind) {
@@ -1146,4 +1158,10 @@ export type SvgParameters = {
    * @default "rectangle"
    */
   shape: "rectangle" | "circle"
+}
+
+// Weeks start on sunday
+export function isWeekEnd(day: number) {
+  const x = day % 7
+  return x === 0 || x === 6
 }

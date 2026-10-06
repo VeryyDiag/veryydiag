@@ -49,7 +49,7 @@ function matchSelectionToDiagramLinkAux(
   // TODO: visit in order based on selection/alphabetic names of anchors to allow to resolve ambiguity
   for (const linkIDScandidate of candidates) {
     try {
-      log(logStr(depth+1, `We explore the candidate ${linkIDScandidate} in the selection`))
+      log(logStr(depth+1, `We explore the candidate ${linkIDScandidate} in the selection, so currently trying ${linkIDScandidate} --> ${linkIDtoElect}`))
       // First, we check if our candidate is obviously wrong (bad input/output)
       const linkScandidate = assertNotUndefined(diagram?.linksWithID?.[linkIDScandidate],
                                                 `Weird, this should never occur, please report a bug`)
@@ -70,7 +70,7 @@ function matchSelectionToDiagramLinkAux(
       const setB = Set([electFromIDAnchorTranslated, electToIDAnchorTranslated]
         .filter(x => x !== undefined))
       if (!setA.isSuperset(setB)) {
-        throw new VeryyDiagError(`Different starting/ending points (${setA.toString()} != ${setB.toString()})`)
+        throw new VeryyDiagError(`Different starting/ending points (${setA.toString()} ⊅ ${setB.toString()})`)
       }
       // In some cases (two mono-wire boundary nodes) we need to try multiple assignments
       let newMonoAnchorsBimapBAToTry : BiMap<IDAnchor, IDAnchor>[] = []
@@ -103,27 +103,29 @@ function matchSelectionToDiagramLinkAux(
           )
         )
       } else if (electFromIsMonoWireBoundary) {
-        log(logStr(depth+1, `The starting point of the rule wire is a mono-wire boundary. So far, detected mono-wire boundaries are ${monoAnchorsBimapBA.forward.toString()}`))
         const linkSameDirection = linkScandidate.to === electToIDAnchorTranslated
+        const elected = linkSameDirection ? linkScandidate.from : linkScandidate.to
+        log(logStr(depth+1, `The starting point of the rule wire is a mono-wire boundary. So far, detected mono-wire boundaries are ${monoAnchorsBimapBA.forward.toString()}, and we will try to assign ${linkToElect.from} --> ${elected} to match the link candidate`))
         newMonoAnchorsBimapBAToTry.push(biMapElectCandidate(
           monoAnchorsBimapBA,
           linkToElect.from,
-          linkSameDirection ? linkScandidate.from : linkScandidate.to
+          elected
         ))
       } else if (electToIsMonoWireBoundary) {
-        log(logStr(depth+1, `The ending point of the rule wire is a mono-wire boundary. So far, detected mono-wire boundaries are ${monoAnchorsBimapBA.forward.toString()}`))
         const linkSameDirection = linkScandidate.from === electFromIDAnchorTranslated
+        const elected = linkSameDirection ? linkScandidate.to : linkScandidate.from
+        log(logStr(depth+1, `The ending point of the rule wire is a mono-wire boundary. So far, detected mono-wire boundaries are ${monoAnchorsBimapBA.forward.toString()}, and we will try to elect ${linkToElect.to} --> ${elected} to match the link candidate`))
         newMonoAnchorsBimapBAToTry.push(biMapElectCandidate(
           monoAnchorsBimapBA,
           linkToElect.to,
-          linkSameDirection ? linkScandidate.to : linkScandidate.from
+          elected
         ))
       } else {
         newMonoAnchorsBimapBAToTry.push(monoAnchorsBimapBA)
       }
       for (const newMonoAnchorsBimapBA of newMonoAnchorsBimapBAToTry) {
         // TODO: check parameters etc
-        log(logStr(depth+1, `Trying the mono-anchor assignment ${newMonoAnchorsBimapBA.toString()}…`))
+        log(logStr(depth+1, `Trying the mono-anchor assignment ${newMonoAnchorsBimapBA.forward.toString()}…`))
         try {
           const newLinkBimapBA = biMapElectCandidate(linkBimapBA, linkIDtoElect, linkIDScandidate)
           return matchSelectionToDiagramLinkAux(
@@ -139,7 +141,7 @@ function matchSelectionToDiagramLinkAux(
             log
           )
         } catch (e) {
-          log(logStr(depth+1, `The mono-anchor assignment ${newMonoAnchorsBimapBA.forward.toString()} failed`))
+          log(logStr(depth+1, `The mono-anchor assignment ${newMonoAnchorsBimapBA.forward.toString()} failed (${e})`))
         }
       }
     } catch (e) {
@@ -324,8 +326,12 @@ export function matchSelectionToDiagram(
         // But I'm not sure if this will bring a huge improvement since anyway
         // that arrives basically at the leaves, so I don't think it creates much branching.
         [linkID, linkSelectionInDiagram]
-      )
+      ),
+    // We allow some links in the selection to have no inverse, this way it provides a better user experience when the user selects multi-wire links by mistake. Yet, all non-multi-wire links in the rule should have a candidate.
+    false,
+    true,
   )
+  console.log(`Starting point for linkBimapBA ${JSON.stringify(linkBimapBA)}`)
 
   // It will help here to be able to quickly identify which link leaves/enter
   // from which node/anchor.
@@ -350,6 +356,7 @@ export function matchSelectionToDiagram(
     linksInB, // Helpers to avoid recomputing the same thing again and again
     log,
   )
+  console.log("Final result", JSON.stringify(r))
   return {
     // Maps from immutable.js back to js object
     nodeBijectionAB: r.nodeBimapBA.backward.mapEntries(([a, bs]) => {
@@ -361,9 +368,15 @@ export function matchSelectionToDiagram(
       return [b, assertNotUndefined(as.first(), `Should never occur, please report a bug`)]
     }).toObject(),
     linkBijectionAB: r.linkBimapBA.backward.mapEntries(([a, bs]) => {
-      assertTrue(bs.size === 1, `Weird, we expect at the end all matched elements to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
+      if (bs.size === 0) {
+        // We allow the selection to contain more links than expected, as the user may
+        // get confused if they selected an multi-wire link while they should not. Hence, we prune
+        // them here.
+        return undefined
+      }
+      assertTrue(bs.size === 1, `Weird, we expect at the end all matched links to have only one element but elements corresponding to ${a} have ${bs.size} elements (${bs.toString()})`)
       return [a, assertNotUndefined(bs.first(), `Should never occur, please report a bug`)]
-    }).toObject(),
+    }).filter(x => x !== undefined).toObject(),
   }
 }
 
@@ -407,3 +420,5 @@ export function proofStepApplyRuleFromSelection(
     // ambiguityBoundaryLinksAB,
   }
 }
+
+// TODO: maybe yield instead of return to return multiple matches when it exists (espetially if links are optionally matched), so that we can try to apply the rule to multiple matches

@@ -889,7 +889,9 @@ export class DiagramConfClass {
 
   setRuleLhs = (ruleName: RuleName, diagram : Diagram | undefined = undefined, theoryID: TheoryID | undefined = undefined) => {
     const id = theoryID || this.getCurrentTheoryName()
-    const diag = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
+    // We remove the viewport to force it to be updated when mounting (TODO: cleaner fix that
+    // always recompute when mounting)
+    const {viewport, ...diag} = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
     if (this.diagramConf?.theories[id]?.rules?.[ruleName] === undefined) {
       this.sendNotification("error", `Weird, the rule ${ruleName} does not exist. Report a bug.`)
       return
@@ -899,7 +901,9 @@ export class DiagramConfClass {
 
   setRuleRhs = (ruleName: RuleName, diagram : Diagram | undefined = undefined, theoryID: TheoryID | undefined = undefined) => {
     const id = theoryID || this.getCurrentTheoryName()
-    const diag = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
+    // We remove the viewport to force it to be updated when mounting (TODO: cleaner fix that
+    // always recompute when mounting)
+    const {viewport, ...diag} = diagram ? diagram : $state.snapshot(this.getCurrentDiagram())
     if (this.diagramConf?.theories[id]?.rules?.[ruleName] === undefined) {
       this.sendNotification("error", `Weird, the rule ${ruleName} does not exist. Report a bug.`)
       return

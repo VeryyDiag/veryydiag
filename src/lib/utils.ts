@@ -373,8 +373,10 @@ export type BiMap<X, Y> = {
   /* List of items that have already been elected (the size being equal to 1 is
      not enough as we may have one candidate from the very beginning) */
   alreadyElected: SetIm<X>,
-  /** Sometimes, X and Y are not in bijection, i.e. we allow items in Y to have no inverse. */
+  /** Sometimes, X and Y are not in bijection. Setting this to false allows items in Y to have no inverse. */
   mustHaveInverse: boolean,
+  /** Sometimes, X and Y are not in bijection since X is larger than Y. Setting this to false allows allows elements in X to be mapped to no elements in Y. To configure a surjection, set mustHaveInverse to true and mustHaveCandidate to false. */
+  mustHaveCandidate: boolean,
 }
 
 export function mapListFromEntriesDuplicate<X, Y>(m: List<[X, Y]>) : Map<X, List<Y>>{
@@ -406,10 +408,10 @@ export function shallowFlatten<X>(m: List<Collection<unknown, X>>) : List<X> {
 // }
 
 
-export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>, mustHaveInverse = true) : BiMap<X, Y> {
+export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>, mustHaveInverse = true, mustHaveCandidate = true) : BiMap<X, Y> {
   const l : List<[Y, X]> = shallowFlatten(List(forward).map(([k,vs]) => vs.map((v) : [Y, X] => [v, k])))
   const backward = mapSetFromEntriesDuplicate(l)
-  return {forward, backward, alreadyElected: SetIm(), mustHaveInverse}
+  return {forward, backward, alreadyElected: SetIm(), mustHaveInverse, mustHaveCandidate}
 }
 
 /**
@@ -418,6 +420,19 @@ export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>, mustHaveInverse = 
  * and we also update the alreadyElected item.
  */
 export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X, Y>{
+  // We check if we are not electing a value that was already elected in the past, otherwise we may get
+  // something like:
+  // linkBimapBA":{"forward":{"xhr":["xh"],"hboundary":["xh"]},"backward":{"xh":["hboundary"],"hz":[]},
+  // "alreadyElected":["xhr","hboundary"],"mustHaveInverse":false,"mustHaveCandidate":true}}
+  bm.alreadyElected.forEach((x2) => {
+    const previouslyElectedList = assertNotUndefined(bm.forward.get(x2), `Weird, the previously elected element ${x2} is not anywore in the bimap. Report a bug.`)
+    if (previouslyElectedList.size !== 1) {
+      throw new VeryyDiagError(`Weird, the previously elected element ${x2} has candidates ${JSON.stringify(previouslyElectedList)} but we expect to have a list of size 1.`)
+    }
+    if(previouslyElectedList.first() === y) {
+      throw new VeryyDiagError(`The value ${y} can't be attributed to ${x} since it was already attributed earlier to ${x2}`)
+    }
+  })
   const oldCandidates = assertNotUndefined(
     bm.forward.get(x),
     `Can't get the value of the elected element ${x} in the bimap as it does not exist`)
@@ -428,7 +443,7 @@ export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X
         assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
         const newXs = xs.delete(x)
         if (newXs.isEmpty() && bm.mustHaveInverse) {
-          throw new VeryyDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later.`)
+          throw new VeryyDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later. (in biMapElectCandidate with bm = ${JSON.stringify(bm)}; x = ${JSON.stringify(x)}; y = ${JSON.stringify(y)})`)
         }
         return newXs
       }
@@ -436,7 +451,7 @@ export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X
     backward.set(y, SetIm([x]))
   })
   const forward = bm.forward.set(x, SetIm([y]))
-  return {forward, backward, alreadyElected: bm.alreadyElected.add(x), mustHaveInverse: bm.mustHaveInverse}
+  return {forward, backward, alreadyElected: bm.alreadyElected.add(x), mustHaveInverse: bm.mustHaveInverse, mustHaveCandidate: bm.mustHaveCandidate}
 }
 
 /** If, during the matching, you know that some candidates are  */
@@ -446,9 +461,11 @@ export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<
     `Can't get the value of the element ${x} (to intersect) in the bimap as it does not exist`
   )
   const newCandidates = oldCandidates.intersect(ys)
-  assertTrue(!newCandidates.isEmpty(),
-             `After applying an intersection, no candidates are left for ${x}`
-  )
+  if (bm.mustHaveCandidate) {
+    assertTrue(!newCandidates.isEmpty(),
+               `After applying an intersection, no candidates are left for ${x}`
+    )
+  }
   const forward = bm.forward.set(x, oldCandidates.intersect(ys))
   // We update 'backward' by saying that all other candidates should not anymore be linked with x
   const excludedCandidates = oldCandidates.subtract(ys)
@@ -462,7 +479,7 @@ export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<
       return newXs
     }))
   })
-  return {forward, backward, alreadyElected: bm.alreadyElected, mustHaveInverse: bm.mustHaveInverse}
+  return {forward, backward, alreadyElected: bm.alreadyElected, mustHaveInverse: bm.mustHaveInverse, mustHaveCandidate: bm.mustHaveCandidate}
 }
 
 /** Get an element from the bimap and checks that it exists and is unique (only one candidate) */

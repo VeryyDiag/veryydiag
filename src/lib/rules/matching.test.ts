@@ -129,12 +129,23 @@ describe('Test matching selection to diagram', () => {
       })
   })
 
-  test('Fails if an extra link is present', () => {
-    expect(() => matchSelectionToDiagram(["myA"], [ "foo" ], editCopy(rulesTest.diagramAtoC, (draft: any) => {
-      draft.linksWithID.Ishouldnotbehere = draft.linksWithID.foo
-    }), rulesTest.diagramAprimetoAlice, rulesTest.theoryABC))
-      .toThrow(VeryyDiagError)
+  test('Test a match between a mono-wire and multi-wire boundary (Hadamard ZX-rule)', () => {
+    expect(matchSelectionToDiagram(["H", "X"], [ "xh", "hz" ], rulesTest.diagramm_meas_X_H_Z, rulesTest.diagramm_hadamard_rule_X, rulesTest.theoryZX))
+      .toEqual({
+        nodeBijectionAB: {X: "Xr", H: "Hr"},
+        boundaryAnchorsBA: {"boundaryQ.boundary": "Z.quantum"},
+        linkBijectionAB: {xh: "xhr", hz: "hboundary"},
+      })
   })
 
+  test('Test a match between a mono-wire and multi-wire boundary with a non-necessary link', () => {
+    // Same as previous test but we add a useless link "X2meas" in the selection
+    expect(matchSelectionToDiagram(["H", "X"], [ "xh", "hz", "X2meas" ], rulesTest.diagramm_meas_X_H_Z, rulesTest.diagramm_hadamard_rule_X, rulesTest.theoryZX))
+      .toEqual({
+        nodeBijectionAB: {X: "Xr", H: "Hr"},
+        boundaryAnchorsBA: {"boundaryQ.boundary": "Z.quantum"},
+        linkBijectionAB: {xh: "xhr", hz: "hboundary"},
+      })
+  })
 
 })

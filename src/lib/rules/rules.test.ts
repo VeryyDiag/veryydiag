@@ -670,6 +670,88 @@ export const proofStepAitselftoA2WithLinksViaPrime = {
   },
 } satisfies ProofStepApplyRule
 
+
+export const diagramm_meas_X_H_Z  = {
+  nodes: {
+    meas: {nodeKind: "boundary", params: {multipleWiresAllowed: {value: false}, boundaryName: {value: "meas"}}},
+    X: {nodeKind: "X"},
+    H: {nodeKind: "H"},
+    Z: {nodeKind: "Z"},
+  },
+  linksWithID: {
+    xh: {
+      from: "X.quantum",
+      to: "H.quantum"
+    },
+    hz: {
+      from: "H.quantum",
+      to: "Z.quantum"
+    },
+    X2meas: {
+      from: "X.phase",
+      to: "meas.boundary" // For tests, you can also set it to "meas.phase" (not a valid graph), but may give interesting results in the matching phase.
+    },
+  },
+} satisfies Diagram
+
+export const diagramm_hadamard_rule_X  = {
+  nodes: {
+    measP: {nodeKind: "boundary", params: {multipleWiresAllowed: {value: true}, boundaryName: {value: "P"}}},
+    Xr: {nodeKind: "X"},
+    Hr: {nodeKind: "H"},
+    boundaryQ: {nodeKind: "boundary", params: {
+      multipleWiresAllowed: {value: false}, boundaryName: {value: "Q"}
+    }},
+  },
+  linksWithID: {
+    measr: {
+      from: "Xr.phase",
+      to: "measP.boundary"
+    },
+    xhr: {
+      from: "Xr.quantum",
+      to: "Hr.quantum"
+    },
+    hboundary: {
+      from: "Hr.quantum",
+      to: "boundaryQ.boundary"
+    },
+  },
+} satisfies Diagram
+
+export const theoryZX = {
+  // Theory
+  availableNodes: {
+    X: {
+      parsedSVG: {
+        anchors: {
+          quantum: {},
+          phase: {},
+        }
+      }
+    },
+    H: {
+      parsedSVG: {
+        anchors: {
+          quantum: {},
+          phase: {},
+        }
+      }
+    },
+    Z: {
+      parsedSVG: {
+        anchors: {
+          quantum: {},
+          phase: {},
+        }
+      }
+    },
+    boundary: boundaryAvailableNode
+  },
+} satisfies Theory;
+
+
+
 // Describe = group tests by (sub)-category
 describe('Test well formed diagrams/rules/…', () => {
   describe('Well formed diagrams', () => {

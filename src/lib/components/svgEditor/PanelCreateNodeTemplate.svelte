@@ -305,8 +305,8 @@
       {#each svgParameters.anchors as anchor, i}
         <li class="list-disc">
           Name: <input class={`${styleInput} w-15`} bind:value={anchor.name} />
-          x in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posX} type="number" step="0.1" />
-          y in [0,1]: <input class={`${styleInput} w-10`} bind:value={anchor.posY} type="number" step="0.1"/>
+          x in [0,1]: <input class={`${styleInput} w-20`} bind:value={anchor.posX} type="number" step="0.1" />
+          y in [0,1]: <input class={`${styleInput} w-20`} bind:value={anchor.posY} type="number" step="0.1"/>
           Color: <input class={`${styleInput} w-15`} bind:value={anchor.color} />
           Radius: <input class={`${styleInput} w-15`} bind:value={anchor.radius} type="number" step="0.01"/>
           <Button onclick={() => svgParameters.anchors.splice(i, 1)}><Icon icon="mdi:trash-outline" width="25" height="25" /></Button>

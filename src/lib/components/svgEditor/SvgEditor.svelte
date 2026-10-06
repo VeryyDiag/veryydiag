@@ -69,7 +69,19 @@
 
 
   const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
-  $effect(() => {if (diagramConfClass.getCurrentDiagram()?.viewport === undefined) { resetViewport() }})
+  $effect(() => {
+    if (diagramConfClass.getCurrentDiagram()?.viewport === undefined) {
+      console.log("Resetting viewport")
+      resetViewport()
+    }
+  })
+
+  // $effect(() => {
+  //   diagramConfClass.getConfig();
+  //   console.log("reseting because object changed")
+  //   resetViewport()
+  // })
+
 
   let errors = $derived(errorsImport ? [errorsImport.message] : [])
   registerErrors(uid, () => errors)

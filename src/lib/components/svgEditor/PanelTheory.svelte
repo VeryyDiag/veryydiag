@@ -15,13 +15,15 @@
   let allLinkTypes = $derived(diagramConfClass.getCurrentTheory()?.linkTypes || {})
   let { addPanelCollapsed = $bindable(), createNodeTemplatePanel = $bindable() } = $props()
 
+  let maximizePanel = $state(false)
+
   let currentTheoryTab = $state<"nodes" | "types" | "rules">("nodes")
 
 </script>
 <div class={[
-            "absolute left-4 top-1/2 -translate-y-1/2 w-xs min-w-0 h-9/10 flex flex-col items-center transition-all duration-300",
-            addPanelCollapsed && "opacity-0 invisible",
-            ]}>
+          `absolute left-4 top-1/2 -translate-y-1/2 ${maximizePanel ? "w-7/10" : "w-xs"} min-w-0 h-9/10 flex flex-col items-center transition-all duration-300`,
+          addPanelCollapsed && "opacity-0 invisible",
+          ]}>
   <!-- Tabs for theories -->
   <div class="flex gap-0 p-0 rounded-t-xl bg-white/80 backdrop-blur-md border border-b-0 border-gray-200 shadow-lg overflow-hidden">
     <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Remove current theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.removeTheory()}}>
@@ -47,6 +49,9 @@
     </button>
     <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => {diagramConfClass.undoSnapshot(); diagramConfClass.addTheory()}}>
       <Icon icon="famicons:duplicate-outline" width="20" height="20"/>
+    </button>
+    <button class="tab px-2 py-1 border-r border-gray-100 hover:bg-blue-100/30 " title="Duplicate theory" onclick={() => {maximizePanel = !maximizePanel}}>
+      <Icon icon="mdi-light:fullscreen" width="20" height="20"/>
     </button>
   </div>
 
