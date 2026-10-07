@@ -21,7 +21,7 @@ Pronounce `VeryyDiag` like `Verydiag` (but you may spend more time on the `y` if
 
 ## Contribute
 
-If you want to contribute to this project, see [the file `README_DEV.md`](./README_DEV.md). So far this code is human-written (no AI except for debugging/good practice), and while we can't really forbid AI usage, we ask you to perfectly understand your submitted code and its implications, and you should be able to justify all technical choices you made.
+If you want to contribute to this project, see [the file `README_DEV.md`](./README_DEV.md). So far this code is human-written (no AI except for debugging/good practice/non-important tasks like styling), and while we can't really forbid AI usage, we ask you to perfectly understand your submitted code and its implications, and you should be able to justify all technical choices you made.
 
 ## To know
 
