@@ -22,7 +22,7 @@ Pronounce `VeryyDiag` like `Verydiag` (but you may spend more time on the `y` if
 
 ## Contributor
 
-The main developer of this project is [Léo Colisson Palais](https://leo.colisson.me/).
+The creator and main developer of this project is [Léo Colisson Palais](https://leo.colisson.me/).
 
 ## Contribute
 
