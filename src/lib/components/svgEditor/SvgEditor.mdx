@@ -1,11 +1,20 @@
-import { Title, Subtitle, Description, ArgTypes, Primary, Controls, Stories, Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
- 
+import {
+  Title,
+  Subtitle,
+  Description,
+  ArgTypes,
+  Primary,
+  Controls,
+  Stories,
+  Canvas,
+  Meta,
+  Story
+} from '@storybook/addon-docs/blocks';
+
 import * as SvgEditorStories from './SvgEditor.stories.ts';
 
 <Meta of={SvgEditorStories} />
- 
- Title:
- 
+Title:
 <Title />
 
 Subtitle:
@@ -24,23 +33,22 @@ Arg types
 
 Primary and controls don't work (https://github.com/storybookjs/storybook/issues/33829) without explicit "of=":
 
-<Primary/>
+<Primary />
 
 Per-story code:
 
 Canvas (seems equivalent to Story):
- 
+
 <Canvas of={SvgEditorStories.Primary} />
 
 Controls:
 
-<Controls of={SvgEditorStories.Primary}/>
+<Controls of={SvgEditorStories.Primary} />
 
 Story
 
-<Story of={SvgEditorStories.Primary}/>
+<Story of={SvgEditorStories.Primary} />
 
 All stories
 
 <Stories />
-

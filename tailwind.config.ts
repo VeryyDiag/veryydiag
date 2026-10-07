@@ -3,9 +3,9 @@ export default {
     extend: {
       colors: {
         text: {
-          muted: 'rgb(107 114 128)',  // gray-500
-        },
-      },
-    },
-  },
-}
+          muted: 'rgb(107 114 128)' // gray-500
+        }
+      }
+    }
+  }
+};

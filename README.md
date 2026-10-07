@@ -15,6 +15,7 @@ VeryyDiag is the first step of our bigger project that aims to build a new frame
 ## Why this name "VeryyDiag" and how do you pronounce it?
 
 Pronounce `VeryyDiag` like `Verydiag` (but you may spend more time on the `y` if you enjoy it!). `Diag` stands for `diagrams` (surprising no?) and `Veryy` for `verification` as we aim to provide formal verification tool based on diagram rewriting rules. Why `Veryy` and not `Veri`? For a bunch of reasons:
+
 - `VeriDiag`/`VeryDiag` already existed in a completely different context (seems like good names are rare… at least I keep the same pronunciation), and maybe not veryy funnyy.
 - A `y` looks close to a flipped `λ` that is common in verification/functional programming languages… and having a flipped `λ` next to a `y` allows us to have a fancy logo close to the fractal recursive Sierpiński triangle! (and recursion will plays a great role in our tool!)
 
@@ -33,6 +34,7 @@ If you want to contribute to this project, see [the file `README_DEV.md`](./READ
 ## Related projects
 
 Here is a non-exhaustive list of related softwares:
+
 - [ZxLive](https://github.com/zxcalc/zxlive) Cons: specific to ZX-calculus. Pros: specific to ZX-calculus.
 - [Gephi]() Visualize huge graphs, no web, not related to math. Impossible to write equivalences between graphs.
 - [yED](https://www.yworks.com/yed-live/) Create generic diagrams, not related to math at all. Can't apply rules etc. [The software and SDK yFiles](https://www.yfiles.com/) is also not open source.

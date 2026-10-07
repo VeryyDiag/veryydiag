@@ -24,11 +24,13 @@ You can preview the production build with `npm run preview`.
 ## Unit testing
 
 You can test basic functions by creating a file called `*.test.ts` and that follows vitest syntax. To run all unit tests (including storybook, see below), run:
+
 ```
 npm run test:unit
 ```
 
 If you simply want to run tests non involving storybook (simpler to deploy since you don't need to install playwright), just run:
+
 ```
 npm run test:unit:server
 ```
@@ -38,12 +40,15 @@ For debugging, the output of `console.log(…)` are shown above the tests, or yo
 ## Testing with storybook
 
 To test the project, you can run:
+
 ```sh
 npm run storybook
 ```
+
 and click on the `Run tests` button on the bottom left area of the window.
 
 To add documentation via storybook, you should either enable `tags: ['autodocs']` or, for more freedom, create a file `YourComponent.mdx` with the markdown like this (`<Meta … />` helps to put the file in the right menu but also to avoid writing `of=` everywhere):
+
 ```
 import { Title, Subtitle, Description, ArgTypes, Primary, Controls, Stories, Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
 
@@ -92,7 +97,8 @@ All stories
 <Stories />
 ```
 
-The title of the story is obtained via `title: 'Components usable by users/SvgEditor',` in the `defineMeta` argument, while the simpler way to set the description for the component is by putting a JSDoc comment like `/** My comment */` right above the `defineMeta`, or via `parameters.docs.description.component` (see https://storybook.js.org/docs/api/doc-blocks/doc-block-description#writing-descriptions). Stories can also get their description via  `<!-- This is the story **description** -->` above the story. The subtitle can be set via `parameters.docs.subtitle` but this is not documented, not sure if there is a better option. The documentation of the props are set via arguments on the type (not the destructuring!) part like:
+The title of the story is obtained via `title: 'Components usable by users/SvgEditor',` in the `defineMeta` argument, while the simpler way to set the description for the component is by putting a JSDoc comment like `/** My comment */` right above the `defineMeta`, or via `parameters.docs.description.component` (see https://storybook.js.org/docs/api/doc-blocks/doc-block-description#writing-descriptions). Stories can also get their description via `<!-- This is the story **description** -->` above the story. The subtitle can be set via `parameters.docs.subtitle` but this is not documented, not sure if there is a better option. The documentation of the props are set via arguments on the type (not the destructuring!) part like:
+
 ```js
 let {
     diagramConf = {}

@@ -35,9 +35,9 @@ const opts = parseArgs(process.argv.slice(2));
 if (opts.help) {
   process.stderr.write(
     `Usage: mcp-ws-server-bridge.ts [--port <port>] [--host <host>] [--path </>]\n` +
-    `  --port   Port to listen on. Omit or pass 0 to auto-select a free port.\n` +
-    `  --host   Host/interface to bind to (default: 127.0.0.1).\n` +
-    `  --path   WebSocket URL path the browser page must connect to (default: /).\n`
+      `  --port   Port to listen on. Omit or pass 0 to auto-select a free port.\n` +
+      `  --host   Host/interface to bind to (default: 127.0.0.1).\n` +
+      `  --path   WebSocket URL path the browser page must connect to (default: /).\n`
   );
   process.exit(0);
 }
@@ -50,8 +50,8 @@ function log(...args: unknown[]): void {
 
 // ---- state ------------------------------------------------------------
 
-let activeSocket: WebSocket | null = null;   // the current browser WebSocket connection
-const pendingOutbound: string[] = [];        // stdin messages queued while no client is connected
+let activeSocket: WebSocket | null = null; // the current browser WebSocket connection
+const pendingOutbound: string[] = []; // stdin messages queued while no client is connected
 
 // ---- HTTP + WebSocket server -----------------------------------------
 

@@ -6,13 +6,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+import adapter from '@sveltejs/adapter-static';
 
 import { exec } from 'child_process';
 
-function tsToZodPlugin({input, output}: {input: string, output: string}) {
-  const inputAbs = path.resolve(__dirname, input)
-  const outputAbs = path.resolve(__dirname, output)
+function tsToZodPlugin({ input, output }: { input: string; output: string }) {
+  const inputAbs = path.resolve(path.dirname(fileURLToPath(import.meta.url)), input);
+  const outputAbs = path.resolve(path.dirname(fileURLToPath(import.meta.url)), output);
   const runTsToZod = async () => {
     console.log('\n[ts-to-zod] Generating schemas...');
     return new Promise((resolve, error) => {
@@ -22,9 +23,9 @@ function tsToZodPlugin({input, output}: {input: string, output: string}) {
           error(err);
         }
         console.log(`[ts-to-zod] Schemas generated successfully.`);
-        return resolve(stdout)
+        return resolve(stdout);
       });
-    })
+    });
   };
 
   return {
@@ -36,10 +37,10 @@ function tsToZodPlugin({input, output}: {input: string, output: string}) {
     },
 
     // Watches for changes in dev mode
-    async handleHotUpdate({ file }: {file: string}) {
+    async handleHotUpdate({ file }: { file: string }) {
       if (file === inputAbs) {
         await runTsToZod();
-        return []
+        return [];
       }
     }
   };
@@ -49,66 +50,75 @@ function tsToZodPlugin({input, output}: {input: string, output: string}) {
 export default defineConfig({
   plugins: [
     tsToZodPlugin({
-      input: "src/lib/types/types.ts",
-      output: "src/lib/types/typesSchema.ts",
+      input: 'src/lib/types/types.ts',
+      output: 'src/lib/types/typesSchema.ts'
     }),
     tailwindcss(),
-		sveltekit({
-			adapter: adapter({
-				fallback: '404.html'
-			}),
-			paths: {
-				base: process.argv.includes('dev') ? '' : process.env.BASE_PATH
-			},
-		})
+    sveltekit({
+      compilerOptions: {
+		    experimental: {
+			    async: true
+		    }
+	    },
+      adapter: adapter(),
+    })
   ],
   test: {
     expect: {
       requireAssertions: true
     },
-    projects: [{
-      extends: './vite.config.ts',
-      test: {
-        name: 'client',
-        browser: {
-          enabled: true,
-          provider: playwright(),
-          instances: [{
-            browser: 'chromium',
-            headless: true
-          }]
-        },
-        include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-        exclude: ['src/lib/server/**']
+    projects: [
+      {
+        extends: './vite.config.ts',
+        test: {
+          name: 'client',
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [
+              {
+                browser: 'chromium',
+                headless: true
+              }
+            ]
+          },
+          include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+          exclude: ['src/lib/server/**']
+        }
+      },
+      {
+        extends: './vite.config.ts',
+        test: {
+          name: 'server',
+          environment: 'node',
+          include: ['src/**/*.{test,spec}.{js,ts}'],
+          exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+        }
+      },
+      {
+        extends: true,
+        plugins: [
+          // The plugin will run tests for the stories defined in your Storybook config
+          // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+          storybookTest({
+            configDir: path.join(dirname, '.storybook')
+          })
+        ],
+        test: {
+          name: 'storybook',
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [
+              {
+                browser: 'chromium'
+              }
+            ]
+          },
+          setupFiles: ['.storybook/vitest.setup.ts']
+        }
       }
-    }, {
-      extends: './vite.config.ts',
-      test: {
-        name: 'server',
-        environment: 'node',
-        include: ['src/**/*.{test,spec}.{js,ts}'],
-        exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
-      }
-    }, {
-      extends: true,
-      plugins: [
-      // The plugin will run tests for the stories defined in your Storybook config
-      // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      storybookTest({
-        configDir: path.join(dirname, '.storybook')
-      })],
-      test: {
-        name: 'storybook',
-        browser: {
-          enabled: true,
-          headless: true,
-          provider: playwright({}),
-          instances: [{
-            browser: 'chromium'
-          }]
-        },
-        setupFiles: ['.storybook/vitest.setup.ts']
-      }
-    }]
+    ]
   }
 });

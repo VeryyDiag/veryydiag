@@ -1,14 +1,27 @@
 // File containing most of the types and some helper to translate from one type to another
 //
 
-import { officialSvgNameToSvgString } from '$lib/components/Nodes/allNodes';
-import { assertDontThrow, assertNotUndefined, assertTrue, assertNever, randomID, toString, fullAnchorToIDAndAnchor, assertNotUndefinedNR, keys, entries, toBoolean, toInteger, unitToCm } from '$lib/utils';
-
+import { officialSvgNameToSvgString } from '#lib/components/Nodes/allNodes.js';
+import {
+  assertDontThrow,
+  assertNotUndefined,
+  assertTrue,
+  assertNever,
+  randomID,
+  toString,
+  fullAnchorToIDAndAnchor,
+  assertNotUndefinedNR,
+  keys,
+  entries,
+  toBoolean,
+  toInteger,
+  unitToCm
+} from '#lib/utils.js';
 
 export class VeryyDiagError extends Error {
   constructor(message: string, options?: ErrorOptions) {
-    super(message, options)
-    this.name = "Error"
+    super(message, options);
+    this.name = 'Error';
   }
 }
 
@@ -22,16 +35,16 @@ export class VeryyDiagError extends Error {
 // - data-veryydiag-input-type=
 
 export type Point = {
-  x: number,
-  y: number,
+  x: number;
+  y: number;
+};
+
+export function addPoints(a: Point, b: Point): Point {
+  return { x: a.x + b.x, y: a.y + b.y };
 }
 
-export function addPoints(a: Point, b: Point) : Point {
-  return {x: a.x + b.x, y: a.y + b.y}
-}
-
-export function subtractPoints(a: Point, b: Point) : Point {
-  return {x: a.x - b.x, y: a.y - b.y}
+export function subtractPoints(a: Point, b: Point): Point {
+  return { x: a.x - b.x, y: a.y - b.y };
 }
 
 /** Parameters of a node, like the name of a box…
@@ -39,64 +52,73 @@ export function subtractPoints(a: Point, b: Point) : Point {
  *  but parameters are far less cumbursome (try to write an ascii string as a graph…), and most
  *  importantly it allows nice graphical designs (I do prefer to see "XOR" than a huge graph encoding the string "XOR").
  */
-export type ParamName = string
-export type paramAvailableTypesTS = "integer" | "string" | "boolean"
+export type ParamName = string;
+export type paramAvailableTypesTS = 'integer' | 'string' | 'boolean';
 /** Parameter specification */
-export const paramAvailableTypes : paramAvailableTypesTS[] = ["integer", "string", "boolean"] as const // as const needed, otherwise it types as string[]. Need duplication due to https://github.com/fabien0102/ts-to-zod/issues/368, but anyway it seems like if I forget a type in this list it is catched by a later bug
+export const paramAvailableTypes: paramAvailableTypesTS[] = [
+  'integer',
+  'string',
+  'boolean'
+] as const; // as const needed, otherwise it types as string[]. Need duplication due to https://github.com/fabien0102/ts-to-zod/issues/368, but anyway it seems like if I forget a type in this list it is catched by a later bug
 
-export type paramAvailableTypesJS = number | string | boolean
+export type paramAvailableTypesJS = number | string | boolean;
 /** Check if a string has the appropriate type (either integer/string/boolean) */
 export function isParamAvailableType(type: string): type is paramAvailableTypesTS {
-  return paramAvailableTypes.some(t => t === type)
+  return paramAvailableTypes.some((t) => t === type);
 }
 export type ParamSpec = {
-  type: paramAvailableTypesTS,
-  default: paramAvailableTypesJS
+  type: paramAvailableTypesTS;
+  default: paramAvailableTypesJS;
   /** If unique is true, we forbid diagrams with the same value appearing twice (used mostly to uniquely
    *  identify diagram outputs). If not specified, assumed to be false.
    */
-  unique?: boolean,
-}
-export type ParamValue = number | string | boolean
+  unique?: boolean;
+};
+export type ParamValue = number | string | boolean;
 
-export function checkParamType(paramType: paramAvailableTypesJS, value: ParamSpec["default"]) : true {
+export function checkParamType(
+  paramType: paramAvailableTypesJS,
+  value: ParamSpec['default']
+): true {
   assertTrue(
-    (typeof value === "string" && paramType === "string")
-    || (typeof value === "number" && paramType === "integer")
-    || (typeof value === "boolean" && paramType === "boolean"),
-    `Expected type ${paramType} but got a non compatible type ${typeof value}`)
+    (typeof value === 'string' && paramType === 'string') ||
+      (typeof value === 'number' && paramType === 'integer') ||
+      (typeof value === 'boolean' && paramType === 'boolean'),
+    `Expected type ${paramType} but got a non compatible type ${typeof value}`
+  );
   // TODO: finish
-  if (typeof value === "number" && paramType === "integer") {
-    assertTrue(Number.isInteger(value),
-               `${value} is not integer`)
+  if (typeof value === 'number' && paramType === 'integer') {
+    assertTrue(Number.isInteger(value), `${value} is not integer`);
   }
-  return true
+  return true;
 }
 
 //export function castParamType(paramType: paramAvailableTypesTS, value: ParamValue) {
-export function castParamType(paramType: "string" | "boolean" | "integer", value: ParamValue) {
-    switch (paramType) {
-      case "string":
-        return toString(value);
-    case "boolean":
-      return toBoolean(value)
-    case "integer":
-      return toInteger(value)
+export function castParamType(paramType: 'string' | 'boolean' | 'integer', value: ParamValue) {
+  switch (paramType) {
+    case 'string':
+      return toString(value);
+    case 'boolean':
+      return toBoolean(value);
+    case 'integer':
+      return toInteger(value);
     default:
-      assertNever(paramType, `Parameter ${paramType} is not supported (maybe report a bug if it should).`)
+      assertNever(
+        paramType,
+        `Parameter ${paramType} is not supported (maybe report a bug if it should).`
+      );
   }
 }
 
 /** Parameter instantiation */
 export type Param = {
-  value: ParamValue
-}
+  value: ParamValue;
+};
 
-export type AnchorProps = {
-}
+export type AnchorProps = {};
 
-export type ParamSpecs = Record<ParamName, ParamSpec>
-export type Params = Record<ParamName, Param>
+export type ParamSpecs = Record<ParamName, ParamSpec>;
+export type Params = Record<ParamName, Param>;
 
 /** Parsing a SVG everytime we need it is a bit cumbersome, hard to do in some languages (Rocq/lean…),
  *  make us dependent on a resource that may not be available anymore in the future (e.g. if the SVG is
@@ -108,7 +130,7 @@ export type Params = Record<ParamName, Param>
  */
 export type ParsedSVG = {
   /** Parameters that characterize the node. They are typically extracted from the svg itself. */
-  paramSpecs?: ParamSpecs,
+  paramSpecs?: ParamSpecs;
   /**
    * Anchors provided by the node.
    * They are typically automatically derived from the SVG file when importing it, but we also
@@ -116,326 +138,407 @@ export type ParsedSVG = {
    * file that we may certify using other tools that may not allow easy XML parsing (Rocq…).
    * It also provides some robustness, as we can use it to detect when the SVG file changed.
    */
-  anchors?: Record<AnchorName, AnchorProps>,
+  anchors?: Record<AnchorName, AnchorProps>;
   /** Position of the center in cm (same unit as "width") relative to the top left coordinate */
-  center?: Point,
+  center?: Point;
   /** Width of the SVG image (as specified in "width") */
-  width?: number,
+  width?: number;
   /** Height of the SVG image (as specified in "height") */
-  height?: number,
-}
+  height?: number;
+};
 
-export type SvgGenerationMethod = {[x:string]: any} & {method: string}
+export type SvgGenerationMethod = { [x: string]: any } & { method: string };
 
 export type AvailableNode = {
-  svgString?: string, // You can either specify the SVG directly in the YML file…
-  svgName?: string, // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
-  componentName?: string, // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
-  parsedSVG?: ParsedSVG,
-  params?: Params,
+  svgString?: string; // You can either specify the SVG directly in the YML file…
+  svgName?: string; // … or specify a name of a SVG … or don't provide anything except for anchors (but this can't be shown in the GUI for now, still useful when considering CLI/tests)
+  componentName?: string; // … or the name of a svelte component: by default we use the NodeGeneric component that should cover most cases (if not all, at least we try to make it really generic) …
+  parsedSVG?: ParsedSVG;
+  params?: Params;
   /** If the SVG was generated via an automatic procedure (e.g. builtin template mode), you may specify it here.
    *  This may be helpful to re-edit the node later, or to generate tikz instead for native inclusion in LaTeX…
    */
-  svgGenerationMethod?: SvgGenerationMethod,
+  svgGenerationMethod?: SvgGenerationMethod;
   /** Value given to the parameters */
   // TODO: … or specify the URL of a SVG file
-}
+};
 
-export function getParam(node: Node, theory: Theory, paramName: ParamName) : ParamValue | undefined {
+export function getParam(node: Node, theory: Theory, paramName: ParamName): ParamValue | undefined {
   if (node?.params?.[paramName] !== undefined) {
-    return node.params[paramName].value
+    return node.params[paramName].value;
   } else {
-    return theory?.availableNodes?.[node?.nodeKind]?.parsedSVG?.paramSpecs?.[paramName]?.default
+    return theory?.availableNodes?.[node?.nodeKind]?.parsedSVG?.paramSpecs?.[paramName]?.default;
   }
 }
 
-export function getAnchorsNode(node: Node, theory: Theory) : Record<AnchorName, AnchorProps> | undefined {
-  return theory?.availableNodes?.[node.nodeKind]?.parsedSVG?.anchors
+export function getAnchorsNode(
+  node: Node,
+  theory: Theory
+): Record<AnchorName, AnchorProps> | undefined {
+  return theory?.availableNodes?.[node.nodeKind]?.parsedSVG?.anchors;
 }
 
-export function getAnchorsNodeID(nodeID: NodeID, diagram: Diagram, theory: Theory) : Record<AnchorName, AnchorProps> | undefined  {
-  return getAnchorsNode(nodeFromNodeID(nodeID, diagram), theory)
+export function getAnchorsNodeID(
+  nodeID: NodeID,
+  diagram: Diagram,
+  theory: Theory
+): Record<AnchorName, AnchorProps> | undefined {
+  return getAnchorsNode(nodeFromNodeID(nodeID, diagram), theory);
 }
-
 
 // TODO: actually we always specify a nodeKind and don't care about most props of Available nodes
 // as we always fetch them from the theory itself.
 // So remove them from the definition of Node.
-export type Node = AvailableNode & { nodeKind: string, pos?: Point }
+export type Node = AvailableNode & { nodeKind: string; pos?: Point };
 
 // Dots are forbiden in NodeID
-export type NodeID = string
-export type NodeKind = string
+export type NodeID = string;
+export type NodeKind = string;
 /** A boundary name is the param 'name' given to a boundary node */
-export type BoundaryName = string
+export type BoundaryName = string;
 
-export type AnchorName = string
+export type AnchorName = string;
 /** NodeID . AnchorName, see IDAnchorToFullAnchor and fullAnchorToIDAndAnchor */
-export type IDAnchor = string
-export type TheoryID = string
+export type IDAnchor = string;
+export type TheoryID = string;
 
 /** Special kind of nodes used to describe connectivity with the outside world */
-export const nodeKindBoundaries : NodeKind[] = [ "boundary" ]
+export const nodeKindBoundaries: NodeKind[] = ['boundary'];
 
-export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram) : Node {
-  return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`)
+export function nodeFromNodeID(nodeID: NodeID, diagram: Diagram): Node {
+  return assertNotUndefined(diagram?.nodes?.[nodeID], `The node ${nodeID} does not exist`);
 }
 
-export function linkFromLinkID(linkID: LinkID, diagram: Diagram) : Link {
-  const link = assertNotUndefined(diagram?.linksWithID?.[linkID], `The link ${linkID} does not exist`)
-  assertNotUndefined(link?.from, `Link ${linkID} has no 'from' property`)
-  assertNotUndefined(link?.to, `Link ${linkID} has no 'to' property`)
-  return link
+export function linkFromLinkID(linkID: LinkID, diagram: Diagram): Link {
+  const link = assertNotUndefined(
+    diagram?.linksWithID?.[linkID],
+    `The link ${linkID} does not exist`
+  );
+  assertNotUndefined(link?.from, `Link ${linkID} has no 'from' property`);
+  assertNotUndefined(link?.to, `Link ${linkID} has no 'to' property`);
+  return link;
 }
 
-export function isBoundaryNode(node: Node) : boolean {
-  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`)
-  return nodeKindBoundaries.includes(nodeKind)
+export function isBoundaryNode(node: Node): boolean {
+  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`);
+  return nodeKindBoundaries.includes(nodeKind);
 }
 
-export function isBoundaryNodeID(nodeID: NodeID, diagram: Diagram) : boolean {
+export function isBoundaryNodeID(nodeID: NodeID, diagram: Diagram): boolean {
   return assertDontThrow(
     () => isBoundaryNode(nodeFromNodeID(nodeID, diagram)),
     `Problem with the node ${nodeID} when checking if it is a boundary node`
-  )
+  );
 }
 
-export function isMonoWireBoundaryNode(node: Node, theory: Theory) : boolean {
-  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`)
-  const mwa = getParam(node, theory, "multipleWiresAllowed")
-  return nodeKindBoundaries.includes(nodeKind) && mwa !== undefined && !toBoolean(mwa)
+export function isMonoWireBoundaryNode(node: Node, theory: Theory): boolean {
+  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`);
+  const mwa = getParam(node, theory, 'multipleWiresAllowed');
+  return nodeKindBoundaries.includes(nodeKind) && mwa !== undefined && !toBoolean(mwa);
 }
 
-export function isMonoWireBoundaryNodeID(nodeID: NodeID, diagram: Diagram, theory: Theory) : boolean {
+export function isMonoWireBoundaryNodeID(
+  nodeID: NodeID,
+  diagram: Diagram,
+  theory: Theory
+): boolean {
   return assertDontThrow(
     () => isMonoWireBoundaryNode(nodeFromNodeID(nodeID, diagram), theory),
     `Problem with the node ${nodeID} when checking if it is a mono-wire boundary node`
-  )
+  );
 }
 
-export function isMultiWireBoundaryNode(node: Node, theory: Theory) : boolean {
-  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`)
-  const mwa = getParam(node, theory, "multipleWiresAllowed")
-  return nodeKindBoundaries.includes(nodeKind) && mwa !== undefined && toBoolean(mwa)
+export function isMultiWireBoundaryNode(node: Node, theory: Theory): boolean {
+  const nodeKind = assertNotUndefined(node.nodeKind, `The node has no nodeKind`);
+  const mwa = getParam(node, theory, 'multipleWiresAllowed');
+  return nodeKindBoundaries.includes(nodeKind) && mwa !== undefined && toBoolean(mwa);
 }
 
-export function isMultiWireBoundaryNodeID(nodeID: NodeID, diagram: Diagram, theory: Theory) : boolean {
+export function isMultiWireBoundaryNodeID(
+  nodeID: NodeID,
+  diagram: Diagram,
+  theory: Theory
+): boolean {
   return assertDontThrow(
     () => isMultiWireBoundaryNode(nodeFromNodeID(nodeID, diagram), theory),
     `Problem with the node ${nodeID} when checking if it is a multi-wire boundary node`
-  )
+  );
 }
-
 
 // See also getBoundaryName if you don't want to throw an error. You may also specify full ID + anchor
 // instead of NodeID.
-export function getBoundaryNameFromNode(nodeID: NodeID, diagram: Diagram, theory: Theory) : BoundaryName {
-  const node = diagram?.nodes?.[fullAnchorToIDAndAnchor(nodeID)[0]]
+export function getBoundaryNameFromNode(
+  nodeID: NodeID,
+  diagram: Diagram,
+  theory: Theory
+): BoundaryName {
+  const node = diagram?.nodes?.[fullAnchorToIDAndAnchor(nodeID)[0]];
   if (node === undefined) {
-    throw new VeryyDiagError(`The node ${nodeID} does not exist in the diagram`)
+    throw new VeryyDiagError(`The node ${nodeID} does not exist in the diagram`);
   }
-  const boundaryName = getParam(node, theory, "boundaryName")
+  const boundaryName = getParam(node, theory, 'boundaryName');
   if (boundaryName === undefined) {
     if (isBoundaryNodeID(nodeID, diagram)) {
-      throw new VeryyDiagError(`The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`)
+      throw new VeryyDiagError(
+        `The parameter boundaryName does not exist in ${nodeID} while it is supposed to be a boundary node (have you forgotten a .value?)`
+      );
     } else {
-      throw new VeryyDiagError(`The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`)
+      throw new VeryyDiagError(
+        `The parameter boundaryName does not exist in ${nodeID} (and is anyway not a boundary node)`
+      );
     }
   }
-  return toString(boundaryName)
+  return toString(boundaryName);
 }
 
-
-export function getBoundaryName(node: Node, theory: Theory) : BoundaryName | undefined {
-  const p = getParam(node, theory, "boundaryName")
+export function getBoundaryName(node: Node, theory: Theory): BoundaryName | undefined {
+  const p = getParam(node, theory, 'boundaryName');
   if (p === undefined) {
-    return undefined
+    return undefined;
   } else {
-    return toString(p)
+    return toString(p);
   }
 }
 
-export type NbBoundaryLink = 0|1|2|3
+export type NbBoundaryLink = 0 | 1 | 2 | 3;
 
 /** Returns the identity of boundary links, 0 = not a boundary link, 1 = from is boundary, not to,
  * 2 = to is boundary, not from, 3 = both are boundary nodes.
  */
-export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
-  const nodeFromFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
-  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull)
-  const nodeToFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.to, `The link ${linkID} has no "to"`)
-  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull)
+export function nbBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory): NbBoundaryLink {
+  const nodeFromFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.from,
+    `The link ${linkID} has no "from"`
+  );
+  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull);
+  const nodeToFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.to,
+    `The link ${linkID} has no "to"`
+  );
+  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull);
   // To help typescript we don't use sum
-  const a = isBoundaryNodeID(nodeFrom, diagram)
-  const b = isBoundaryNodeID(nodeTo, diagram)
+  const a = isBoundaryNodeID(nodeFrom, diagram);
+  const b = isBoundaryNodeID(nodeTo, diagram);
   if (!a && !b) {
-    return 0
+    return 0;
   } else if (a && !b) {
-    return 1
+    return 1;
   } else if (b && !a) {
-    return 2
+    return 2;
   } else {
-    return 3
+    return 3;
   }
 }
 
 /** Returns the identity of multi-wire boundary links, 0 = not a boundary link, 1 = from is boundary, not to,
  * 2 = to is boundary, not from, 3 = both are boundary nodes (should be illegal).
  */
-export function nbMultiWireBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
-  const nodeFromFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
-  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull)
-  const nodeToFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.to, `The link ${linkID} has no "to"`)
-  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull)
+export function nbMultiWireBoundaryLink(
+  linkID: LinkID,
+  diagram: Diagram,
+  theory: Theory
+): NbBoundaryLink {
+  const nodeFromFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.from,
+    `The link ${linkID} has no "from"`
+  );
+  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull);
+  const nodeToFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.to,
+    `The link ${linkID} has no "to"`
+  );
+  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull);
   // To help typescript we don't use sum
-  const a = isMultiWireBoundaryNodeID(nodeFrom, diagram, theory)
-  const b = isMultiWireBoundaryNodeID(nodeTo, diagram, theory)
+  const a = isMultiWireBoundaryNodeID(nodeFrom, diagram, theory);
+  const b = isMultiWireBoundaryNodeID(nodeTo, diagram, theory);
   if (!a && !b) {
-    return 0
+    return 0;
   } else if (a && !b) {
-    return 1
+    return 1;
   } else if (b && !a) {
-    return 2
+    return 2;
   } else {
-    return 3
+    return 3;
   }
 }
 
 /** Returns the identity of mono-wire boundary links, 0 = not a boundary link, 1 = from is boundary, not to,
  * 2 = to is boundary, not from, 3 = both are boundary nodes.
  */
-export function nbMonoWireBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : NbBoundaryLink {
-  const nodeFromFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.from, `The link ${linkID} has no "from"`)
-  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull)
-  const nodeToFull = assertNotUndefined(linkFromLinkID(linkID, diagram)?.to, `The link ${linkID} has no "to"`)
-  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull)
+export function nbMonoWireBoundaryLink(
+  linkID: LinkID,
+  diagram: Diagram,
+  theory: Theory
+): NbBoundaryLink {
+  const nodeFromFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.from,
+    `The link ${linkID} has no "from"`
+  );
+  const [nodeFrom, anchorFrom] = fullAnchorToIDAndAnchor(nodeFromFull);
+  const nodeToFull = assertNotUndefined(
+    linkFromLinkID(linkID, diagram)?.to,
+    `The link ${linkID} has no "to"`
+  );
+  const [nodeTo, anchorTo] = fullAnchorToIDAndAnchor(nodeToFull);
   // To help typescript we don't use sum
-  const a = isMonoWireBoundaryNodeID(nodeFrom, diagram, theory)
-  const b = isMonoWireBoundaryNodeID(nodeTo, diagram, theory)
+  const a = isMonoWireBoundaryNodeID(nodeFrom, diagram, theory);
+  const b = isMonoWireBoundaryNodeID(nodeTo, diagram, theory);
   if (!a && !b) {
-    return 0
+    return 0;
   } else if (a && !b) {
-    return 1
+    return 1;
   } else if (b && !a) {
-    return 2
+    return 2;
   } else {
-    return 3
+    return 3;
   }
 }
 
 /** Given a linkID, provides, if the node points to a multi-wire boundary node, the IDAnchor of the other node and the associated boundary name. */
-export function IDanchorPointedByMultiWireBoundaryLink(linkID: LinkID, diagram: Diagram, theory: Theory) : [BoundaryName, IDAnchor] | undefined {
-  const nbLinks = nbMultiWireBoundaryLink(linkID, diagram, theory)
+export function IDanchorPointedByMultiWireBoundaryLink(
+  linkID: LinkID,
+  diagram: Diagram,
+  theory: Theory
+): [BoundaryName, IDAnchor] | undefined {
+  const nbLinks = nbMultiWireBoundaryLink(linkID, diagram, theory);
   if (nbLinks == 1) {
     // from is boundary link
-    return [getBoundaryNameFromNode(fullAnchorToIDAndAnchor(linkFromLinkID(linkID, diagram)?.from)[0], diagram, theory),
-            linkFromLinkID(linkID, diagram).to]
+    return [
+      getBoundaryNameFromNode(
+        fullAnchorToIDAndAnchor(linkFromLinkID(linkID, diagram)?.from)[0],
+        diagram,
+        theory
+      ),
+      linkFromLinkID(linkID, diagram).to
+    ];
   } else if (nbLinks == 2) {
     // to is boundary link
-    return [getBoundaryNameFromNode(fullAnchorToIDAndAnchor(linkFromLinkID(linkID, diagram)?.to)[0], diagram, theory),
-            linkFromLinkID(linkID, diagram).from]
+    return [
+      getBoundaryNameFromNode(
+        fullAnchorToIDAndAnchor(linkFromLinkID(linkID, diagram)?.to)[0],
+        diagram,
+        theory
+      ),
+      linkFromLinkID(linkID, diagram).from
+    ];
   } else if (nbLinks == 3) {
-    throw new VeryyDiagError(`Links between two multi-wire boundary nodes are forbidden (no clear semantic)`)
+    throw new VeryyDiagError(
+      `Links between two multi-wire boundary nodes are forbidden (no clear semantic)`
+    );
   } else {
-    return undefined
+    return undefined;
   }
 }
-
 
 /** For each IDAnchor, links to all the multi-wire boundary nodes that are connected to them (may be undefined if the list is empty).
  *  You can use it to check if one needs to fix ambiguity for some links. If you want the inverse of this function, see multiWireBoundaryNameToIdAnchor.
  */
-export function idAnchorToMultiWireBoundaryName(diagram: Diagram, theory: Theory) : Record<IDAnchor, BoundaryName[]> {
-  let r : Record<IDAnchor, BoundaryName[]> = {}
+export function idAnchorToMultiWireBoundaryName(
+  diagram: Diagram,
+  theory: Theory
+): Record<IDAnchor, BoundaryName[]> {
+  let r: Record<IDAnchor, BoundaryName[]> = {};
   entries(diagram?.linksWithID).forEach(([linkID, link]) => {
-    const x = IDanchorPointedByMultiWireBoundaryLink(linkID, diagram, theory)
+    const x = IDanchorPointedByMultiWireBoundaryLink(linkID, diagram, theory);
     if (x === undefined) {
-      return undefined
+      return undefined;
     }
     const [boundaryName, idAnchor] = x;
     if (r?.[idAnchor] === undefined) {
-      r[idAnchor] = []
+      r[idAnchor] = [];
     }
-    r[idAnchor].push(boundaryName)
-  })
-  return r
+    r[idAnchor].push(boundaryName);
+  });
+  return r;
 }
 
-export function multiWireBoundaryNameToIdAnchor(diagram: Diagram, theory: Theory) : Record<BoundaryName, IDAnchor> {
-  return Object.fromEntries(entries(diagram?.linksWithID).map(([linkID, link]) => {
-    return IDanchorPointedByMultiWireBoundaryLink(linkID, diagram, theory)
-  }).filter(x => x !== undefined))
+export function multiWireBoundaryNameToIdAnchor(
+  diagram: Diagram,
+  theory: Theory
+): Record<BoundaryName, IDAnchor> {
+  return Object.fromEntries(
+    entries(diagram?.linksWithID)
+      .map(([linkID, link]) => {
+        return IDanchorPointedByMultiWireBoundaryLink(linkID, diagram, theory);
+      })
+      .filter((x) => x !== undefined)
+  );
 }
 
-export function equivalentNodes(IDAnchorA: IDAnchor, diagramA: Diagram, IDAnchorB: IDAnchor, diagramB: Diagram, nodeBijectionAB: NodeBijection | undefined = undefined) : true {
-  const [nodeA, anchorA] = fullAnchorToIDAndAnchor(IDAnchorA)
-  const [nodeB, anchorB] = fullAnchorToIDAndAnchor(IDAnchorB)
+export function equivalentNodes(
+  IDAnchorA: IDAnchor,
+  diagramA: Diagram,
+  IDAnchorB: IDAnchor,
+  diagramB: Diagram,
+  nodeBijectionAB: NodeBijection | undefined = undefined
+): true {
+  const [nodeA, anchorA] = fullAnchorToIDAndAnchor(IDAnchorA);
+  const [nodeB, anchorB] = fullAnchorToIDAndAnchor(IDAnchorB);
   if (nodeBijectionAB !== undefined) {
     // Check if the corresponding links diagram/rule are pointing to the
     // same node (after translation)/anchor
     assertTrue(
       nodeB === nodeBijectionAB?.[nodeA],
       `Different node name (${nodeB} != ${nodeBijectionAB?.[nodeA]} = translation of ${nodeA})`
-    )
+    );
   }
   // Same anchor?
   assertTrue(
     anchorA === anchorB,
     `Different anchor name ${anchorA} != ${anchorB} (from resp. ${nodeA} and ${nodeB})`
-  )
+  );
   // Check if they point to a node with the same kind
   assertTrue(
-    (diagramA?.nodes?.[nodeA]?.nodeKind !== undefined) &&
-    (diagramA?.nodes?.[nodeA]?.nodeKind === diagramB?.nodes?.[nodeB]?.nodeKind),
+    diagramA?.nodes?.[nodeA]?.nodeKind !== undefined &&
+      diagramA?.nodes?.[nodeA]?.nodeKind === diagramB?.nodes?.[nodeB]?.nodeKind,
     `Different node kind (${diagramA?.nodes?.[nodeA]?.nodeKind} != ${diagramB?.nodes?.[nodeB]?.nodeKind}) (from resp. ${nodeA} and ${nodeB})`
-  )
-  return true
+  );
+  return true;
 }
-
 
 export type Viewport = {
-  x: number
-  y: number
-  w: number
-  h: number
-}
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
 
 export type SvgSize = {
-  w: string
-  h: string
-}
+  w: string;
+  h: string;
+};
 
-export type LinkID = string
+export type LinkID = string;
 
 export type Link = {
-  from: IDAnchor,
-  to: IDAnchor,
+  from: IDAnchor;
+  to: IDAnchor;
   /** Optional ID selected by the user (temporarily ID selected by this software will starts with : and may not be saved
    * as it is used only internally to remove/select/… links easily) */
-  id?: string,
+  id?: string;
   /** Type */
-  linkTypeID?: LinkTypeID,
-}
+  linkTypeID?: LinkTypeID;
+};
 
 export type Error = {
-  message: string,
-}
+  message: string;
+};
 
 /** Rules */
 
-export type RuleName = string
+export type RuleName = string;
 export type Rule = {
   /** Might be undefined when creating the rule */
-  lhs?: Diagram,
-  rhs?: Diagram,
-}
+  lhs?: Diagram;
+  rhs?: Diagram;
+};
 
 /** Maps a node ID in the rule to a node ID in the diagram */
-export type NodeBijection = Record<NodeID, NodeID>
+export type NodeBijection = Record<NodeID, NodeID>;
 /** Maps a node ID + anchor in the rule to a node ID in the diagram */
-export type AnchorMap = Record<IDAnchor, IDAnchor>
+export type AnchorMap = Record<IDAnchor, IDAnchor>;
 /** Maps a link ID in the rule to a link ID in the diagram */
-export type LinkBijection = Record<LinkID, LinkID>
+export type LinkBijection = Record<LinkID, LinkID>;
 /** Maps a link in a diagram to its boundary name in the rule. Since a link may have each
  *  end on a boundary (e.g. ZX ID rule -- = -o-), we need to specify the from/to parts.
  *  For instance, {from: Alice} means that the link starts from the boundary Alice.
@@ -447,20 +550,23 @@ export type LinkBijection = Record<LinkID, LinkID>
  *  via newLinkName{1,2} as documented below.
  *  One may also have similar rules like -- = -- when the kind of the link is changed etc.
  */
-export type BoundaryLinks = Record<LinkID, {
-  from?: BoundaryName,
-  to?: BoundaryName,
-  /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
-   *  Name of the first created link (sharing the 'from' anchor). If you don't know if the rule will
-   *  split the link or not, you can always specify it and it will be ignored if needed.
-   */
-  newLinkName1?: LinkID,
-  /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
-   *  Name of the second created link (sharing the 'to' anchor). If you don't know if the rule will
-   *  split the link or not, you can always specify it and it will be ignored if needed.
-   */
-  newLinkName2?: LinkID,
-} >
+export type BoundaryLinks = Record<
+  LinkID,
+  {
+    from?: BoundaryName;
+    to?: BoundaryName;
+    /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
+     *  Name of the first created link (sharing the 'from' anchor). If you don't know if the rule will
+     *  split the link or not, you can always specify it and it will be ignored if needed.
+     */
+    newLinkName1?: LinkID;
+    /** Only when both 'from' and 'to' are specified and the link is split in two parts in the rule.
+     *  Name of the second created link (sharing the 'to' anchor). If you don't know if the rule will
+     *  split the link or not, you can always specify it and it will be ignored if needed.
+     */
+    newLinkName2?: LinkID;
+  }
+>;
 
 /**
  * Step that describes how to apply a rule to a given diagram. For this, we need to map each node/link
@@ -528,17 +634,17 @@ export type BoundaryLinks = Record<LinkID, {
  */
 export type ProofStepApplyRule = {
   /** Kind of proof step */
-  kind: "applyRule",
-  ruleName: RuleName,
+  kind: 'applyRule';
+  ruleName: RuleName;
   /** Optional string to describe what we are doing in this step */
-  description?: string,
+  description?: string;
   /** Specify if we apply the rule from left to right, or right to left */
-  direction: "lr" | "rl",
+  direction: 'lr' | 'rl';
   /**
    * Map diagram node to rule node.
    * More details in the doc of the structure.
    */
-  nodeBijectionAB?: NodeBijection,
+  nodeBijectionAB?: NodeBijection;
   /**
    * Map mono-wire boundary node to a diagram node anchor.
    * We need this to be in this direction because the same anchor in the diagram may map to different simple boundary nodes.
@@ -556,43 +662,43 @@ export type ProofStepApplyRule = {
    * We can certainly fake other behaviors either by adding more rules, or by introducing a
    * node that just decompose links into two parts.
    */
-  boundaryAnchorsBA?: AnchorMap,
+  boundaryAnchorsBA?: AnchorMap;
   /**
    * Same for links. Details in the doc of the structure. You should specify here internal links and links with mono-wire boundary,
    * but not links with multi-wire boundaries (we don't care about them anyway).
    */
-  linkBijectionAB?: LinkBijection,
+  linkBijectionAB?: LinkBijection;
   /**
    * Fix ambiguity when two multiple boundary nodes are connected to the same node.
    * Note that a single link may refer to multiple boundary names (e.g. loop in the diagram)
    * so that's why we need to map both ends to a boundary name.
    * Details in the doc of the structure.
    */
-  ambiguityBoundaryLinksAB?: Record<LinkID, {from?: BoundaryName, to?: BoundaryName}>,
+  ambiguityBoundaryLinksAB?: Record<LinkID, { from?: BoundaryName; to?: BoundaryName }>;
   /** Similarly, we maintain a map "node in 'to' rule" -> "node in final diagram".
    *  We can't just take the name in the new rule as we may have name collision.
    *  We also ignore boundary nodes.
    */
-  nodeBijectionCD?: NodeBijection,
+  nodeBijectionCD?: NodeBijection;
   /** Same for links */
-  linkBijectionCD?: LinkBijection,
+  linkBijectionCD?: LinkBijection;
   /** For each final node you want to move, specify the final position */
-  move?: Record<NodeID, Point>,
+  move?: Record<NodeID, Point>;
   /** Allow to change the viewport */
-  viewport?: Viewport,
-}
+  viewport?: Viewport;
+};
 
 /** This proof step just specifies that two diagrams are identical except for the position of their nodes */
 export type ProofStepMove = {
   /** Kind of proof step */
-  kind: "move",
+  kind: 'move';
   /** Optional string to describe what we are doing in this step */
-  description?: string,
+  description?: string;
   /** For each node you want to move, specify the final position */
-  move?: Record<NodeID, Point>
+  move?: Record<NodeID, Point>;
   /** Allow to change the viewport */
-  viewport?: Viewport,
-}
+  viewport?: Viewport;
+};
 
 /** Specify that the next proof steps (until ProofStepGroupEnd) belong to the same group, e.g. grouping trivial movements together,
  *  or proof generated via the same strategy/plugin/…
@@ -603,296 +709,337 @@ export type ProofStepMove = {
  */
 export type ProofStepGroupStart = {
   /** Kind of proof step */
-  kind: "group",
+  kind: 'group';
   /** Title given to this group, e.g. shown in bold font */
-  title?: string,
+  title?: string;
   /** Optional string to describe what we are doing in this step */
-  description?: string,
-}
+  description?: string;
+};
 
 /** Ends a group started with ProofStepGroupStart */
 export type ProofStepGroupEnd = {
   /** Kind of proof step */
-  kind: "groupEnd",
-}
+  kind: 'groupEnd';
+};
 
-export type ProofStep = ProofStepApplyRule | ProofStepMove | ProofStepGroupStart | ProofStepGroupEnd
+export type ProofStep =
+  | ProofStepApplyRule
+  | ProofStepMove
+  | ProofStepGroupStart
+  | ProofStepGroupEnd;
 
 /** ID of a proof */
-export type ProofID = string
+export type ProofID = string;
 /** Type containing a whole proof (or in-progress proof) */
 export type Proof = {
   /** The name of the proof shown in the TAB */
-  name: string,
+  name: string;
   /** The starting diagram of the proof. Also specifies the theory since the diagram itself refers to a theory. */
-  startingDiagram: Diagram,
+  startingDiagram: Diagram;
   /** You can write a description of the current proof */
-  description?: string,
+  description?: string;
   /** Specifies all the steps in the current proof */
-  steps: ProofStep[],
+  steps: ProofStep[];
   /** Step shown in the UI, defaults to 0 = starting diagram, 1 = first step etc */
-  currentStep?: number,
-}
+  currentStep?: number;
+};
 
 /** ID identifying a link type */
-export type LinkTypeID = string
+export type LinkTypeID = string;
 
 /** Describes how a link type is drawn in the SVG export */
 export type TypeLook = {
-  color: string, // svg color of the link
-}
+  color: string; // svg color of the link
+};
 
 /** Describe the type of a link (e.g. to create integer, complex… types) */
 export type LinkType = {
   /** Description, only used to help the user to understand its use case. */
-  description?: string,
+  description?: string;
   /** Specifies if the link is a directed link (like in directed graph) or not. If unspecified, equivalent to directed=false. */
-  directed?: boolean,
+  directed?: boolean;
   /** Look of the type in the SVG. If unspecified, defaults to black. */
-  look?: TypeLook,
-}
+  look?: TypeLook;
+};
 
 /** Theory contains nodes and rules we can apply on the nodes */
 export type Theory = {
-  theoryName?: string,
-  availableNodes?: Record<NodeKind, AvailableNode>,
-  linkTypes?: Record<LinkTypeID, LinkType>,
-  rules?: Record<RuleName, Rule>,
-}
+  theoryName?: string;
+  availableNodes?: Record<NodeKind, AvailableNode>;
+  linkTypes?: Record<LinkTypeID, LinkType>;
+  rules?: Record<RuleName, Rule>;
+};
 
 /** Identify a diagram */
-export type DiagramID = string
+export type DiagramID = string;
 export type Diagram = {
-  name?: string,
-  nodes?: Record<NodeID, Node>,
+  name?: string;
+  nodes?: Record<NodeID, Node>;
   /** Links (we turn links (easier to write) into linksWithID when loading the file for efficiency reasons) */
-  linksWithID?: Record<LinkID, Link>,
+  linksWithID?: Record<LinkID, Link>;
   /** Links (we don't require IDs for these links as it is easier to write, but less efficient so we turn them into linksWithID when loading them) */
-  links?: Link[],
-  viewport?: Viewport,
+  links?: Link[];
+  viewport?: Viewport;
   /** Size of the svg when exported as standalone image. */
-  svgSize?: SvgSize,
+  svgSize?: SvgSize;
   /** List of nodes/rewritting rules to use. If not specified, defaults to "main" */
-  theory?: TheoryID,
+  theory?: TheoryID;
   /** If this diagram is computed, e.g. based on the application of a rule, it may contain an error
    *  (e.g. if the rule was not applied correctly). We don't use a new kind like Diagram | Error
    *  since all the code would basically have this complicated kind. Yet, all our core function throw errors
    *  instead of returning a diagram with an error field.
    */
-  error?: string,
-}
+  error?: string;
+};
 
 /** Tabs are used to list diagrams/proofs and maybe later plugin-generated tabs etc */
-export type Tab = TabDiagram | TabProof
+export type Tab = TabDiagram | TabProof;
 
 export type TabDiagram = {
-  tabKind: "tabDiagram",
-  diagramID: DiagramID,
-}
+  tabKind: 'tabDiagram';
+  diagramID: DiagramID;
+};
 
 export type TabProof = {
-  tabKind: "tabProof",
-  proofID: ProofID,
-}
+  tabKind: 'tabProof';
+  proofID: ProofID;
+};
 
 /** Configuration of a whole file (contains all diagrams, theories, proofs…) */
 export type DiagramConf = {
   /** Stores all diagrams contained in the current file. */
-  diagrams: Record<DiagramID, Diagram>,
+  diagrams: Record<DiagramID, Diagram>;
   /** Stores all the proofs that are currently under edit (theorems are moved to theories) */
-  proofs: Record<ProofID, Proof>,
+  proofs: Record<ProofID, Proof>;
   /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons */
-  tabs: Tab[],
+  tabs: Tab[];
   /** Diagram currently under edit */
-  currentTab: Tab,
+  currentTab: Tab;
   /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
-  theories: Record<TheoryID, Theory>,
+  theories: Record<TheoryID, Theory>;
   /** List of loaded plugins */
-  plugins?: Plugin[],
-}
-
+  plugins?: Plugin[];
+};
 
 /** Configuration given by the user that is more permissive (e.g. links don't require ID). See diagramConfToDiagramConfByUser */
 export type DiagramConfByUser = {
   /** Stores all diagrams contained in the current file. */
-  diagrams?: Record<DiagramID, Diagram>,
+  diagrams?: Record<DiagramID, Diagram>;
   /** Stores all the proofs that are currently under edit (theorems are moved to theories) */
-  proofs?: Record<ProofID, Proof>,
+  proofs?: Record<ProofID, Proof>;
   /** Sorts them to show them in tabs. We don't simply use a list in diagrams for efficiently reasons.
    * If unspecified, this is equivalent to a single tab pointing to the "main" diagram
    */
-  tabs?: Tab[],
+  tabs?: Tab[];
   /** Diagram currently under edit. If unspecified, equals to the "main" diagram */
-  currentTab?: Tab,
+  currentTab?: Tab;
   /** A theory is a list of nodes and rules. We allow multiple theories in the same file. */
-  theories?: Record<TheoryID, Theory>,
+  theories?: Record<TheoryID, Theory>;
   /** These are shortcuts to quickly specify the "main" diagram without creating a new tab etc
    * (also helps with backward compatibility)
    */
-  diagramNodes?: Record<NodeID, Node>,
+  diagramNodes?: Record<NodeID, Node>;
   /** These are shortcuts for the "main" theory, when we are too lazy to define tabs… */
-  availableNodes?: Record<NodeID, AvailableNode>,
+  availableNodes?: Record<NodeID, AvailableNode>;
   /** These are shortcuts for the "main" links, when we are too lazy to define tabs… */
-  links?: Link[],
+  links?: Link[];
   /** These are shortcuts for the "main" linksWithID, when we are too lazy to define tabs… */
-  linksWithID?: Record<LinkID, Link>,
+  linksWithID?: Record<LinkID, Link>;
   /** Shortcuts for the "main" Viewport, when we are too lazy to define tabs… */
-  viewport?: Viewport,
+  viewport?: Viewport;
   /** Shortcuts for the "main" Viewport, when we are too lazy to define tabs… */
-  svgSize?: SvgSize,
+  svgSize?: SvgSize;
   /** To add plugins */
-  plugins?: Plugin[],
-}
+  plugins?: Plugin[];
+};
 
 export type Plugin = {
   /** Name of the plugin written in the bottom box */
-  name: string,
+  name: string;
   /** To load a plugin, you can either provide the HTML source code (via code) or an url (via url) */
-  url?: string,
+  url?: string;
   /** To load a plugin, you can either provide the HTML source code (via code) or an url (via url) */
-  code?: string,
-}
+  code?: string;
+};
 
-export type NotificationKind = "error" | "info" | "warning"
+export type NotificationKind = 'error' | 'info' | 'warning';
 export type Notification = {
-  kind: NotificationKind,
-  message: string,
-  buttons: [string, () => void][],
-  codeFormatted?: boolean, // If set to true, show inside <code><pre>… (we don't use @html for security reasons)
-}
+  kind: NotificationKind;
+  message: string;
+  buttons: [string, () => void][];
+  codeFormatted?: boolean; // If set to true, show inside <code><pre>… (we don't use @html for security reasons)
+};
 
 // ========== Conversion between types ==========
 
 // TODO: make sure that this preserves better the text typed by users (e.g. remove links when not needed etc)
-export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf) : DiagramConfByUser {
-  return diagramConf
+export function diagramConfToDiagramConfByUser(diagramConf: DiagramConf): DiagramConfByUser {
+  return diagramConf;
 }
 
-export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser) : DiagramConf {
+export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByUser): DiagramConf {
   if (diagramConfByUser?.diagramNodes && diagramConfByUser?.diagrams?.main) {
-    throw new VeryyDiagError("The diagram has two main nodes (diagramNodes and via diagrams.main)")
+    throw new VeryyDiagError('The diagram has two main nodes (diagramNodes and via diagrams.main)');
   }
   if (diagramConfByUser?.links && diagramConfByUser?.diagrams?.main) {
-    throw new VeryyDiagError("The diagram has two main nodes (links and via diagrams.main)")
+    throw new VeryyDiagError('The diagram has two main nodes (links and via diagrams.main)');
   }
   if (diagramConfByUser?.viewport && diagramConfByUser?.diagrams?.main) {
-    throw new VeryyDiagError("The diagram has two main nodes (viewport and via diagrams.main)")
+    throw new VeryyDiagError('The diagram has two main nodes (viewport and via diagrams.main)');
   }
   if (diagramConfByUser?.svgSize && diagramConfByUser?.diagrams?.main) {
-    throw new VeryyDiagError("The diagram has two main nodes (svgSize and via diagrams.main)")
+    throw new VeryyDiagError('The diagram has two main nodes (svgSize and via diagrams.main)');
   }
   if (diagramConfByUser?.linksWithID && diagramConfByUser?.diagrams?.main) {
-    throw new VeryyDiagError("The diagram has two main nodes (linksWithID and via diagrams.main)")
+    throw new VeryyDiagError('The diagram has two main nodes (linksWithID and via diagrams.main)');
   }
   if (diagramConfByUser?.availableNodes && diagramConfByUser?.theories?.main) {
-    throw new VeryyDiagError("The diagram has two main theories (availableNodes and via theories.main)")
+    throw new VeryyDiagError(
+      'The diagram has two main theories (availableNodes and via theories.main)'
+    );
   }
 
   const {
     diagrams = {},
     proofs = {},
-    tabs = [ {tabKind: "tabDiagram", diagramID: "main"} ],
-    currentTab = {tabKind: "tabDiagram", diagramID: "main"},
+    tabs = [{ tabKind: 'tabDiagram', diagramID: 'main' }],
+    currentTab = { tabKind: 'tabDiagram', diagramID: 'main' },
     theories = {},
     diagramNodes,
     availableNodes,
     links,
     linksWithID,
     viewport,
-    svgSize,
-  } = diagramConfByUser
-  const diagramsPreCleared : Record<DiagramID, Diagram> = (diagramNodes === undefined && links === undefined && viewport === undefined && svgSize === undefined) ? diagrams : {...diagrams, main: {
-    name: "Main diagram",
-    nodes: diagramNodes || {},
-    links: links || [],
-    linksWithID: linksWithID || {},
-    viewport: viewport || {x: 0, y: 0, w: 20, h: 20},
-    svgSize: svgSize,
-    theory: "main"
-  }}
-  const clearDiagram = (diagID: DiagramID, {links, linksWithID, viewport, ...rest}: Diagram) : Diagram => {
+    svgSize
+  } = diagramConfByUser;
+  const diagramsPreCleared: Record<DiagramID, Diagram> =
+    diagramNodes === undefined &&
+    links === undefined &&
+    viewport === undefined &&
+    svgSize === undefined
+      ? diagrams
+      : {
+          ...diagrams,
+          main: {
+            name: 'Main diagram',
+            nodes: diagramNodes || {},
+            links: links || [],
+            linksWithID: linksWithID || {},
+            viewport: viewport || { x: 0, y: 0, w: 20, h: 20 },
+            svgSize: svgSize,
+            theory: 'main'
+          }
+        };
+  const clearDiagram = (
+    diagID: DiagramID,
+    { links, linksWithID, viewport, ...rest }: Diagram
+  ): Diagram => {
     // Check if IDs are unique
-    const ids = (links || []).map(v => v?.id).filter((id) => id !== undefined)
-    const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i)
+    const ids = (links || []).map((v) => v?.id).filter((id) => id !== undefined);
+    const duplicates = ids.filter((e, i, a) => a.indexOf(e) !== i);
     if (duplicates.length > 0) {
-      throw new VeryyDiagError(`When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`)
+      throw new VeryyDiagError(
+        `When importing the configuration we found multiple links with duplicated IDs: ${duplicates} in the diagram ${diagID}`
+      );
     }
     return {
       ...rest,
       linksWithID: {
         ...(linksWithID || {}),
-        ...(Object.fromEntries((links || []).map((link) => [link?.id || `:${randomID()}`, link])))
+        ...Object.fromEntries((links || []).map((link) => [link?.id || `:${randomID()}`, link]))
       },
-      viewport: viewport || {x: 0, y: 0, w: 20, h: 20}
-    }
-  }
-  const diagCleared = Object.fromEntries(Object.entries(diagramsPreCleared).map(([k,diag]) => ([k, clearDiagram(k, diag)])))
+      viewport: viewport || { x: 0, y: 0, w: 20, h: 20 }
+    };
+  };
+  const diagCleared = Object.fromEntries(
+    Object.entries(diagramsPreCleared).map(([k, diag]) => [k, clearDiagram(k, diag)])
+  );
 
   const cleanedConfig = {
     // We must have at least one diagram or the interface would crash
-    diagrams: (Object.keys(diagCleared).length > 0) ? diagCleared : {
-      main: {
-        name: "Main diagram",
-        nodes: {},
-        linksWithID: {},
-        theory: "main"
-      },
-    },
+    diagrams:
+      Object.keys(diagCleared).length > 0
+        ? diagCleared
+        : {
+            main: {
+              name: 'Main diagram',
+              nodes: {},
+              linksWithID: {},
+              theory: 'main'
+            }
+          },
     proofs: proofs,
-    tabs: tabs || [ {tabKind: "tabDiagram", diagramID: "main"} ],
-    currentTab: currentTab || {tabKind: "tabDiagram", diagramID: "main"},
-    theories: (availableNodes !== undefined || Object.keys(theories).length === 0) ? {...theories, main: {
-      theoryName: "Main theory",
-      availableNodes: availableNodes,
-    }} : theories,
-  }
+    tabs: tabs || [{ tabKind: 'tabDiagram', diagramID: 'main' }],
+    currentTab: currentTab || { tabKind: 'tabDiagram', diagramID: 'main' },
+    theories:
+      availableNodes !== undefined || Object.keys(theories).length === 0
+        ? {
+            ...theories,
+            main: {
+              theoryName: 'Main theory',
+              availableNodes: availableNodes
+            }
+          }
+        : theories
+  };
 
   // Force remove viewport on import to recompute it. A bit dirty, TODO: find a better fix.
   entries(cleanedConfig?.theories).forEach(([theoryID, theory]) => {
     entries(theory?.rules).forEach(([ruleName, rule]) => {
       if (rule?.lhs?.viewport) {
-        delete rule.lhs.viewport
+        delete rule.lhs.viewport;
       }
       if (rule?.rhs?.viewport) {
-        delete rule.rhs.viewport
+        delete rule.rhs.viewport;
       }
-    })
-  })
+    });
+  });
 
   const isValidTab = (tab: Tab, tabDetails: string) => {
-    const tabKind = tab.tabKind
+    const tabKind = tab.tabKind;
     switch (tabKind) {
-      case "tabDiagram":
-        const diagramID = assertNotUndefined(tab?.diagramID, `The ${tabDetails} does not specify a diagramID`)
+      case 'tabDiagram':
+        const diagramID = assertNotUndefined(
+          tab?.diagramID,
+          `The ${tabDetails} does not specify a diagramID`
+        );
         assertNotUndefinedNR(
           cleanedConfig.diagrams?.[diagramID],
           `The diagram '${diagramID}' set in ${tabDetails} does not exist (valid diagrams ID are ${JSON.stringify(keys(cleanedConfig.diagrams))}).`
-        )
+        );
         break;
-      case "tabProof":
-        const proofID = assertNotUndefined(tab?.proofID, `The current tab does not specify a proofID`)
+      case 'tabProof':
+        const proofID = assertNotUndefined(
+          tab?.proofID,
+          `The current tab does not specify a proofID`
+        );
         assertNotUndefinedNR(
           cleanedConfig?.proofs?.[proofID],
           `The proof '${proofID}' set in ${tabDetails} does not exist (valid proofs ID are ${JSON.stringify(keys(cleanedConfig.proofs))}).`
-        )
+        );
         break;
       default:
-        assertNever(tabKind, `Wrong tabKind in currentTab (should be either tabDiagram or tabProof)`)
+        assertNever(
+          tabKind,
+          `Wrong tabKind in currentTab (should be either tabDiagram or tabProof)`
+        );
     }
-  }
+  };
 
   // Check if all tabs are well defined
-  isValidTab(cleanedConfig.currentTab, `default tab`)
+  isValidTab(cleanedConfig.currentTab, `default tab`);
 
   cleanedConfig.tabs.forEach((tab, i) => {
-    isValidTab(tab, `${i+1}-th tab`)
-  })
+    isValidTab(tab, `${i + 1}-th tab`);
+  });
 
   Object.entries(cleanedConfig.diagrams).forEach(([diagID, diag]) => {
-    if (cleanedConfig.theories?.[diag?.theory || "main"] === undefined) {
-      throw new VeryyDiagError(`The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`)
+    if (cleanedConfig.theories?.[diag?.theory || 'main'] === undefined) {
+      throw new VeryyDiagError(
+        `The diagram ${diagID} relies on a theory ${diag.theory} that does not exist in the list of theories.`
+      );
     }
-  })
+  });
 
   // Parse the svg files once for all
   entries(cleanedConfig?.theories).forEach(([theoryID, theory]) => {
@@ -900,80 +1047,99 @@ export function diagramConfByUserToDiagramConf(diagramConfByUser: DiagramConfByU
       // Problem: $derived not usable in .ts, needs .svelte.ts, but then js mapping is bad and gives bad debugging
       // experience. Anyway, I don't think it's really needed to have a reactive element here.
       // availableNode.parsedSVG = $derived(availableNodeToParsedSVG(availableNode))
-      availableNode.parsedSVG = availableNodeToParsedSVG(availableNode)
-    })
-  })
+      availableNode.parsedSVG = availableNodeToParsedSVG(availableNode);
+    });
+  });
 
   // Check if all nodes have available theories
-  return cleanedConfig
+  return cleanedConfig;
 }
 
-
 export function extractNodeParamSpecsFromSVG(svg: string): ParamSpecs {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(svg, "image/svg+xml")
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
   // Not possible to use CSS selectors because of the (mandatory) namespace…
   // We can only select elements irrespective of their namespace via CSS selectors.
   // https://stackoverflow.com/a/23047888/4987648
-  const allElements = doc.getElementsByTagNameNS("veryydiag", "newparam")
-  return Object.fromEntries([...allElements].map(elt => {
-    const name = elt.getAttribute("name")
-    const type = elt.getAttribute("type")
-    const def = elt.getAttribute("default")
-    const unique = elt.getAttribute("unique")
-    if (name === null) {
-      throw new VeryyDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
-    }
-    if (type === null) {
-      throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`)
-    }
-    if (def === null) {
-      throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`)
-    }
-    assertTrue(isParamAvailableType(type),
-               `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
-    )
-    if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
-      throw new VeryyDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
-    }
-    if (type === "boolean" && !["true", "false"].includes(def)) {
-      throw new VeryyDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
-    }
-    if (unique !== null && !["true", "false"].includes(unique)) {
-      throw new VeryyDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
-    }
-    return [
-      name,
-      {
-        ...(unique !== null && unique === "true" && {unique: true}),
-        type,
-        default: def,
+  const allElements = doc.getElementsByTagNameNS('veryydiag', 'newparam');
+  return Object.fromEntries(
+    [...allElements].map((elt) => {
+      const name = elt.getAttribute('name');
+      const type = elt.getAttribute('type');
+      const def = elt.getAttribute('default');
+      const unique = elt.getAttribute('unique');
+      if (name === null) {
+        throw new VeryyDiagError(
+          `No 'name' field was provided when creating a new parameter in the SVG file.`
+        );
       }
-    ]
-  }))
+      if (type === null) {
+        throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`);
+      }
+      if (def === null) {
+        throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`);
+      }
+      assertTrue(
+        isParamAvailableType(type),
+        `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
+      );
+      if (type === 'integer' && def !== null && isNaN(parseFloat(def))) {
+        throw new VeryyDiagError(
+          `The type is int but the default value ${def} can't be turned into a def.`
+        );
+      }
+      if (type === 'boolean' && !['true', 'false'].includes(def)) {
+        throw new VeryyDiagError(
+          `The type is boolean but the default value (${def}) is not true/false.`
+        );
+      }
+      if (unique !== null && !['true', 'false'].includes(unique)) {
+        throw new VeryyDiagError(
+          `In the definition of the ${name} parameter, the unique field must be true.`
+        );
+      }
+      return [
+        name,
+        {
+          ...(unique !== null && unique === 'true' && { unique: true }),
+          type,
+          default: def
+        }
+      ];
+    })
+  );
 }
 
 /** Turns something like "3mm" to its value in pixels */
-function parseSvgLengthToPx(value: string) : number {
-  const match = String(value).trim().match(/^(-?[\d.]+)([a-z%]*)$/i);
-  assertTrue(!!match && match.length == 3, `Couldn't parse the svg distance ${value}`)
+function parseSvgLengthToPx(value: string): number {
+  const match = String(value)
+    .trim()
+    .match(/^(-?[\d.]+)([a-z%]*)$/i);
+  assertTrue(!!match && match.length == 3, `Couldn't parse the svg distance ${value}`);
 
   const num = parseFloat(match[1]);
-  const unit = match[2] || "px";
+  const unit = match[2] || 'px';
 
   const DPI = 96;
 
   switch (unit) {
-    case "": return num;
-    case "px": return num;
-    case "in": return num * DPI;
-    case "cm": return num * DPI / 2.54;
-    case "mm": return num * DPI / 25.4;
-    case "pt": return num * DPI / 72;
-    case "pc": return num * DPI / 6;
+    case '':
+      return num;
+    case 'px':
+      return num;
+    case 'in':
+      return num * DPI;
+    case 'cm':
+      return (num * DPI) / 2.54;
+    case 'mm':
+      return (num * DPI) / 25.4;
+    case 'pt':
+      return (num * DPI) / 72;
+    case 'pc':
+      return (num * DPI) / 6;
     default:
       // ❗ needs context (viewport size)
-      throw new VeryyDiagError(`Unit must be px/in/cm/mm/pt/pc, '${unit}' not supported`)
+      throw new VeryyDiagError(`Unit must be px/in/cm/mm/pt/pc, '${unit}' not supported`);
   }
 }
 
@@ -1009,159 +1175,186 @@ function parseSvgLengthToPx(value: string) : number {
  *   </svg>
  */
 export function parseSVG(svg: string): ParsedSVG {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(svg, "image/svg+xml")
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
   // Not possible to use CSS selectors because of the (mandatory) namespace…
   // We can only select elements irrespective of their namespace via CSS selectors.
   // https://stackoverflow.com/a/23047888/4987648
-  const allElements = doc.getElementsByTagNameNS("veryydiag", "newparam")
-  const paramSpecs = Object.fromEntries([...allElements].map(elt => {
-    const name = elt.getAttribute("name")
-    const type = elt.getAttribute("type")
-    const def = elt.getAttribute("default")
-    const unique = elt.getAttribute("unique")
-    if (name === null) {
-      throw new VeryyDiagError(`No 'name' field was provided when creating a new parameter in the SVG file.`)
-    }
-    if (type === null) {
-      throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`)
-    }
-    if (def === null) {
-      throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`)
-    }
-    if (type === "integer" && def !== null && isNaN(parseFloat(def))) {
-      throw new VeryyDiagError(`The type is int but the default value ${def} can't be turned into a def.`)
-    }
-    if (type === "boolean" && !["true", "false"].includes(def)) {
-      throw new VeryyDiagError(`The type is boolean but the default value (${def}) is not true/false.`)
-    }
-    if (unique !== null && !["true", "false"].includes(unique)) {
-      throw new VeryyDiagError(`In the definition of the ${name} parameter, the unique field must be true.`)
-    }
-    assertTrue(isParamAvailableType(type),
-               `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
-    )
-    return [
-      name,
-      {
-        ...(unique !== null && unique === "true" && {unique: true}),
-        type,
-        default: castParamType(type, def),
+  const allElements = doc.getElementsByTagNameNS('veryydiag', 'newparam');
+  const paramSpecs = Object.fromEntries(
+    [...allElements].map((elt) => {
+      const name = elt.getAttribute('name');
+      const type = elt.getAttribute('type');
+      const def = elt.getAttribute('default');
+      const unique = elt.getAttribute('unique');
+      if (name === null) {
+        throw new VeryyDiagError(
+          `No 'name' field was provided when creating a new parameter in the SVG file.`
+        );
       }
-    ]
-  }))
-  const anchorElements = doc.querySelectorAll<SVGElement>('[data-veryydiag-anchor]')
-  const anchors = Object.fromEntries(Array.from(anchorElements).map((elt) => [elt.dataset.veryydiagAnchor, {}]))
+      if (type === null) {
+        throw new VeryyDiagError(`No 'type' field was provided for the param '${name}'`);
+      }
+      if (def === null) {
+        throw new VeryyDiagError(`No 'def' field was provided for the param '${name}'`);
+      }
+      if (type === 'integer' && def !== null && isNaN(parseFloat(def))) {
+        throw new VeryyDiagError(
+          `The type is int but the default value ${def} can't be turned into a def.`
+        );
+      }
+      if (type === 'boolean' && !['true', 'false'].includes(def)) {
+        throw new VeryyDiagError(
+          `The type is boolean but the default value (${def}) is not true/false.`
+        );
+      }
+      if (unique !== null && !['true', 'false'].includes(unique)) {
+        throw new VeryyDiagError(
+          `In the definition of the ${name} parameter, the unique field must be true.`
+        );
+      }
+      assertTrue(
+        isParamAvailableType(type),
+        `In the ${name} param definition, the type ${type} is not a valid type (${JSON.stringify(paramAvailableTypes)}).`
+      );
+      return [
+        name,
+        {
+          ...(unique !== null && unique === 'true' && { unique: true }),
+          type,
+          default: castParamType(type, def)
+        }
+      ];
+    })
+  );
+  const anchorElements = doc.querySelectorAll<SVGElement>('[data-veryydiag-anchor]');
+  const anchors = Object.fromEntries(
+    Array.from(anchorElements).map((elt) => [elt.dataset.veryydiagAnchor, {}])
+  );
   // We also compute the position of the center by checking if a node is present with kind
   // data-veryydiag-center. This node should be a circle (typically invisible) at the
   // top-level of the SVG (makes computations easier)
-  const svgElt = doc.querySelector<SVGSVGElement>('svg')
-  assertTrue(svgElt !== null,
-             `We found no <svg> element when parsing the svg file.`)
+  const svgElt = doc.querySelector<SVGSVGElement>('svg');
+  assertTrue(svgElt !== null, `We found no <svg> element when parsing the svg file.`);
   // We compute the position in percentage of the viewbox
-  const viewbox = (svgElt.getAttribute("viewBox") || "").split(" ")
-  assertTrue(viewbox.length === 4,
-             `The viewbox of the node is not made of 4 elements ${svgElt.getAttribute("viewbox")}`)
-  const [x, y, w, h] = viewbox.map(x => parseSvgLengthToPx(x))
-  const widthUnit = parseSvgLengthToPx(assertNotUndefined(
-    svgElt.getAttribute("width"),
-    `No width attribute found on <svg> when parsing`)
-  )
-  const heightUnit = parseSvgLengthToPx(assertNotUndefined(
-    svgElt.getAttribute("height"),
-    `No height attribute found on <svg> when parsing`))
+  const viewbox = (svgElt.getAttribute('viewBox') || '').split(' ');
+  assertTrue(
+    viewbox.length === 4,
+    `The viewbox of the node is not made of 4 elements ${svgElt.getAttribute('viewbox')}`
+  );
+  const [x, y, w, h] = viewbox.map((x) => parseSvgLengthToPx(x));
+  const widthUnit = parseSvgLengthToPx(
+    assertNotUndefined(
+      svgElt.getAttribute('width'),
+      `No width attribute found on <svg> when parsing`
+    )
+  );
+  const heightUnit = parseSvgLengthToPx(
+    assertNotUndefined(
+      svgElt.getAttribute('height'),
+      `No height attribute found on <svg> when parsing`
+    )
+  );
   // By default we center the node
   let center = {
-    x: unitToCm(widthUnit/2),
-    y: unitToCm(heightUnit/2)
-  }
+    x: unitToCm(widthUnit / 2),
+    y: unitToCm(heightUnit / 2)
+  };
   center = {
-    x: unitToCm(widthUnit/2),
-    y: unitToCm(heightUnit/2)
-  }
-  const centerElements = Array.from(doc.querySelectorAll<SVGElement>('[data-veryydiag-center]'))
+    x: unitToCm(widthUnit / 2),
+    y: unitToCm(heightUnit / 2)
+  };
+  const centerElements = Array.from(doc.querySelectorAll<SVGElement>('[data-veryydiag-center]'));
   if (centerElements.length === 1) {
-    console.log("Interesting, something with a center!")
-    const centerElement = centerElements[0]
-    const cx = parseFloat(assertNotUndefined(centerElement.getAttribute("cx"),
-                                             `No cx attribute on the data-veryydiag-center element`))
-    const cy = parseFloat(assertNotUndefined(centerElement.getAttribute("cy"),
-                                             `No cx attribute on the data-veryydiag-center element`))
-    center.x = unitToCm((cx - x)/w * widthUnit)
-    center.y = unitToCm((cy - y)/h * heightUnit)
-    console.log("cx", cx, "x", x, "w", w, "widthUnit", widthUnit, "center.x", center.x)
+    console.log('Interesting, something with a center!');
+    const centerElement = centerElements[0];
+    const cx = parseFloat(
+      assertNotUndefined(
+        centerElement.getAttribute('cx'),
+        `No cx attribute on the data-veryydiag-center element`
+      )
+    );
+    const cy = parseFloat(
+      assertNotUndefined(
+        centerElement.getAttribute('cy'),
+        `No cx attribute on the data-veryydiag-center element`
+      )
+    );
+    center.x = unitToCm(((cx - x) / w) * widthUnit);
+    center.y = unitToCm(((cy - y) / h) * heightUnit);
+    console.log('cx', cx, 'x', x, 'w', w, 'widthUnit', widthUnit, 'center.x', center.x);
   }
-  return {paramSpecs, anchors, width: unitToCm(widthUnit), height: unitToCm(heightUnit), center}
+  return { paramSpecs, anchors, width: unitToCm(widthUnit), height: unitToCm(heightUnit), center };
 }
 
-export function availableNodeToParsedSVG(availableNode: AvailableNode) : ParsedSVG | undefined {
+export function availableNodeToParsedSVG(availableNode: AvailableNode): ParsedSVG | undefined {
   if (availableNode?.svgString !== undefined) {
-    return parseSVG(availableNode.svgString)
+    return parseSVG(availableNode.svgString);
   } else if (availableNode.svgName !== undefined) {
-    const str = officialSvgNameToSvgString(availableNode.svgName)
+    const str = officialSvgNameToSvgString(availableNode.svgName);
     if (str !== undefined) {
-      return parseSVG(str)
+      return parseSVG(str);
     }
   }
-  return undefined
+  return undefined;
 }
 
 // Creation of new nodes
 
 export type SvgParameters = {
-  method: "builtin.createNodeTemplate",
-  tex: string,
+  method: 'builtin.createNodeTemplate';
+  tex: string;
   /**
    * @schema coerce.number()
    * @default 0.4
    */
-  height: number,
+  height: number;
   /**
    * @schema coerce.number()
    * @default 1
    */
-  scale: number,
+  scale: number;
   /**
    * @default "white"
    */
-  mainNodeColor: string,
+  mainNodeColor: string;
   anchors: {
-    name: string,
+    name: string;
     /**
      * @schema coerce.number()
      */
-    posX: number,
+    posX: number;
     /**
      * @schema coerce.number()
      */
-    posY: number,
-    color: string,
+    posY: number;
+    color: string;
     /**
      * @schema coerce.number()
      */
-    radius: number
-  }[]
+    radius: number;
+  }[];
   /**
    * @schema coerce.number().transform((val) => Math.min(val, 2))
    * @max 2
    */
-  extraSpacingAroundText: number,
+  extraSpacingAroundText: number;
   /**
    * @schema coerce.number().transform((val) => Math.min(val, 2))
    */
-  strokeWidth: number,
+  strokeWidth: number;
   /**
    * @schema coerce.number().transform((val) => Math.min(val, 2))
    */
-  extraSpacingAroundMargin: number,
+  extraSpacingAroundMargin: number;
   /**
    * @default "rectangle"
    */
-  shape: "rectangle" | "circle"
-}
+  shape: 'rectangle' | 'circle';
+};
 
 // Weeks start on sunday
 export function isWeekEnd(day: number) {
-  const x = day % 7
-  return x === 0 || x === 6
+  const x = day % 7;
+  return x === 0 || x === 6;
 }

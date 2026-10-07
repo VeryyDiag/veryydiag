@@ -3,153 +3,187 @@
     <script>
       // ====== Minimalist MCP 2 client (you can copy/paste it in your own plugin or use an actual SDK client)
       const _callRPC = (id, method, params) => {
-        window.parent.postMessage({
-          jsonrpc: "2.0",
-          id: id,
-          method,
-          params: {...params,
-                   _meta: {...{
-                     "io.github.veryydiag/pluginMessage": true,
-                     "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-                     "io.modelcontextprotocol/clientCapabilities": {},
-                     "io.modelcontextprotocol/clientInfo": {
-                       "name": "pingPlugin",
-                       "version": "1.0",
-                     },
-                   }, ...params._meta || {}},
+        window.parent.postMessage(
+          {
+            jsonrpc: '2.0',
+            id: id,
+            method,
+            params: {
+              ...params,
+              _meta: {
+                ...{
+                  'io.github.veryydiag/pluginMessage': true,
+                  'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+                  'io.modelcontextprotocol/clientCapabilities': {},
+                  'io.modelcontextprotocol/clientInfo': {
+                    name: 'pingPlugin',
+                    version: '1.0'
+                  }
+                },
+                ...(params._meta || {})
+              }
+            }
           },
-        }, '*')
-      }
+          '*'
+        );
+      };
 
       // Call this to call plugin messages
       // Very basic implementation of the MCP protocol
       async function callTool(toolName, args = {}, ifUnstructuredTryGetText = true) {
-        const id = crypto.randomUUID()
-        _callRPC(id, "tools/call",
-                 {
-                   name: toolName,
-                   arguments: args
-                 }
-        )
+        const id = crypto.randomUUID();
+        _callRPC(id, 'tools/call', {
+          name: toolName,
+          arguments: args
+        });
         // Listen for messages
-        return new Promise(function(resolve, reject) {
-          window.addEventListener("message", myCallback = (e) => {
-            const data = e?.data
-            if (data?.id === id) {
-              window.removeEventListener("message", myCallback);
-              if (data?.result?.isError) {
-                reject(data)
-              } else {
-                console.log("Received the data", data)
-                resolve(data?.result?.structuredContent || (
-                  ifUnstructuredTryGetText ? (
-                    data?.result?.content?.filter(x => x.type === 'text')?.[0]?.text || data?.result?.content
-                  ) : data?.result?.content)
-                )
+        return new Promise(function (resolve, reject) {
+          window.addEventListener(
+            'message',
+            (myCallback = (e) => {
+              const data = e?.data;
+              if (data?.id === id) {
+                window.removeEventListener('message', myCallback);
+                if (data?.result?.isError) {
+                  reject(data);
+                } else {
+                  console.log('Received the data', data);
+                  resolve(
+                    data?.result?.structuredContent ||
+                      (ifUnstructuredTryGetText
+                        ? data?.result?.content?.filter((x) => x.type === 'text')?.[0]?.text ||
+                          data?.result?.content
+                        : data?.result?.content)
+                  );
+                }
               }
-            }
-          })
-        })
+            })
+          );
+        });
       }
 
       async function getResource(uri, tryGetText = true) {
-        const id = crypto.randomUUID()
-        _callRPC(id, "resources/read", { uri })
+        const id = crypto.randomUUID();
+        _callRPC(id, 'resources/read', { uri });
         // Listen for messages
-        return new Promise(function(resolve, reject) {
-          window.addEventListener("message", myCallback = (e) => {
-            const data = e?.data
-            if (data?.id === id) {
-              window.removeEventListener("message", myCallback);
-              if (data?.result?.isError) {
-                reject(data)
-              } else {
-                resolve(tryGetText ? (data?.result?.contents?.filter(x => x?.text !== undefined && x.uri === uri)?.[0]?.text || data?.result?.contents)
-                      : data?.result?.contents)
+        return new Promise(function (resolve, reject) {
+          window.addEventListener(
+            'message',
+            (myCallback = (e) => {
+              const data = e?.data;
+              if (data?.id === id) {
+                window.removeEventListener('message', myCallback);
+                if (data?.result?.isError) {
+                  reject(data);
+                } else {
+                  resolve(
+                    tryGetText
+                      ? data?.result?.contents?.filter(
+                          (x) => x?.text !== undefined && x.uri === uri
+                        )?.[0]?.text || data?.result?.contents
+                      : data?.result?.contents
+                  );
+                }
               }
-            }
-          })
-        })
+            })
+          );
+        });
       }
 
       async function getJSONResource(uri, tryGetText = true) {
-        const res = await getResource(uri, tryGetText)
-        return JSON.parse(res)
+        const res = await getResource(uri, tryGetText);
+        return JSON.parse(res);
       }
 
       async function subscriptionListen(notifications, callback) {
-        const id = crypto.randomUUID()
-        _callRPC(id, "subscriptions/listen", {
-          notifications: notifications,
-        }, '*')
+        const id = crypto.randomUUID();
+        _callRPC(
+          id,
+          'subscriptions/listen',
+          {
+            notifications: notifications
+          },
+          '*'
+        );
         // Listen for messages
-        return new Promise(function(resolve, reject) {
-          window.addEventListener("message", (e) => {
-            const data = e?.data
-            if (data?.params?._meta?.["io.modelcontextprotocol/subscriptionId"] === id) {
-              if (data?.method === "notifications/resources/updated") {
-                callback(data?.params?.uri)
+        return new Promise(function (resolve, reject) {
+          window.addEventListener('message', (e) => {
+            const data = e?.data;
+            if (data?.params?._meta?.['io.modelcontextprotocol/subscriptionId'] === id) {
+              if (data?.method === 'notifications/resources/updated') {
+                callback(data?.params?.uri);
               }
             }
-          })
-        })
+          });
+        });
       }
 
       async function subscribeResource(uri, callback) {
-        await subscriptionListen({
-          "resourceSubscriptions": [uri]
-        }, callback)
+        await subscriptionListen(
+          {
+            resourceSubscriptions: [uri]
+          },
+          callback
+        );
       }
 
       async function subscribeAndFetchResource(uri, callback) {
-        await subscriptionListen({
-          "resourceSubscriptions": [uri]
-        }, async (uri) => {
-          const res = await getResource(uri)
-          callback(res, uri)
-        })
+        await subscriptionListen(
+          {
+            resourceSubscriptions: [uri]
+          },
+          async (uri) => {
+            const res = await getResource(uri);
+            callback(res, uri);
+          }
+        );
       }
 
       // ====== end of the minimalist MCP 2 client. Actual plugin content begins
 
       async function ping() {
-        const res = await callTool("ping")
-        document.getElementById("pong").innerHTML += `${res}<br/>`
+        const res = await callTool('ping');
+        document.getElementById('pong').innerHTML += `${res}<br/>`;
       }
 
       async function checkPluginVisibility() {
-        const res = await getJSONResource("veryydiag://current_plugin/visibility")
-        document.getElementById("pong").innerHTML += `${res}<br/>`
+        const res = await getJSONResource('veryydiag://current_plugin/visibility');
+        document.getElementById('pong').innerHTML += `${res}<br/>`;
       }
 
       async function getCurrentDiagram() {
-        const res = await getJSONResource("veryydiag://internal_state/current_diagram")
-        document.getElementById("diagram").value += `${JSON.stringify(res)}`
+        const res = await getJSONResource('veryydiag://internal_state/current_diagram');
+        document.getElementById('diagram').value += `${JSON.stringify(res)}`;
       }
 
       async function setCurrentDiagram() {
-        const res = await callTool("set_current_diagram",
-                                   JSON.parse(document.getElementById("diagram").value))
+        const res = await callTool(
+          'set_current_diagram',
+          JSON.parse(document.getElementById('diagram').value)
+        );
       }
 
-      subscribeAndFetchResource("veryydiag://current_plugin/visibility", (newContent) => {
-        document.getElementById("pong").innerHTML += `Visibility changed to ${newContent}<br/>`
-      })
+      subscribeAndFetchResource('veryydiag://current_plugin/visibility', (newContent) => {
+        document.getElementById('pong').innerHTML += `Visibility changed to ${newContent}<br/>`;
+      });
 
-      subscribeAndFetchResource("veryydiag://internal_state/current_diagram", (newContent) => {
-        document.getElementById("pong").innerHTML += `The current diagram changed to ${newContent.slice(0,30)}…<br/>`
-      })
-
+      subscribeAndFetchResource('veryydiag://internal_state/current_diagram', (newContent) => {
+        document.getElementById('pong').innerHTML +=
+          `The current diagram changed to ${newContent.slice(0, 30)}…<br/>`;
+      });
     </script>
     <h1>Demo Ping Pong</h1>
-    <p>Demo plugin: each time you press the bellow "ping" button, you will receive a message back from the main instance of VeryyDiag below:</p>
+    <p>
+      Demo plugin: each time you press the bellow "ping" button, you will receive a message back
+      from the main instance of VeryyDiag below:
+    </p>
     <p><button onclick="ping()">Ping</button></p>
     <p><button onclick="checkPluginVisibility()">Check visibility</button></p>
     <p>
       <button onclick="getCurrentDiagram()">Get current diagram</button>
       <button onclick="setCurrentDiagram()">Set current diagram</button>
     </p>
-    <p><textarea id="diagram" style="width: 100%;"></textarea></p>
+    <p><textarea id="diagram" style="width: 100%"></textarea></p>
     <code id="pong"></code>
   </body>
 </html>

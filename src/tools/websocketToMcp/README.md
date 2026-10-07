@@ -9,10 +9,13 @@ MCP client  <-- stdio -->  this bridge  <-- WebSocket -->  browser page
 This is a super-simple script that just forwards websocket to stdio: you may also actually prefer to simply use existing tools like `websocat -s <port>`.
 
 ## Usage
+
 ```
 $ ./websocketToMcp.ts [--port <port>] [--host <host>] [--path </>]
 ```
+
 or
+
 ```
 $ npx vite-node src/tools/websocketToMcp/ [--port <port>] [--host <host>] [--path </>]
 ```

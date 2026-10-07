@@ -1,19 +1,19 @@
 <script lang="ts">
-  import {onMount} from 'svelte'
-  let n = $state(0)
-  const delay = ms => new Promise(res => setTimeout(res, ms));
+  import { onMount } from 'svelte';
+  let n = $state(0);
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
   onMount(async () => {
     await delay(1000); // Waits to start the installation otherwise it blocks the page TODO: it seems like if the iframe does an infinite loop (or install pyodide), it also blocks the main thread and the UI is frozen…
-    console.log("Installing pyodide…")
+    console.log('Installing pyodide…');
     // @ts-ignore Loaded from the <script>, not installed via npm (reduce dependencies since this is just a plugin)
     let pyodide = await loadPyodide();
-    console.log("Running my first python: 1 + 2 = ", pyodide.runPython("1 + 2"))
-    console.log("Loading micropip…")
-    await pyodide.loadPackage("micropip");
-    const micropip = pyodide.pyimport("micropip");
-    console.log("Installing pyzx…")
+    console.log('Running my first python: 1 + 2 = ', pyodide.runPython('1 + 2'));
+    console.log('Loading micropip…');
+    await pyodide.loadPackage('micropip');
+    const micropip = pyodide.pyimport('micropip');
+    console.log('Installing pyzx…');
     await micropip.install('pyzx');
-    console.log("Pyzx installed!")
+    console.log('Pyzx installed!');
     const code = String.raw`
 import pyzx as zx
 import numpy as np
@@ -65,21 +65,25 @@ mat = g.to_matrix()
 print("\nResulting matrix:")
 print(mat)
 [mat.real, mat.imag]
-    `
-    console.log("Code to run", code)
-    const mat = pyodide.runPython(code)
-    console.log("Result", mat)
-    console.log("mat",mat.toJs({create_pyproxies: false}))
-  })
+    `;
+    console.log('Code to run', code);
+    const mat = pyodide.runPython(code);
+    console.log('Result', mat);
+    console.log('mat', mat.toJs({ create_pyproxies: false }));
+  });
 </script>
+
 <svelte:head>
-  <base target="_blank">
+  <base target="_blank" />
   <!-- We could install it via npm, let's maybe save bundle size since it is a plugin? TODO: see if use via npm. -->
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.6/full/pyodide.js"></script>
 </svelte:head>
 
 <div class="mytext">
-  <p>This plugin allows you to treat a diagram as a ZX-calculus diagram, and to use tools originating from <a href="https://pyzx.readthedocs.io/" rel="noopener noreferrer">PyZX</a>.</p>
-  <button onclick={() => n = n + 1}>Click me {n}</button>
+  <p>
+    This plugin allows you to treat a diagram as a ZX-calculus diagram, and to use tools originating
+    from <a href="https://pyzx.readthedocs.io/" rel="noopener noreferrer">PyZX</a>.
+  </p>
+  <button onclick={() => (n = n + 1)}>Click me {n}</button>
   <p>Work in progress</p>
 </div>

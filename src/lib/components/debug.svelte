@@ -1,15 +1,15 @@
 <script>
   // @ts-nocheck
-  import { onMount } from "svelte";
-  import svgString from "./Nodes/NodeDiscard.svg?raw";
-  let container;  
+  import { onMount } from 'svelte';
+  import svgString from './Nodes/NodeDiscard.svg?raw';
+  let container;
   let line = { x1: 0, y1: 0, x2: 0, y2: 0 };
 
   function getTransformToElement(fromElement, toElement) {
     // https://stackoverflow.com/questions/5891552/more-usage-of-gettransformtoelement
-    return toElement.getScreenCTM().inverse().multiply(fromElement.getScreenCTM())
+    return toElement.getScreenCTM().inverse().multiply(fromElement.getScreenCTM());
   }
-  
+
   function updateLine(eltA, eltB) {
     const a = eltA.getBBox();
     const b = eltB.getBBox();
@@ -30,11 +30,13 @@
 
   onMount(() => {
     // Mount the svg
-    let svgElt = container?.querySelector("svg");
-    console.log(svgElt)
+    let svgElt = container?.querySelector('svg');
+    console.log(svgElt);
     svgElt.setAttribute('x', 100);
-    updateLine(document.getElementById("A"), svgElt.querySelector('[data-veryydiag-input="0"]'));
-    svgElt.querySelector('[data-veryydiag-input="0"]').addEventListener('click', function(){alert("clicked!")})
+    updateLine(document.getElementById('A'), svgElt.querySelector('[data-veryydiag-input="0"]'));
+    svgElt.querySelector('[data-veryydiag-input="0"]').addEventListener('click', function () {
+      alert('clicked!');
+    });
   });
 </script>
 
@@ -44,11 +46,5 @@
   <g bind:this={container}>
     {@html svgString}
   </g>
-  <line
-    x1={line.x1}
-    y1={line.y1}
-    x2={line.x2}
-    y2={line.y2}
-    stroke="black"
-  />
+  <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="black" />
 </svg>

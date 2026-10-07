@@ -10,12 +10,19 @@
     children?: Snippet;
     [key: string]: any;
   }>();
-
 </script>
 
 <span
-  contenteditable="true" spellcheck="false" role="button" tabindex="0" onblur={(e) => onedit((e.target as HTMLElement).innerText, (e.target as HTMLElement), e)}
-  onkeydown={(e) => {if (e.key === 'Enter') {(e.target as HTMLElement).blur()}}}
+  contenteditable="true"
+  spellcheck="false"
+  role="button"
+  tabindex="0"
+  onblur={(e) => onedit((e.target as HTMLElement).innerText, e.target as HTMLElement, e)}
+  onkeydown={(e) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLElement).blur();
+    }
+  }}
   {...rest}
 >
   {@render children?.()}

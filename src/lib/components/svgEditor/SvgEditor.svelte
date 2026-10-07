@@ -1,27 +1,54 @@
 <script lang="ts">
-  import type { DiagramConf, DiagramConfByUser, Error } from "$lib/types/types"
-  import Node from "$lib/components/Nodes/Node.svelte"
-  import Link from "$lib/components/Links/Link.svelte"
-  import { setContextDiagram, setContextErrors, type ErrorsMap, registerErrors, DiagramConfClass } from "$lib/contexts/context.svelte";
-  import { warningIfClosingWithUnsavedData, saveToLocalStorage, panzoom, drawLink, selectElement, drag, removeSelection, addNodeToDiagram, pasteFile, selectAll, undo, redo, drawLassoSelection } from "$lib/components/svgEditor/navigateSVG.svelte"
-  import { cm, randomID, cmToUnit, range } from "$lib/utils"
+  import type { DiagramConf, DiagramConfByUser, Error } from '#lib/types/types.js';
+  import Node from '#lib/components/Nodes/Node.svelte';
+  import Link from '#lib/components/Links/Link.svelte';
+  import {
+    setContextDiagram,
+    setContextErrors,
+    type ErrorsMap,
+    registerErrors,
+    DiagramConfClass
+  } from '#lib/contexts/context.svelte.js';
+  import {
+    warningIfClosingWithUnsavedData,
+    saveToLocalStorage,
+    panzoom,
+    drawLink,
+    selectElement,
+    drag,
+    removeSelection,
+    addNodeToDiagram,
+    pasteFile,
+    selectAll,
+    undo,
+    redo,
+    drawLassoSelection
+  } from '#lib/components/svgEditor/navigateSVG.svelte.js';
+  import { cm, randomID, cmToUnit, range } from '#lib/utils.js';
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
-  import { stylePanel, styleButton, styleButtonEnabled, styleButtonDisabled, dividerStyle, styleSelected } from "./commonStyles.svelte"
+  import {
+    stylePanel,
+    styleButton,
+    styleButtonEnabled,
+    styleButtonDisabled,
+    dividerStyle,
+    styleSelected
+  } from './commonStyles.svelte';
 
   // Import the various panels
   import PanelError from './PanelError.svelte';
   import PanelNotifications from './PanelNotifications.svelte';
-  import PanelLoadFile from "./PanelLoadFile.svelte";
-  import PanelDownload from "./PanelDownload.svelte";
-  import PanelTheory from "./PanelTheory.svelte";
-  import PanelToolbar from "./PanelToolbar.svelte";
-  import PanelDetails from "./PanelDetails.svelte";
-  import PanelProofMode from "./PanelProofMode.svelte";
-  import { onMount, untrack } from "svelte";
-  import PanelCreateNodeTemplate from "./PanelCreateNodeTemplate.svelte";
-  import PanelPlugins from "./PanelPlugins.svelte";
+  import PanelLoadFile from './PanelLoadFile.svelte';
+  import PanelDownload from './PanelDownload.svelte';
+  import PanelTheory from './PanelTheory.svelte';
+  import PanelToolbar from './PanelToolbar.svelte';
+  import PanelDetails from './PanelDetails.svelte';
+  import PanelProofMode from './PanelProofMode.svelte';
+  import { onMount, untrack } from 'svelte';
+  import PanelCreateNodeTemplate from './PanelCreateNodeTemplate.svelte';
+  import PanelPlugins from './PanelPlugins.svelte';
 
-  let disableDrag = $state({disableDrag: false})
+  let disableDrag = $state({ disableDrag: false });
 
   /**
    * Interactive SVG editor component
@@ -44,37 +71,37 @@
     diagramConf = {},
     diagramConfParsed = undefined,
     debug = false,
-    onlySvg = undefined,
-  } : SvgEditorProps = $props();
+    onlySvg = undefined
+  }: SvgEditorProps = $props();
 
-  let diagramConfClass : DiagramConfClass = new DiagramConfClass();
-  setContextDiagram(diagramConfClass)
+  let diagramConfClass: DiagramConfClass = new DiagramConfClass();
+  setContextDiagram(diagramConfClass);
 
   let uid: string = randomID(); // We use it to register errors per component, this uid is the ID of the current component
-  let allErrors = $state<ErrorsMap>({})
-  setContextErrors(allErrors)
+  let allErrors = $state<ErrorsMap>({});
+  setContextErrors(allErrors);
 
-  let errorsImport = $state<Error | undefined>(undefined)
+  let errorsImport = $state<Error | undefined>(undefined);
   $effect(() => {
     try {
       if (diagramConfParsed !== undefined) {
-        errorsImport = diagramConfClass.setConfigDontReparse(diagramConfParsed)
+        errorsImport = diagramConfClass.setConfigDontReparse(diagramConfParsed);
       } else {
-        errorsImport = diagramConfClass.setConfig(diagramConf)
+        errorsImport = diagramConfClass.setConfig(diagramConf);
       }
     } catch (err) {
-      errorsImport = {message: `Error while importing the configuration (${err})`}
+      errorsImport = { message: `Error while importing the configuration (${err})` };
     }
-  })
+  });
 
-
-  const resetViewport = () => diagramConfClass.fitViewportToContent({scale: onlySvg, breathe: onlySvg === undefined})
+  const resetViewport = () =>
+    diagramConfClass.fitViewportToContent({ scale: onlySvg, breathe: onlySvg === undefined });
   $effect(() => {
     if (diagramConfClass.getCurrentDiagram()?.viewport === undefined) {
-      console.log("Resetting viewport")
-      resetViewport()
+      console.log('Resetting viewport');
+      resetViewport();
     }
-  })
+  });
 
   // $effect(() => {
   //   diagramConfClass.getConfig();
@@ -82,21 +109,20 @@
   //   resetViewport()
   // })
 
+  let errors = $derived(errorsImport ? [errorsImport.message] : []);
+  registerErrors(uid, () => errors);
 
-  let errors = $derived(errorsImport ? [errorsImport.message] : [])
-  registerErrors(uid, () => errors)
-
-  let svgRef : SVGGraphicsElement | undefined = undefined
+  let svgRef: SVGGraphicsElement | undefined = undefined;
   $effect(() => {
-    diagramConfClass.setSvg(svgRef)
-  })
+    diagramConfClass.setSvg(svgRef);
+  });
 
   $effect(() => {
     if (onlySvg !== undefined) {
       // Let them some time before refreshing the viewport, otherwise errors won't show-up
-      setTimeout(() => resetViewport(), 0)
+      setTimeout(() => resetViewport(), 0);
     }
-  })
+  });
 
   // For debug
   onMount(() => {
@@ -104,70 +130,91 @@
       // @ts-ignore We modify the windows only for debugging
       if (window?.diagramConfClass === undefined) {
         // @ts-ignore We modify the windows only for debugging
-        window.diagramConfClass = diagramConfClass
+        window.diagramConfClass = diagramConfClass;
       } else {
-        console.warn("A diagram window.diagramConfClass already existed (i.e. you loaded multiple diagrams in the same page). We overwrote it, but beware if you use it to debug!")
+        console.warn(
+          'A diagram window.diagramConfClass already existed (i.e. you loaded multiple diagrams in the same page). We overwrote it, but beware if you use it to debug!'
+        );
         // @ts-ignore We modify the windows only for debugging
-        window.diagramConfClass = diagramConfClass
+        window.diagramConfClass = diagramConfClass;
       }
     }
-  })
+  });
 
-  let proofMode = diagramConfClass.isInProofMode()
+  let proofMode = diagramConfClass.isInProofMode();
 
   let addPanelCollapsed = $state(false);
-  let loadFilePanel = $state(false)
-  let downloadPanel = $state(false)
-  let panelDetailsEnabled = $state(true)
-  let createNodeTemplatePanel = $state(false)
+  let loadFilePanel = $state(false);
+  let downloadPanel = $state(false);
+  let panelDetailsEnabled = $state(true);
+  let createNodeTemplatePanel = $state(false);
 </script>
 
 {#snippet svg(width: string | number, height: string | number)}
   {@const nbErrors = Object.entries(allErrors).length}
-  <svg bind:this={svgRef}
-    width={width}
-    height={height}
+  <svg
+    bind:this={svgRef}
+    {width}
+    {height}
     overflow="hidden"
-    viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(diagramConfClass.getViewport().w)} {cm(diagramConfClass.getViewport().h)}"
+    viewBox="{cm(diagramConfClass.getViewport().x)} {cm(diagramConfClass.getViewport().y)} {cm(
+      diagramConfClass.getViewport().w
+    )} {cm(diagramConfClass.getViewport().h)}"
     xmlns="http://www.w3.org/2000/svg"
     use:panzoom={onlySvg ? undefined : diagramConfClass}
     use:drawLink={diagramConfClass}
     use:selectElement={onlySvg ? undefined : diagramConfClass}
-    use:drag={{diagramConfClass: (onlySvg ? undefined : diagramConfClass), disableDrag}}
+    use:drag={{ diagramConfClass: onlySvg ? undefined : diagramConfClass, disableDrag }}
     use:removeSelection={onlySvg ? undefined : diagramConfClass}
-    use:drawLassoSelection={{diagramConfClass: (onlySvg ? undefined : diagramConfClass), disableDrag}}
+    use:drawLassoSelection={{
+      diagramConfClass: onlySvg ? undefined : diagramConfClass,
+      disableDrag
+    }}
     style="touch-action: none;"
     data-veryydiag-app="true"
-    data-veryydiag-main-svg={onlySvg ? undefined : "true"}
+    data-veryydiag-main-svg={onlySvg ? undefined : 'true'}
     data-veryydiag-uid={uid}
     role="toolbar"
-    tabindex="0" >
+    tabindex="0"
+  >
     <defs>
       <pattern
         id="grid"
         patternUnits="userSpaceOnUse"
         width={cm(1)}
         height={cm(1)}
-        patternTransform="translate({diagramConfClass.getViewport().x % cm(1)}, {diagramConfClass.getViewport().y % cm(1)})"
+        patternTransform="translate({diagramConfClass.getViewport().x %
+          cm(1)}, {diagramConfClass.getViewport().y % cm(1)})"
       >
         <circle cx={cm(1) / 2} cy={cm(1) / 2} r={cm(0.03)} fill="#DDDDDD" />
       </pattern>
     </defs>
     <!-- If the bounding box of the element is too small (e.g. horizontal line will have zero height), add invisible elements around it to increase the size of the bounding box -->
     <filter id="selected" x="-450%" y="-450%" width="1000%" height="1000%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feFlood flood-color="dodgerblue" flood-opacity="1" result="color"/>
-      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feFlood flood-color="dodgerblue" flood-opacity="1" result="color" />
+      <feComposite in="color" in2="blur" operator="in" result="glow" />
       <feMerge>
-        <feMergeNode in="glow"/>
-        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
     {#if !onlySvg}
-      <circle x={diagramConfClass.getViewport().x} y={diagramConfClass.getViewport().y} r="10000%" fill="url(#grid)" style="pointer-events: none;"/>
+      <circle
+        x={diagramConfClass.getViewport().x}
+        y={diagramConfClass.getViewport().y}
+        r="10000%"
+        fill="url(#grid)"
+        style="pointer-events: none;"
+      />
     {/if}
     {#if diagramConfClass.getCurrentDiagram()?.error !== undefined && !onlySvg}
-      <circle r="10000%" x={diagramConfClass.getViewport().x} y={diagramConfClass.getViewport().y} fill="red"/>
+      <circle
+        r="10000%"
+        x={diagramConfClass.getViewport().x}
+        y={diagramConfClass.getViewport().y}
+        fill="red"
+      />
     {/if}
     <!--
          We create a group to be able to get bounding box reliably (no grid, selection etc). We do take
@@ -175,13 +222,16 @@
     -->
     <g data-veryydiag-svg-bounding-box="true">
       {#each Object.entries(diagramConfClass.getLinks()) as [linkID, link] (linkID)}
-        <Link {...link} id={linkID}  />
+        <Link {...link} id={linkID} />
       {/each}
       {#if diagramConfClass?.currentlyCreatedLink !== undefined}
-        <Link from={diagramConfClass.currentlyCreatedLink.from} to={diagramConfClass.currentlyCreatedLink.to} />
+        <Link
+          from={diagramConfClass.currentlyCreatedLink.from}
+          to={diagramConfClass.currentlyCreatedLink.to}
+        />
       {/if}
       {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
-        <Node id={id} {...node} />
+        <Node {id} {...node} />
       {/each}
       {#if onlySvg !== undefined && nbErrors > 0}
         <text x="0" y="0" style="fill:red; font: bold 15px sans-serif;">
@@ -197,36 +247,49 @@
       {/if}
     </g>
     {#if !onlySvg && diagramConfClass.currentlyDrawnLassoSelection !== undefined && diagramConfClass.currentlyDrawnLassoSelection.length > 0}
-      <path data-veryydiag-lasso="true" d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({x, y}) => `${x} ${y}`).join(" L")}Z`} fill-rule="evenodd" fill="dodgerblue" fill-opacity="0.1" stroke="grey" stroke-dasharray="4" stroke-width="0.8" />
-        <!-- It is very hard to draw links with touch devices (and sometimes with the mouse as well)
+      <path
+        data-veryydiag-lasso="true"
+        d={`M${diagramConfClass.currentlyDrawnLassoSelection.map(({ x, y }) => `${x} ${y}`).join(' L')}Z`}
+        fill-rule="evenodd"
+        fill="dodgerblue"
+        fill-opacity="0.1"
+        stroke="grey"
+        stroke-dasharray="4"
+        stroke-width="0.8"
+      />
+      <!-- It is very hard to draw links with touch devices (and sometimes with the mouse as well)
              since we need to click exactly on the small anchor with a big finger. Hence, we provide
              another way to create links: if we end our lasso where we started on the circle, it
              creates a link between the two selected anchors when available.
         -->
-        <circle
-          cx={diagramConfClass.currentlyDrawnLassoSelection[0].x}
-          cy={diagramConfClass.currentlyDrawnLassoSelection[0].y}
-          r="5"
-          fill="grey"
-          stroke="dodgerblue"
-          data-veryydiag-lasso-create-link="true"
-        />
-        <!-- To select nodes we show the center of the node that must be selected -->
-        {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
-          {#if node?.pos !== undefined}
-            <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />
-          {/if}
-        {/each}
+      <circle
+        cx={diagramConfClass.currentlyDrawnLassoSelection[0].x}
+        cy={diagramConfClass.currentlyDrawnLassoSelection[0].y}
+        r="5"
+        fill="grey"
+        stroke="dodgerblue"
+        data-veryydiag-lasso-create-link="true"
+      />
+      <!-- To select nodes we show the center of the node that must be selected -->
+      {#each Object.entries(diagramConfClass.getNodes()) as [id, node] (id)}
+        {#if node?.pos !== undefined}
+          <circle cx={cmToUnit(node.pos.x)} cy={cmToUnit(node.pos.y)} r="2" stroke="white" />
+        {/if}
+      {/each}
     {/if}
   </svg>
 {/snippet}
 
-{#if onlySvg }
-  {@render svg(diagramConfClass.getCurrentDiagram()?.svgSize?.w || "100%", diagramConfClass.getCurrentDiagram()?.svgSize?.h || "100%")}
+{#if onlySvg}
+  {@render svg(
+    diagramConfClass.getCurrentDiagram()?.svgSize?.w || '100%',
+    diagramConfClass.getCurrentDiagram()?.svgSize?.h || '100%'
+  )}
 {:else}
-
-  <div class="relative w-screen h-screen overflow-clip"
-    tabindex="0" role="button"
+  <div
+    class="relative h-screen w-screen overflow-clip"
+    tabindex="0"
+    role="button"
     use:addNodeToDiagram={diagramConfClass}
     use:pasteFile={diagramConfClass}
     use:saveToLocalStorage={onlySvg ? undefined : diagramConfClass}
@@ -235,43 +298,42 @@
     use:redo={onlySvg ? undefined : diagramConfClass}
     use:warningIfClosingWithUnsavedData={onlySvg ? undefined : diagramConfClass}
   >
-    {@render svg("100%", "100%")}
+    {@render svg('100%', '100%')}
 
     <!-- Toolbar -->
     <PanelToolbar
-      bind:addPanelCollapsed={addPanelCollapsed}
-      bind:downloadPanel={downloadPanel}
-      bind:loadFilePanel={loadFilePanel}
-      bind:panelDetailsEnabled={panelDetailsEnabled}
-      resetViewport={resetViewport}
+      bind:addPanelCollapsed
+      bind:downloadPanel
+      bind:loadFilePanel
+      bind:panelDetailsEnabled
+      {resetViewport}
     />
 
     <!-- Theory panel -->
-    <PanelTheory bind:addPanelCollapsed={addPanelCollapsed} bind:createNodeTemplatePanel={createNodeTemplatePanel} />
+    <PanelTheory bind:addPanelCollapsed bind:createNodeTemplatePanel />
 
     <!-- Theory panel -->
-    <PanelDetails bind:panelDetailsEnabled={panelDetailsEnabled} />
+    <PanelDetails bind:panelDetailsEnabled />
 
     <!-- Proof mode panel -->
-    <PanelProofMode bind:panelDetailsEnabled={panelDetailsEnabled} />
+    <PanelProofMode bind:panelDetailsEnabled />
 
     <!-- Plugins -->
     <PanelPlugins />
 
     <!-- Load file panel -->
-    <PanelLoadFile bind:loadFilePanel={loadFilePanel} />
+    <PanelLoadFile bind:loadFilePanel />
 
     <!-- Download panel -->
-    <PanelDownload bind:downloadPanel={downloadPanel} />
+    <PanelDownload bind:downloadPanel />
 
     <!-- Download panel -->
-    <PanelCreateNodeTemplate bind:createNodeTemplatePanel={createNodeTemplatePanel} />
+    <PanelCreateNodeTemplate bind:createNodeTemplatePanel />
 
     <!-- Errors -->
     <PanelError />
 
     <!-- Notifications -->
     <PanelNotifications />
-
   </div>
 {/if}

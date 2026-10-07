@@ -1,14 +1,16 @@
 <script lang="ts">
   /** Error panel */
-  import { getContextErrors } from "$lib/contexts/context.svelte";
+  import { getContextErrors } from '#lib/contexts/context.svelte.js';
 
-  let allErrors = getContextErrors()
+  let allErrors = getContextErrors();
 </script>
 
 <!-- Error panel -->
 {#if Object.entries(allErrors).length > 0}
-  <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-6/10 flex flex-col gap-2 p-5 backdrop-blur-md rounded-xl shadow-lg border border-red-200 text-red bg-red-100 max-h-2/10 overflow-auto">
-    <h1 class="text-center text-lg font-normal text-body">Errors</h1>
+  <div
+    class="text-red absolute bottom-4 left-1/2 flex max-h-2/10 w-6/10 -translate-x-1/2 flex-col gap-2 overflow-auto rounded-xl border border-red-200 bg-red-100 p-5 shadow-lg backdrop-blur-md"
+  >
+    <h1 class="text-body text-center text-lg font-normal">Errors</h1>
     <div>
       <ul class="list-disc px-5">
         {#each Object.entries(allErrors) as [uid, errors]}

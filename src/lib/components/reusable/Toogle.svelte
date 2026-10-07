@@ -2,41 +2,44 @@
   let {
     enabled = $bindable(false),
     onchange,
-    tiny = false,
-  } : {
-    enabled?: boolean,
-    onchange?: (enabled: boolean) => void,
-    tiny?: boolean,
+    tiny = false
+  }: {
+    enabled?: boolean;
+    onchange?: (enabled: boolean) => void;
+    tiny?: boolean;
   } = $props();
 
   function toggle() {
     enabled = !enabled;
     if (onchange) {
-      onchange(enabled)
+      onchange(enabled);
     }
   }
 </script>
 
 <button
   onclick={toggle}
-  class={["inline-block align-middle mx-2 relative flex items-center rounded-full transition-all duration-300 backdrop-blur-md border shadow-lg",
-        enabled
-        ? 'bg-green-200/80 border-green-400 shadow-green-500/30'
-          : 'bg-gray-200/80 border-gray-300 shadow-black/10',
-        tiny ? "w-10 h-7" : "w-16 h-10"
-        ]}
+  class={[
+    'relative mx-2 flex inline-block items-center rounded-full border align-middle shadow-lg backdrop-blur-md transition-all duration-300',
+    enabled
+      ? 'border-green-400 bg-green-200/80 shadow-green-500/30'
+      : 'border-gray-300 bg-gray-200/80 shadow-black/10',
+    tiny ? 'h-7 w-10' : 'h-10 w-16'
+  ]}
 >
   <!-- Track highlight -->
-  <div class="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 to-transparent pointer-events-none"></div>
+  <div
+    class="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/40 to-transparent"
+  ></div>
 
   <!-- Knob -->
   <div
-    class={`absolute left-1 top-1/2 -translate-y-1/2
+    class={`absolute top-1/2 left-1 -translate-y-1/2
             rounded-full
-            bg-white border border-gray-200 shadow-md
+            border border-gray-200 bg-white shadow-md
             transition-all duration-300
             ${enabled ? (tiny ? `translate-x-2` : `translate-x-7`) : 'translate-x-0'}
-            ${tiny ? "w-5 h-5" : "w-7 h-7 "}
+            ${tiny ? 'h-5 w-5' : 'h-7 w-7 '}
             `}
   ></div>
 </button>

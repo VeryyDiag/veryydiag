@@ -1,39 +1,39 @@
 <script lang="ts">
   /** Download panel */
   import Icon from '@iconify/svelte'; // https://icon-sets.iconify.design/
-  import { getContextDiagram } from "$lib/contexts/context.svelte";
-  import Button from '$lib/components/reusable/Button.svelte'
+  import { getContextDiagram } from '#lib/contexts/context.svelte.js';
+  import Button from '#lib/components/reusable/Button.svelte';
   import { stylePanel } from './commonStyles.svelte';
-  import SvgEditor from "./SvgEditor.svelte"
+  import SvgEditor from './SvgEditor.svelte';
   import { mount } from 'svelte';
-  import Toogle from '$lib/components/reusable/Toogle.svelte'
-  import { downloadStringAsFile } from "$lib/utils"
-  import { stringify } from 'yaml'
-  import {flushSync} from "svelte"
-  import { saveToLocalStorageFct } from '$lib/components/svgEditor/navigateSVG.svelte'
+  import Toogle from '#lib/components/reusable/Toogle.svelte';
+  import { downloadStringAsFile } from '#lib/utils.js';
+  import { stringify } from 'yaml';
+  import { flushSync } from 'svelte';
+  import { saveToLocalStorageFct } from '#lib/components/svgEditor/navigateSVG.svelte.js';
 
-  let { downloadPanel = $bindable() } = $props()
+  let { downloadPanel = $bindable() } = $props();
 
-  let diagramConfClass = getContextDiagram()
+  let diagramConfClass = getContextDiagram();
 
-  let copy = $state(false)
-  let useYaml = $state(true)
+  let copy = $state(false);
+  let useYaml = $state(true);
 
-  async function downloadSVG({asInView, copy} : {asInView: boolean, copy:boolean}) {
-    let svgRef = diagramConfClass.getSVG()
-    let str = ""
+  async function downloadSVG({ asInView, copy }: { asInView: boolean; copy: boolean }) {
+    let svgRef = diagramConfClass.getSVG();
+    let str = '';
     if (asInView) {
       if (svgRef === undefined) {
-        alert("Error: no SVG found. This should never occur, please report a bug.")
+        alert('Error: no SVG found. This should never occur, please report a bug.');
       } else {
-        str = svgRef.outerHTML
+        str = svgRef.outerHTML;
       }
     } else {
-      const container = document.createElement('div')
+      const container = document.createElement('div');
       // We must mount the container or it will not work,
       // container.hidden = true won't work,
       // visibility: hidden seems to work, but anyway too fast to see anything
-      container.style = "visibility: hidden"
+      container.style = 'visibility: hidden';
       // Needed or some variables would not update, not sure why
       document.body.appendChild(container);
       const foo = mount(SvgEditor, {
@@ -41,58 +41,81 @@
         props: {
           onlySvg: 1,
           diagramConfParsed: $state.snapshot(diagramConfClass.getConfig())
-      }})
+        }
+      });
       flushSync(); // Make sure that effects are ran, not sure if it makes a difference when mounted in the dom?
       // Wait for the javascript code that creates the svg file to mount
-      await new Promise(r => setTimeout(r, 0));
-      str = container.innerHTML
-      container.remove()
+      await new Promise((r) => setTimeout(r, 0));
+      str = container.innerHTML;
+      container.remove();
     }
     if (copy) {
-      navigator.clipboard.writeText(str)
-    }
-    else {
-      downloadStringAsFile(str, "image/svg+xml", "diagram.svg")
+      navigator.clipboard.writeText(str);
+    } else {
+      downloadStringAsFile(str, 'image/svg+xml', 'diagram.svg');
     }
   }
 
-  function downloadDiagram({json, copy}: {json: boolean, copy: boolean}) {
+  function downloadDiagram({ json, copy }: { json: boolean; copy: boolean }) {
     if (json) {
-      const str = JSON.stringify(diagramConfClass.getDiagramConfUser())
+      const str = JSON.stringify(diagramConfClass.getDiagramConfUser());
       if (copy) {
-        navigator.clipboard.writeText(str)
-      }
-      else {
-        downloadStringAsFile(str, "application/json", "diagram.veryydiag")
+        navigator.clipboard.writeText(str);
+      } else {
+        downloadStringAsFile(str, 'application/json', 'diagram.veryydiag');
       }
     } else {
-      const str = stringify(diagramConfClass.getDiagramConfUser())
+      const str = stringify(diagramConfClass.getDiagramConfUser());
       if (copy) {
-        navigator.clipboard.writeText(str)
+        navigator.clipboard.writeText(str);
       } else {
-           downloadStringAsFile(str, "application/x-yaml", "diagram.veryydiag")
+        downloadStringAsFile(str, 'application/x-yaml', 'diagram.veryydiag');
       }
     }
   }
-
 </script>
 
-{#if downloadPanel }
-  <div class={["absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4/10 h-7/10 flex flex-col items-center gap-2 p-5 overflow-x-auto overflow-y-auto", stylePanel]}>
+{#if downloadPanel}
+  <div
+    class={[
+      'absolute top-1/2 left-1/2 flex h-7/10 w-4/10 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 overflow-x-auto overflow-y-auto p-5',
+      stylePanel
+    ]}
+  >
     <!-- Floating close icon -->
     <button
-      class={["absolute top-2 right-2 w-8 h-8 flex items-center justify-center !rounded-full hover:bg-blue-100", stylePanel]}
+      class={[
+        'absolute top-2 right-2 flex h-8 w-8 items-center justify-center !rounded-full hover:bg-blue-100',
+        stylePanel
+      ]}
       title="Close download panel"
-      onclick={() => downloadPanel = false}
-      >
+      onclick={() => (downloadPanel = false)}
+    >
       <Icon icon="material-symbols:close-rounded" width="20" height="20" />
     </button>
-    <h1 class="text-center text-lg font-normal text-body">Download</h1>
-    <p class="text-center">Copy instead of download: <Toogle bind:enabled={copy} /> Use yaml: <Toogle bind:enabled={useYaml} /></p>
-    <Button onclick={() => downloadSVG({asInView: true, copy: copy})}>{copy ? "Copy" : "Download"} SVG like in view</Button>
-    <Button onclick={() => downloadSVG({asInView: false, copy: copy})}>{copy ? "Copy" : "Download"} whole SVG</Button>
-    <Button onclick={() => downloadDiagram({json: !useYaml, copy: copy})}>{copy ? "Copy" : "Download"} diagram file ({useYaml ? "yaml variant, recommended (better versionning, manual edit)" : "json variant, if yaml not supported"})</Button>
-    <p>If you want to quickly save regularly your work without exporting the whole file, you can also press Ctrl-S and it will save it in the localStorage of your browser (warning: this may be removed without notice by your browser, so always export it locally at the end). To reload it, go to the "Load diagram" tab.</p>
+    <h1 class="text-body text-center text-lg font-normal">Download</h1>
+    <p class="text-center">
+      Copy instead of download: <Toogle bind:enabled={copy} /> Use yaml: <Toogle
+        bind:enabled={useYaml}
+      />
+    </p>
+    <Button onclick={() => downloadSVG({ asInView: true, copy: copy })}
+      >{copy ? 'Copy' : 'Download'} SVG like in view</Button
+    >
+    <Button onclick={() => downloadSVG({ asInView: false, copy: copy })}
+      >{copy ? 'Copy' : 'Download'} whole SVG</Button
+    >
+    <Button onclick={() => downloadDiagram({ json: !useYaml, copy: copy })}
+      >{copy ? 'Copy' : 'Download'} diagram file ({useYaml
+        ? 'yaml variant, recommended (better versionning, manual edit)'
+        : 'json variant, if yaml not supported'})</Button
+    >
+    <p>
+      If you want to quickly save regularly your work without exporting the whole file, you can also
+      press Ctrl-S and it will save it in the localStorage of your browser (warning: this may be
+      removed without notice by your browser, so always export it locally at the end). To reload it,
+      go to the "Load diagram" tab.
+    </p>
     <Button onclick={() => saveToLocalStorageFct(diagramConfClass)}>Save in local storage</Button>
   </div>
 {/if}

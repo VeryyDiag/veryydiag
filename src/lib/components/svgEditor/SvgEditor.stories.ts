@@ -10,8 +10,8 @@ const meta = {
   component: SvgEditor,
   title: 'Components usable by users/SvgEditor',
   parameters: {
-    docs: {subtitle: "My subtitle v2"},
-  },
+    docs: { subtitle: 'My subtitle v2' }
+  }
   // tags: ['autodocs'],
   // argTypes: {} // TODO
 } satisfies Meta<typeof SvgEditor>;
@@ -21,26 +21,27 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    diagramConf:{
+    diagramConf: {
       diagramNodes: {
-        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}},
+        myfirstnode: { nodeKind: 'myDiscard', pos: { x: 0, y: 0 } }
       },
       availableNodes: {
-        myDiscard: {svgName: "builtins.circuits.discard"},
+        myDiscard: { svgName: 'builtins.circuits.discard' }
       }
-  }},
+    }
+  },
   play: async ({ canvas, userEvent, canvasElement }) => {
-    const svg = canvasElement.querySelectorAll("svg");
+    const svg = canvasElement.querySelectorAll('svg');
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="in.0"]').length).toBe(1);
-  },
+  }
 };
 
 export const SvgIncluded: Story = {
   args: {
     diagramConf: {
       diagramNodes: {
-        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}}
+        myfirstnode: { nodeKind: 'myDiscard', pos: { x: 0, y: 0 } }
       },
       availableNodes: {
         myDiscard: {
@@ -68,10 +69,10 @@ export const SvgIncluded: Story = {
     }
   },
   play: async ({ canvas, userEvent, canvasElement }) => {
-    const svg = canvasElement.querySelectorAll("svg");
+    const svg = canvasElement.querySelectorAll('svg');
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="out.0"]').length).toBe(1);
-  },
+  }
 };
 
 export const OnlySvg: Story = {
@@ -79,7 +80,7 @@ export const OnlySvg: Story = {
     onlySvg: 1,
     diagramConf: {
       diagramNodes: {
-        myfirstnode: {nodeKind: "myDiscard", pos: {x: 0, y: 0}}
+        myfirstnode: { nodeKind: 'myDiscard', pos: { x: 0, y: 0 } }
       },
       availableNodes: {
         myDiscard: {
@@ -107,57 +108,57 @@ export const OnlySvg: Story = {
     }
   },
   play: async ({ canvas, userEvent, canvasElement }) => {
-    const svg = canvasElement.querySelectorAll("svg");
+    const svg = canvasElement.querySelectorAll('svg');
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="out.0"]').length).toBe(1);
-  },
+  }
 };
 
 export const TwoNodes: Story = {
   args: {
-    diagramConf:{
+    diagramConf: {
       diagramNodes: {
-        myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
-        mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}}
+        myfirstnode: { nodeKind: 'inputDiscard', pos: { x: 0, y: 0 } },
+        mysecondnode: { nodeKind: 'discard', pos: { x: 2, y: 0 } }
       },
       availableNodes: {
-        inputDiscard: {svgName: "builtins.circuits.inputDiscard"},
-        discard: {svgName: "builtins.circuits.discard"}
+        inputDiscard: { svgName: 'builtins.circuits.inputDiscard' },
+        discard: { svgName: 'builtins.circuits.discard' }
       }
-  }},
+    }
+  },
   play: async ({ canvas, userEvent, canvasElement }) => {
-    const svg = canvasElement.querySelectorAll("svg");
+    const svg = canvasElement.querySelectorAll('svg');
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="in.0"]').length).toBe(1);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="out.0"]').length).toBe(1);
-  },
+  }
 };
-
 
 export const TwoNodesLinked: Story = {
   args: {
-    diagramConf:{
+    diagramConf: {
       diagramNodes: {
-        myfirstnode: {nodeKind: "inputDiscard", pos: {x: 0, y: 0}},
-        mysecondnode: {nodeKind: "discard", pos: {x: 2, y: 0}},
+        myfirstnode: { nodeKind: 'inputDiscard', pos: { x: 0, y: 0 } },
+        mysecondnode: { nodeKind: 'discard', pos: { x: 2, y: 0 } }
       },
       availableNodes: {
-        inputDiscard: {svgName: "builtins.circuits.inputDiscard"},
-        discard: {svgName: "builtins.circuits.discard"},
+        inputDiscard: { svgName: 'builtins.circuits.inputDiscard' },
+        discard: { svgName: 'builtins.circuits.discard' }
       },
       links: [
         {
-          from: "myfirstnode.out.0",
-          to: "mysecondnode.in.0"
-        },
-      ],
-  }},
+          from: 'myfirstnode.out.0',
+          to: 'mysecondnode.in.0'
+        }
+      ]
+    }
+  },
   play: async ({ canvas, userEvent, canvasElement }) => {
-    const svg = canvasElement.querySelectorAll("svg");
+    const svg = canvasElement.querySelectorAll('svg');
     await expect(svg).not.toBe(null);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="in.0"]').length).toBe(1);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-anchor="out.0"]').length).toBe(1);
     await expect(canvasElement.querySelectorAll('[data-veryydiag-link]').length).toBe(1);
-  },
+  }
 };
-

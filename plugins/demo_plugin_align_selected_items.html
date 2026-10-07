@@ -1,50 +1,56 @@
 <html>
   <body>
     <h1>Demo Ping Pong</h1>
-    <p>Demo plugin: each time you press the bellow "ping" button, you will receive a message back from the main software listed below:</p>
+    <p>
+      Demo plugin: each time you press the bellow "ping" button, you will receive a message back
+      from the main software listed below:
+    </p>
     <p><button onclick="ping()">Ping</button></p>
     <code id="pong"></code>
     <script>
       // Call this to call plugin messages
       function callTool(toolName, data) {
-        window.parent.postMessage({isProofdiagMsg: true, ...data}, '*')
+        window.parent.postMessage({ isProofdiagMsg: true, ...data }, '*');
       }
       // Listen for messages
-      window.addEventListener("message", ({data}) => {
+      window.addEventListener('message', ({ data }) => {
         if (data.isProofdiagMsg) {
-          console.log("PLUGIN: I received a message from Proofdiag", data)
-          if (data.kind === "plugin.visibility.changed" && data.visible) {
+          console.log('PLUGIN: I received a message from Proofdiag', data);
+          if (data.kind === 'plugin.visibility.changed' && data.visible) {
             // For more complex interfaces, you may want to consider instead
             // frameworks like React, VueJS or Svelte (used by proofdiag but requires a compilation)
-            document.getElementById("timeOpenPlugin").innerHTML = new Date()
+            document.getElementById('timeOpenPlugin').innerHTML = new Date();
           }
         }
       });
       // Asks for the status of the Notifies that the plugin is loaded, ready to listen to new messages
       function resetTheory() {
-        console.log("Sending a message")
-        pluginMessage({kind: "config.set", config: {
-          diagrams: {
-            main: {
-              nodes: {
-                myNode: {
-                  nodeKind: "discard",
-                  pos: {x: 0, y: 0}
-                },
-              }
+        console.log('Sending a message');
+        pluginMessage({
+          kind: 'config.set',
+          config: {
+            diagrams: {
+              main: {
+                nodes: {
+                  myNode: {
+                    nodeKind: 'discard',
+                    pos: { x: 0, y: 0 }
+                  }
+                }
+              },
+              theory: 'main'
             },
-            theory: "main",
-          },
-          theories: {
-            main: {
-              availableNodes: {
-                discard: {
-                  svgName: "builtins.discard"
+            theories: {
+              main: {
+                availableNodes: {
+                  discard: {
+                    svgName: 'builtins.discard'
+                  }
                 }
               }
-            },
-          },
-        }})
+            }
+          }
+        });
       }
     </script>
   </body>

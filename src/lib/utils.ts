@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { AnchorName, IDAnchor, NodeID, Point, ParamValue, Error } from './types/types';
 import { VeryyDiagError } from './types/types';
-import { List, Map, Set as SetIm, Collection } from "immutable"
+import { List, Map, Set as SetIm, Collection } from 'immutable';
 
 // This file contains generic utils functions
 
@@ -13,32 +13,31 @@ import { List, Map, Set as SetIm, Collection } from "immutable"
  *  but maybe safer as well since both copies are really different.
  *  f must change its input destructively
  */
-export function editCopy<A>(obj: A, f: (x: A) => void) : A {
-  let objCopy = structuredClone(obj)
-  f(objCopy)
-  return objCopy
+export function editCopy<A>(obj: A, f: (x: A) => void): A {
+  let objCopy = structuredClone(obj);
+  f(objCopy);
+  return objCopy;
 }
 
-export function errToUndef<T>(x: () => T) : T | undefined {
+export function errToUndef<T>(x: () => T): T | undefined {
   try {
-    return x()
+    return x();
   } catch (e) {
-    return undefined
+    return undefined;
   }
 }
 
 export function assertTrue(x: boolean, m: string): asserts x {
   if (!x) {
-    throw new VeryyDiagError(m)
+    throw new VeryyDiagError(m);
   }
 }
 
-
 export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new VeryyDiagError(m)
+    throw new VeryyDiagError(m);
   } else {
-    return x
+    return x;
   }
 }
 
@@ -47,15 +46,15 @@ export function assertNotUndefined<T>(x: T | undefined, m: string): NonNullable<
  */
 export function assertNotUndefinedNR<T>(x: T | undefined, m: string): asserts x is NonNullable<T> {
   if (x === undefined || x === null) {
-    throw new VeryyDiagError(m)
+    throw new VeryyDiagError(m);
   }
 }
 
 export function assertDontThrow<T>(f: () => T, m: string): T {
   try {
-    return f()
+    return f();
   } catch (e) {
-    throw new VeryyDiagError(`${m}: (${e})`, { cause: e })
+    throw new VeryyDiagError(`${m}: (${e})`, { cause: e });
   }
 }
 
@@ -64,93 +63,102 @@ export function assertNever(x: never, m: string = `We should never enter this ca
   throw new VeryyDiagError(`${m}: ${x}`);
 }
 
-export function exceptionToErrorMessage<A>(f: () => A) : A | Error {
+export function exceptionToErrorMessage<A>(f: () => A): A | Error {
   try {
-    return f()
+    return f();
   } catch (e) {
-    return {message: `${e}`}
+    return { message: `${e}` };
   }
 }
 
 export function toBoolean(x: string | boolean | number | undefined) {
-  if (typeof x === 'string' ) {
-    if (x === "true") {
-      return true
-    } else if (x === "false") {
-      return false
+  if (typeof x === 'string') {
+    if (x === 'true') {
+      return true;
+    } else if (x === 'false') {
+      return false;
     } else {
-      throw new VeryyDiagError(`Impossible to convert string "${x}" into a boolean`)
+      throw new VeryyDiagError(`Impossible to convert string "${x}" into a boolean`);
     }
   } else if (typeof x === 'number') {
-    throw new VeryyDiagError("Expecting a boolean but got a number ${x}")
+    throw new VeryyDiagError('Expecting a boolean but got a number ${x}');
   } else if (typeof x === 'boolean') {
-    return x
+    return x;
   } else if (x === undefined) {
-    return false
+    return false;
   } else {
-    throw new VeryyDiagError(`Can't turn type ${typeof x} into a boolean`)
+    throw new VeryyDiagError(`Can't turn type ${typeof x} into a boolean`);
   }
 }
 
-export function toString(x: ParamValue) : string {
-  if (typeof x === 'string' ) {
-    return x
+export function toString(x: ParamValue): string {
+  if (typeof x === 'string') {
+    return x;
   } else if (typeof x === 'number') {
-    return `${x}`
+    return `${x}`;
   } else if (typeof x === 'boolean') {
-    return x ? "true" : "false"
+    return x ? 'true' : 'false';
   } else {
-    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`)
+    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`);
   }
 }
 
-export function toInteger(x: ParamValue) : number {
-  if (typeof x === 'string' ) {
-    const xn = Number(x)
-    assertTrue(Number.isInteger(xn),
-               `${xn} is not integer`)
-    return xn
+export function toInteger(x: ParamValue): number {
+  if (typeof x === 'string') {
+    const xn = Number(x);
+    assertTrue(Number.isInteger(xn), `${xn} is not integer`);
+    return xn;
   } else if (typeof x === 'number') {
-    assertTrue(Number.isInteger(x),
-               `${x} is not integer`)
-    return x
+    assertTrue(Number.isInteger(x), `${x} is not integer`);
+    return x;
   } else {
-    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`)
+    throw new VeryyDiagError(`The type "${typeof x}" is not string, number or boolean.`);
   }
 }
 
-export function recordIsBijection(x: Record<string,string>,
-                                  { filterLeft = (x) => true,
-                                    filterRight = (x) => true,
-                                  } : {
-                                    filterLeft?: ((x: string) => boolean),
-                                    filterRight?: ((x: string) => boolean),
-                                  } = {}) : boolean {
-  return (new Set(Object.keys(x).filter(filterLeft))).size === (new Set(Object.values(x).filter(filterRight))).size
+export function recordIsBijection(
+  x: Record<string, string>,
+  {
+    filterLeft = (x) => true,
+    filterRight = (x) => true
+  }: {
+    filterLeft?: (x: string) => boolean;
+    filterRight?: (x: string) => boolean;
+  } = {}
+): boolean {
+  return (
+    new Set(Object.keys(x).filter(filterLeft)).size ===
+    new Set(Object.values(x).filter(filterRight)).size
+  );
 }
 
-export function listHasNoDuplicateE(a: string[]) : true {
-  const seen = a.filter((s => v => s.has(v) || !s.add(v))(new Set));
+export function listHasNoDuplicateE(a: string[]): true {
+  const seen = a.filter(
+    (
+      (s) => (v) =>
+        s.has(v) || !s.add(v)
+    )(new Set())
+  );
   if (seen.length !== 0) {
-    throw new VeryyDiagError(`The list has some duplicated values ${JSON.stringify(seen)}`)
+    throw new VeryyDiagError(`The list has some duplicated values ${JSON.stringify(seen)}`);
   }
-  return true
+  return true;
 }
 
-export function listsAreBijection(a: string[], b: string[]) : boolean {
-  const s = new Set(a).size
-  return s === (new Set(b)).size && s === a.length
+export function listsAreBijection(a: string[], b: string[]): boolean {
+  const s = new Set(a).size;
+  return s === new Set(b).size && s === a.length;
 }
 
-export function listsAreNotOverlapping(a: string[], b: string[]) : boolean {
-  const aS = new Set(a)
-  const bS = new Set(b)
-  return aS.intersection(bS).size === 0
+export function listsAreNotOverlapping(a: string[], b: string[]): boolean {
+  const aS = new Set(a);
+  const bS = new Set(b);
+  return aS.intersection(bS).size === 0;
 }
 
-export function listsAreEqualUpToOrdering(a: string[], b: string[]) : boolean {
+export function listsAreEqualUpToOrdering(a: string[], b: string[]): boolean {
   // Don't use set since we want [1] != [1,1]
-  return isDeepEqual(a.toSorted(), b.toSorted())
+  return isDeepEqual(a.toSorted(), b.toSorted());
 }
 
 // https://stackoverflow.com/a/77278013
@@ -159,7 +167,12 @@ export const isDeepEqual = <T>(a: T, b: T): boolean => {
     return true;
   }
 
-  const bothAreObjects = a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b);
+  const bothAreObjects =
+    a &&
+    b &&
+    typeof a === 'object' &&
+    typeof b === 'object' &&
+    Array.isArray(a) === Array.isArray(b);
 
   return Boolean(
     bothAreObjects &&
@@ -168,62 +181,67 @@ export const isDeepEqual = <T>(a: T, b: T): boolean => {
   );
 };
 
+export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) =>
+  a.size === b.size && [...a].every((value) => b.has(value));
 
-export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => a.size === b.size && [...a].every(value => b.has(value));
-
-export function areSetsEqualThrow<T>(a: Set<T>, b: Set<T>) : true {
-  if (a.size === b.size && [...a].every(value => b.has(value))) {
-    return true
+export function areSetsEqualThrow<T>(a: Set<T>, b: Set<T>): true {
+  if (a.size === b.size && [...a].every((value) => b.has(value))) {
+    return true;
   } else {
-    const adiff = Array.from(a.difference(b))
-    const bdiff = Array.from(b.difference(a))
-    throw new VeryyDiagError(`The sets are different: first set contains the values ${JSON.stringify(adiff)} not contained in second set, and second set contains ${JSON.stringify(bdiff)} not contained in first set`)
+    const adiff = Array.from(a.difference(b));
+    const bdiff = Array.from(b.difference(a));
+    throw new VeryyDiagError(
+      `The sets are different: first set contains the values ${JSON.stringify(adiff)} not contained in second set, and second set contains ${JSON.stringify(bdiff)} not contained in first set`
+    );
   }
 }
 
-export function listsAreUniqueAndIdenticalSets(a: string[], b: string[]) : boolean {
-  const aSet = new Set(a)
-  const sa = aSet.size
-  const bSet = new Set(b)
-  const sb = bSet.size
-  return sa === a.length && sb === b.length && sa === sb && areSetsEqual(aSet, bSet)
+export function listsAreUniqueAndIdenticalSets(a: string[], b: string[]): boolean {
+  const aSet = new Set(a);
+  const sa = aSet.size;
+  const bSet = new Set(b);
+  const sb = bSet.size;
+  return sa === a.length && sb === b.length && sa === sb && areSetsEqual(aSet, bSet);
 }
 
-export function listsAreUniqueAndIdenticalSetsThrow(a: string[], b: string[]) : true {
-  const aSet = new Set(a)
-  const sa = aSet.size
-  const bSet = new Set(b)
-  const sb = bSet.size
+export function listsAreUniqueAndIdenticalSetsThrow(a: string[], b: string[]): true {
+  const aSet = new Set(a);
+  const sa = aSet.size;
+  const bSet = new Set(b);
+  const sb = bSet.size;
   if (sa !== a.length) {
-    throw new VeryyDiagError(`The first lists contains redundant items ${JSON.stringify(a.filter(x => aSet.has(x)))}`)
+    throw new VeryyDiagError(
+      `The first lists contains redundant items ${JSON.stringify(a.filter((x) => aSet.has(x)))}`
+    );
   }
   if (sb !== b.length) {
-    throw new VeryyDiagError(`The second lists contains redundant items ${JSON.stringify(b.filter(x => bSet.has(x)))}`)
+    throw new VeryyDiagError(
+      `The second lists contains redundant items ${JSON.stringify(b.filter((x) => bSet.has(x)))}`
+    );
   }
-  return areSetsEqualThrow(aSet, bSet)
+  return areSetsEqualThrow(aSet, bSet);
 }
 
-export function listIsUnique<T>(l: T[]) : boolean {
-  const lSet = new Set(l)
-  return l.length == lSet.size
+export function listIsUnique<T>(l: T[]): boolean {
+  const lSet = new Set(l);
+  return l.length == lSet.size;
 }
 
 export function values<T>(o: Record<string, T> | undefined) {
-  return Object.values(o || {})
+  return Object.values(o || {});
 }
 
 export function keys<T>(o: Record<string, T> | undefined) {
-  return Object.keys(o || {})
+  return Object.keys(o || {});
 }
 
 export function entries<T>(o: Record<string, T> | undefined) {
-  return Object.entries(o || {})
+  return Object.entries(o || {});
 }
 
-
-export function inverseBijection(o: Record<string, string>) : Record<string, string> {
-  assertTrue(recordIsBijection(o), `This is not a bijection`)
-  return Object.fromEntries(Object.entries(o).map(([k,v]) => [v, k]))
+export function inverseBijection(o: Record<string, string>): Record<string, string> {
+  assertTrue(recordIsBijection(o), `This is not a bijection`);
+  return Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
 }
 
 // getTransformToElement(fromElement, toElement) returns the matrix to apply to turn coordinate in the insideElement coordinate
@@ -231,16 +249,21 @@ export function inverseBijection(o: Record<string, string>) : Record<string, str
 // This function was deprecated in SVG but practical, let's re-implement it with
 // non-deprecated functions
 // https://stackoverflow.com/questions/5891552/more-usage-of-gettransformtoelement
-export function getTransformToElement(fromElement: SVGGraphicsElement, toElement: SVGGraphicsElement) : DOMMatrix | undefined {
-  const m = fromElement.getScreenCTM()
+export function getTransformToElement(
+  fromElement: SVGGraphicsElement,
+  toElement: SVGGraphicsElement
+): DOMMatrix | undefined {
+  const m = fromElement.getScreenCTM();
   // This may be undefined, e.g. elements are not attached to the DOM
-  if (m === null)
-    return undefined
-  else
-    return toElement.getScreenCTM()?.inverse()?.multiply(m)
+  if (m === null) return undefined;
+  else return toElement.getScreenCTM()?.inverse()?.multiply(m);
 }
 
-export function clientToSVGCoord(svg: SVGSVGElement, clientX: number, clientY: number) : Point | undefined {
+export function clientToSVGCoord(
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number
+): Point | undefined {
   const point = svg.createSVGPoint();
   point.x = clientX;
   point.y = clientY;
@@ -251,105 +274,107 @@ export function clientToSVGCoord(svg: SVGSVGElement, clientX: number, clientY: n
   return point.matrixTransform(ctm.inverse());
 }
 
-export function clientToSVGCoordInCm(svg: SVGSVGElement, clientX: number, clientY: number) : Point | undefined {
-  const pts = clientToSVGCoord(svg, clientX, clientY)
+export function clientToSVGCoordInCm(
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number
+): Point | undefined {
+  const pts = clientToSVGCoord(svg, clientX, clientY);
   if (pts === undefined) {
-    return undefined
+    return undefined;
   }
-  return {x: unitToCm(pts.x), y: unitToCm(pts.y)}
+  return { x: unitToCm(pts.x), y: unitToCm(pts.y) };
 }
 
 // SVG uses CSS px as the base units, and 1cm = 96px / 2.54. We prefer to assume that each small node fits inside a 1cm x 1cm box
 // so we use cm as units here
 export function cmToUnit(cm: number) {
-  return cm * 96 / 2.54
+  return (cm * 96) / 2.54;
 }
 
 // practical alias
 export function cm(cm: number) {
-  return cmToUnit(cm)
+  return cmToUnit(cm);
 }
 
 export function unitToCm(cm: number) {
-  return cm * (2.54 / 96)
+  return cm * (2.54 / 96);
 }
 
 // crypto.randomUUID() only works on localhost or https.
-export function randomID() : string {
+export function randomID(): string {
   return uuidv4();
 }
 
-export function fullAnchorToIDAndAnchor(fullAnchor : IDAnchor, defaultAnchor = "") : [string, string] {
-  const [a, b, _] = fullAnchor.split(/\.(.*)/s)
-  return [a, b || defaultAnchor]
+export function fullAnchorToIDAndAnchor(
+  fullAnchor: IDAnchor,
+  defaultAnchor = ''
+): [string, string] {
+  const [a, b, _] = fullAnchor.split(/\.(.*)/s);
+  return [a, b || defaultAnchor];
 }
 
-export function nodeFromIDAnchor(fullAnchor: IDAnchor) : NodeID {
-  const [a, b] = fullAnchorToIDAndAnchor(fullAnchor)
-  return a
+export function nodeFromIDAnchor(fullAnchor: IDAnchor): NodeID {
+  const [a, b] = fullAnchorToIDAndAnchor(fullAnchor);
+  return a;
 }
 
-export function anchorFromIDAnchor(fullAnchor: IDAnchor) : AnchorName {
-  const [a, b] = fullAnchorToIDAndAnchor(fullAnchor)
-  return b
+export function anchorFromIDAnchor(fullAnchor: IDAnchor): AnchorName {
+  const [a, b] = fullAnchorToIDAndAnchor(fullAnchor);
+  return b;
 }
 
-export function IDAnchorToFullAnchor(node : NodeID, anchor: AnchorName) : IDAnchor {
-  return `${node}.${anchor}`
+export function IDAnchorToFullAnchor(node: NodeID, anchor: AnchorName): IDAnchor {
+  return `${node}.${anchor}`;
 }
-
 
 /** Computes the distance between two event points */
-export function distanceEvent(a: {clientX: number, clientY: number }, b: {clientX: number, clientY: number }) {
-  return Math.hypot(
-    a.clientX - b.clientX,
-    a.clientY - b.clientY
-  )
+export function distanceEvent(
+  a: { clientX: number; clientY: number },
+  b: { clientX: number; clientY: number }
+) {
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
 
 /** Computes the distance between two event points */
 export function distance(a: Point, b: Point) {
-  return Math.hypot(
-    a.x - b.x,
-    a.y - b.y
-  )
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 /** Computes the center between two event points */
 export function centerEvent(a: PointerEvent, b: PointerEvent) {
   return {
-      x: (a.clientX + b.clientX) / 2,
-      y: (a.clientY + b.clientY) / 2
-    }
+    x: (a.clientX + b.clientX) / 2,
+    y: (a.clientY + b.clientY) / 2
+  };
 }
 
 /** Returns the SVG parent element that is a link */
-export function getParentLink(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-veryydiag-link]")
+export function getParentLink(elt: SVGGraphicsElement): SVGGraphicsElement | undefined {
+  const p = elt.closest('[data-veryydiag-link]');
   if (p instanceof SVGGraphicsElement) {
-    return p
+    return p;
   }
 }
 
 /** Returns the SVG parent element that is a node */
-export function getParentNode(elt: SVGGraphicsElement) : SVGGraphicsElement | undefined {
-  const p = elt.closest("[data-veryydiag-node]")
+export function getParentNode(elt: SVGGraphicsElement): SVGGraphicsElement | undefined {
+  const p = elt.closest('[data-veryydiag-node]');
   if (p instanceof SVGGraphicsElement) {
-    return p
+    return p;
   }
 }
 
 /** Download a string as file */
 // https://stackoverflow.com/a/64908345/4987648
-export function downloadStringAsFile(content: string, mimeType: string, filename: string){
-  const a = document.createElement('a') // Create "a" element
-  const blob = new Blob([content], {type: mimeType}) // Create a blob (file-like object)
-  const url = URL.createObjectURL(blob) // Create an object URL from blob
-  a.setAttribute('href', url) // Set "a" element link
-  a.setAttribute('download', filename) // Set download filename
-  a.click() // Start downloading
+export function downloadStringAsFile(content: string, mimeType: string, filename: string) {
+  const a = document.createElement('a'); // Create "a" element
+  const blob = new Blob([content], { type: mimeType }); // Create a blob (file-like object)
+  const url = URL.createObjectURL(blob); // Create an object URL from blob
+  a.setAttribute('href', url); // Set "a" element link
+  a.setAttribute('download', filename); // Set download filename
+  a.click(); // Start downloading
 }
-
 
 /** Capitalize the first letter of a string, https://stackoverflow.com/a/1026087/4987648 */
 export function capitalizeFirstLetter(val: string) {
@@ -357,9 +382,9 @@ export function capitalizeFirstLetter(val: string) {
 }
 
 /** Help with debug in expressions */
-export function log<A>(x: A, m: string = "Logging ") : A {
-  console.log(m, x)
-  return x
+export function log<A>(x: A, m: string = 'Logging '): A {
+  console.log(m, x);
+  return x;
 }
 
 /** A BiMap is basically an immutable map mapping a string (typically node or link ID)
@@ -368,33 +393,30 @@ export function log<A>(x: A, m: string = "Logging ") : A {
  *  This is used to efficiently update the list of candidates in the matching algorithm.
  */
 export type BiMap<X, Y> = {
-  forward: Map<X, SetIm<Y>>,
-  backward: Map<Y, SetIm<X>>,
+  forward: Map<X, SetIm<Y>>;
+  backward: Map<Y, SetIm<X>>;
   /* List of items that have already been elected (the size being equal to 1 is
      not enough as we may have one candidate from the very beginning) */
-  alreadyElected: SetIm<X>,
+  alreadyElected: SetIm<X>;
   /** Sometimes, X and Y are not in bijection. Setting this to false allows items in Y to have no inverse. */
-  mustHaveInverse: boolean,
+  mustHaveInverse: boolean;
   /** Sometimes, X and Y are not in bijection since X is larger than Y. Setting this to false allows allows elements in X to be mapped to no elements in Y. To configure a surjection, set mustHaveInverse to true and mustHaveCandidate to false. */
-  mustHaveCandidate: boolean,
+  mustHaveCandidate: boolean;
+};
+
+export function mapListFromEntriesDuplicate<X, Y>(m: List<[X, Y]>): Map<X, List<Y>> {
+  return m.groupBy(([x, y]) => x).map((x) => x.map(([a, b]) => b));
 }
 
-export function mapListFromEntriesDuplicate<X, Y>(m: List<[X, Y]>) : Map<X, List<Y>>{
-  return m.groupBy(([x, y]) => x)
-          .map(x =>
-            x.map(([a,b]) => b)
-          )
-}
-
-export function mapSetFromEntriesDuplicate<X, Y>(m: List<[X, Y]>) : Map<X, SetIm<Y>>{
-  return mapListFromEntriesDuplicate(m).map(x => SetIm(x))
+export function mapSetFromEntriesDuplicate<X, Y>(m: List<[X, Y]>): Map<X, SetIm<Y>> {
+  return mapListFromEntriesDuplicate(m).map((x) => SetIm(x));
 }
 
 // I don't use flatten because of https://github.com/immutable-js/immutable-js/issues/1712
 // Use maybe flatMap, most of the cases it seems to be enough
-export function shallowFlatten<X>(m: List<Collection<unknown, X>>) : List<X> {
-  const l : List<X> = List()
-  return l.withMutations(l => m.forEach(xs => xs.forEach(x => l.push(x))))
+export function shallowFlatten<X>(m: List<Collection<unknown, X>>): List<X> {
+  const l: List<X> = List();
+  return l.withMutations((l) => m.forEach((xs) => xs.forEach((x) => l.push(x))));
 }
 
 //
@@ -407,11 +429,16 @@ export function shallowFlatten<X>(m: List<Collection<unknown, X>>) : List<X> {
 //           x => l.push(x)))))
 // }
 
-
-export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>, mustHaveInverse = true, mustHaveCandidate = true) : BiMap<X, Y> {
-  const l : List<[Y, X]> = shallowFlatten(List(forward).map(([k,vs]) => vs.map((v) : [Y, X] => [v, k])))
-  const backward = mapSetFromEntriesDuplicate(l)
-  return {forward, backward, alreadyElected: SetIm(), mustHaveInverse, mustHaveCandidate}
+export function biMapFromMap<X, Y>(
+  forward: Map<X, SetIm<Y>>,
+  mustHaveInverse = true,
+  mustHaveCandidate = true
+): BiMap<X, Y> {
+  const l: List<[Y, X]> = shallowFlatten(
+    List(forward).map(([k, vs]) => vs.map((v): [Y, X] => [v, k]))
+  );
+  const backward = mapSetFromEntriesDuplicate(l);
+  return { forward, backward, alreadyElected: SetIm(), mustHaveInverse, mustHaveCandidate };
 }
 
 /**
@@ -419,77 +446,106 @@ export function biMapFromMap<X, Y>(forward: Map<X, SetIm<Y>>, mustHaveInverse = 
  * Additionally, we return an error if at the end, an element Y has zero candidates,
  * and we also update the alreadyElected item.
  */
-export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y) : BiMap<X, Y>{
+export function biMapElectCandidate<X, Y>(bm: BiMap<X, Y>, x: X, y: Y): BiMap<X, Y> {
   // We check if we are not electing a value that was already elected in the past, otherwise we may get
   // something like:
   // linkBimapBA":{"forward":{"xhr":["xh"],"hboundary":["xh"]},"backward":{"xh":["hboundary"],"hz":[]},
   // "alreadyElected":["xhr","hboundary"],"mustHaveInverse":false,"mustHaveCandidate":true}}
   bm.alreadyElected.forEach((x2) => {
-    const previouslyElectedList = assertNotUndefined(bm.forward.get(x2), `Weird, the previously elected element ${x2} is not anywore in the bimap. Report a bug.`)
+    const previouslyElectedList = assertNotUndefined(
+      bm.forward.get(x2),
+      `Weird, the previously elected element ${x2} is not anywore in the bimap. Report a bug.`
+    );
     if (previouslyElectedList.size !== 1) {
-      throw new VeryyDiagError(`Weird, the previously elected element ${x2} has candidates ${JSON.stringify(previouslyElectedList)} but we expect to have a list of size 1.`)
+      throw new VeryyDiagError(
+        `Weird, the previously elected element ${x2} has candidates ${JSON.stringify(previouslyElectedList)} but we expect to have a list of size 1.`
+      );
     }
-    if(previouslyElectedList.first() === y) {
-      throw new VeryyDiagError(`The value ${y} can't be attributed to ${x} since it was already attributed earlier to ${x2}`)
+    if (previouslyElectedList.first() === y) {
+      throw new VeryyDiagError(
+        `The value ${y} can't be attributed to ${x} since it was already attributed earlier to ${x2}`
+      );
     }
-  })
+  });
   const oldCandidates = assertNotUndefined(
     bm.forward.get(x),
-    `Can't get the value of the elected element ${x} in the bimap as it does not exist`)
-  const backward = bm.backward.withMutations(backward => {
-    oldCandidates.forEach(cand => backward.update(cand, (xs) => {
-      // We will modify y later
-      if (cand !== y) {
-        assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
-        const newXs = xs.delete(x)
-        if (newXs.isEmpty() && bm.mustHaveInverse) {
-          throw new VeryyDiagError(`When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later. (in biMapElectCandidate with bm = ${JSON.stringify(bm)}; x = ${JSON.stringify(x)}; y = ${JSON.stringify(y)})`)
+    `Can't get the value of the elected element ${x} in the bimap as it does not exist`
+  );
+  const backward = bm.backward.withMutations((backward) => {
+    oldCandidates.forEach((cand) =>
+      backward.update(cand, (xs) => {
+        // We will modify y later
+        if (cand !== y) {
+          assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`);
+          const newXs = xs.delete(x);
+          if (newXs.isEmpty() && bm.mustHaveInverse) {
+            throw new VeryyDiagError(
+              `When trying to assign ${x} -> ${y}, the element '${cand}' in Y becomes impossible to match later. (in biMapElectCandidate with bm = ${JSON.stringify(bm)}; x = ${JSON.stringify(x)}; y = ${JSON.stringify(y)})`
+            );
+          }
+          return newXs;
         }
-        return newXs
-      }
-    }))
-    backward.set(y, SetIm([x]))
-  })
-  const forward = bm.forward.set(x, SetIm([y]))
-  return {forward, backward, alreadyElected: bm.alreadyElected.add(x), mustHaveInverse: bm.mustHaveInverse, mustHaveCandidate: bm.mustHaveCandidate}
+      })
+    );
+    backward.set(y, SetIm([x]));
+  });
+  const forward = bm.forward.set(x, SetIm([y]));
+  return {
+    forward,
+    backward,
+    alreadyElected: bm.alreadyElected.add(x),
+    mustHaveInverse: bm.mustHaveInverse,
+    mustHaveCandidate: bm.mustHaveCandidate
+  };
 }
 
 /** If, during the matching, you know that some candidates are  */
-export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<Y>) : BiMap<X, Y>{
+export function biMapIntersectCandidates<X, Y>(bm: BiMap<X, Y>, x: X, ys: SetIm<Y>): BiMap<X, Y> {
   const oldCandidates = assertNotUndefined(
     bm.forward.get(x),
     `Can't get the value of the element ${x} (to intersect) in the bimap as it does not exist`
-  )
-  const newCandidates = oldCandidates.intersect(ys)
+  );
+  const newCandidates = oldCandidates.intersect(ys);
   if (bm.mustHaveCandidate) {
-    assertTrue(!newCandidates.isEmpty(),
-               `After applying an intersection, no candidates are left for ${x}`
-    )
+    assertTrue(
+      !newCandidates.isEmpty(),
+      `After applying an intersection, no candidates are left for ${x}`
+    );
   }
-  const forward = bm.forward.set(x, oldCandidates.intersect(ys))
+  const forward = bm.forward.set(x, oldCandidates.intersect(ys));
   // We update 'backward' by saying that all other candidates should not anymore be linked with x
-  const excludedCandidates = oldCandidates.subtract(ys)
-  const backward = bm.backward.withMutations(backward => {
-    excludedCandidates.forEach(cand => backward.update(cand, (xs) => {
-      assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`)
-      const newXs = xs.delete(x)
-      if (newXs.isEmpty() && bm.mustHaveInverse) {
-        throw new VeryyDiagError(`When trying to assign ${x} -> ${ys.toString()} during an intersection operation, the element '${cand}' in Y becomes impossible to match later.`)
-      }
-      return newXs
-    }))
-  })
-  return {forward, backward, alreadyElected: bm.alreadyElected, mustHaveInverse: bm.mustHaveInverse, mustHaveCandidate: bm.mustHaveCandidate}
+  const excludedCandidates = oldCandidates.subtract(ys);
+  const backward = bm.backward.withMutations((backward) => {
+    excludedCandidates.forEach((cand) =>
+      backward.update(cand, (xs) => {
+        assertNotUndefinedNR(xs, `Weird, xs should not be undefined, please report a bug`);
+        const newXs = xs.delete(x);
+        if (newXs.isEmpty() && bm.mustHaveInverse) {
+          throw new VeryyDiagError(
+            `When trying to assign ${x} -> ${ys.toString()} during an intersection operation, the element '${cand}' in Y becomes impossible to match later.`
+          );
+        }
+        return newXs;
+      })
+    );
+  });
+  return {
+    forward,
+    backward,
+    alreadyElected: bm.alreadyElected,
+    mustHaveInverse: bm.mustHaveInverse,
+    mustHaveCandidate: bm.mustHaveCandidate
+  };
 }
 
 /** Get an element from the bimap and checks that it exists and is unique (only one candidate) */
-export function biMapGetUnique<X, Y>(bm: BiMap<X, Y>, x: X) : Y {
+export function biMapGetUnique<X, Y>(bm: BiMap<X, Y>, x: X): Y {
   const candidates = assertNotUndefined(
     bm.forward.get(x),
     `Can't get the unique value of the element ${x} in the bimap as it does not exist`
-  )
-  assertTrue(candidates.size === 1, `Weird, we expect exactly one candidate`)
-  return assertNotUndefined(candidates.first(), `Impossible, report a bug`)
+  );
+  assertTrue(candidates.size === 1, `Weird, we expect exactly one candidate`);
+  return assertNotUndefined(candidates.first(), `Impossible, report a bug`);
 }
 
 /** Generates an array with numbers from start to end with wanted step */
