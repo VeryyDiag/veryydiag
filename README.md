@@ -37,4 +37,4 @@ Here is a non-exhaustive list of related softwares:
 - [ZxLive](https://github.com/zxcalc/zxlive) Cons: specific to ZX-calculus. Pros: specific to ZX-calculus.
 - [Gephi]() Visualize huge graphs, no web, not related to math. Impossible to write equivalences between graphs.
 - [yED](https://www.yworks.com/yed-live/) Create generic diagrams, not related to math at all. Can't apply rules etc. [The software and SDK yFiles](https://www.yfiles.com/) is also not open source.
-- See softwares listed in https://en.wikipedia.org/wiki/Gephi
+- See the software list in https://en.wikipedia.org/wiki/Gephi
