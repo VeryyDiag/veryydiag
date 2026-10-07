@@ -1,5 +1,5 @@
 # From https://svelte.dev/docs/kit/adapter-static
-name: Deploy to GitHub Pages
+name: Deploy the website to GitHub Pages
 
 on:
   push:
