@@ -135,7 +135,7 @@
           <Button>
             <input
               type="file"
-              accept=".svg"
+              accept=".html"
               onchange={async (e) => {
                          const files = (e.target as HTMLInputElement).files;
                          if (files?.length) {

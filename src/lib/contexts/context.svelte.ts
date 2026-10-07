@@ -723,6 +723,28 @@ export class DiagramConfClass {
     this.diagramConf.theories[id].availableNodes[`${newNodeKind}${nb == 0 ? "" : nb}`] = availableNode
   }
 
+  applyFunctionToAllDiagramsInTheory = (f: (diag: Diagram) => void, theoryID: TheoryID | undefined = undefined) => {
+    const id = theoryID || this.getCurrentTheoryName()
+    // We apply f to all diagrams refering to this theory
+    Object.entries(this.diagramConf?.diagrams || {}).forEach(([diagramID, diag]) => {
+      if (diag?.theory === id) {
+        f(diag)
+      }
+    })
+    // Change diagrams in the rules
+    entries(this.diagramConf?.theories?.[id]?.rules).forEach(([ruleID, rule]) => {
+      ([rule.lhs, rule.rhs]).forEach((diag) => {
+        if (diag !== undefined) {
+          f(diag)
+        }
+      })
+    })
+    // We also rename all references in the starting diagrams in the proofs
+    entries(this.diagramConf?.proofs).forEach(([proofID, proof]) => {
+      f(proof.startingDiagram)
+    })
+  }
+
   renameNodeKind = (oldNodeKind: NodeKind, newNodeKind: NodeKind, theoryID: TheoryID | undefined = undefined) => {
     const id = theoryID || this.getCurrentTheoryName()
     if (oldNodeKind === newNodeKind) {
@@ -737,8 +759,7 @@ export class DiagramConfClass {
     }
     this.diagramConf.theories[id].availableNodes[newNodeKind] = this.diagramConf.theories[id].availableNodes[oldNodeKind]
     delete this.diagramConf.theories[id].availableNodes[oldNodeKind];
-    // We also rename all references to this in all diagrams refering to this theory
-    Object.entries(this.diagramConf?.diagrams || {}).forEach(([diagramID, diag]) => {
+    this.applyFunctionToAllDiagramsInTheory((diag) => {
       Object.entries((diag?.nodes || {})).forEach(([nodeID, node]) => {
         if (node.nodeKind === oldNodeKind) {
           node.nodeKind = newNodeKind
@@ -827,6 +848,21 @@ export class DiagramConfClass {
     })
     return true
   }
+
+  renameNodeNodeKind = (nodeID: NodeID, newNodeKind: NodeKind, diagramID: DiagramID | undefined = undefined, theoryID: TheoryID | undefined = undefined) => {
+    const diagID = diagramID || this.getCurrentDiagramID()
+    const diagram = assertNotUndefined(this.diagramConf?.diagrams?.[diagID],
+                                       `The diagram id ${diagID} does not exist`)
+    const id = theoryID || this.getCurrentTheoryName()
+    assertTrue(this.diagramConf.theories?.[id]?.availableNodes?.[newNodeKind] !== undefined,
+               `The node kind ${newNodeKind} does not exist`)
+    // Helps typescript
+    assertNotUndefinedNR(diagram.nodes, `The diagram contains no node`)
+    const node = assertNotUndefined(diagram.nodes?.[nodeID],
+                                    `The node ${nodeID} does not exist in the diagram`)
+    node.nodeKind = newNodeKind
+  }
+
 
   createLinkType = (linkTypeID: LinkTypeID | undefined = undefined, linkType: LinkType = {}, theoryID: TheoryID | undefined = undefined) => {
     console.log("Start")

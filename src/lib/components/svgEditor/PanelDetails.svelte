@@ -45,7 +45,10 @@
                                () => diagramConfClass.renameNodeID(nodeID, s))}}
                 >{nodeID}</ContentEditable></li>
               <li>
-                Node Kind: <code>{node?.nodeKind}</code>
+                Node Kind: <code><ContentEditable
+                                   onedit={(s) => {diagramConfClass.undoSnapshot(); diagramConfClass.tryOrSendNotificationError(
+                                     () => diagramConfClass.renameNodeNodeKind(nodeID, s))}}
+                >{node?.nodeKind}</ContentEditable></code>
               </li>
               <li>
                 Available parameters:

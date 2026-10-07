@@ -118,12 +118,26 @@
       }
 
       async function checkPluginVisibility() {
-        const res = await getJSONResource("veryydiag://current-plugin/visibility")
+        const res = await getJSONResource("veryydiag://current_plugin/visibility")
         document.getElementById("pong").innerHTML += `${res}<br/>`
       }
 
-      subscribeAndFetchResource("veryydiag://current-plugin/visibility", (newContent) => {
+      async function getCurrentDiagram() {
+        const res = await getJSONResource("veryydiag://internal_state/current_diagram")
+        document.getElementById("diagram").value += `${JSON.stringify(res)}`
+      }
+
+      async function setCurrentDiagram() {
+        const res = await callTool("set_current_diagram",
+                                   JSON.parse(document.getElementById("diagram").value))
+      }
+
+      subscribeAndFetchResource("veryydiag://current_plugin/visibility", (newContent) => {
         document.getElementById("pong").innerHTML += `Visibility changed to ${newContent}<br/>`
+      })
+
+      subscribeAndFetchResource("veryydiag://internal_state/current_diagram", (newContent) => {
+        document.getElementById("pong").innerHTML += `The current diagram changed to ${newContent.slice(0,30)}…<br/>`
       })
 
     </script>
@@ -131,6 +145,11 @@
     <p>Demo plugin: each time you press the bellow "ping" button, you will receive a message back from the main instance of VeryyDiag below:</p>
     <p><button onclick="ping()">Ping</button></p>
     <p><button onclick="checkPluginVisibility()">Check visibility</button></p>
+    <p>
+      <button onclick="getCurrentDiagram()">Get current diagram</button>
+      <button onclick="setCurrentDiagram()">Set current diagram</button>
+    </p>
+    <p><textarea id="diagram" style="width: 100%;"></textarea></p>
     <code id="pong"></code>
   </body>
 </html>

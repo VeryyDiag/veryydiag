@@ -1,7 +1,9 @@
 <script lang="ts">
   import {onMount} from 'svelte'
   let n = $state(0)
+  const delay = ms => new Promise(res => setTimeout(res, ms));
   onMount(async () => {
+    await delay(1000); // Waits to start the installation otherwise it blocks the page TODO: it seems like if the iframe does an infinite loop (or install pyodide), it also blocks the main thread and the UI is frozen…
     console.log("Installing pyodide…")
     // @ts-ignore Loaded from the <script>, not installed via npm (reduce dependencies since this is just a plugin)
     let pyodide = await loadPyodide();

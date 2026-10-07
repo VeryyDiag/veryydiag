@@ -98,7 +98,7 @@ export function createServer(
 
   // Send notification when plugin gets in view
   myRegisterResource(
-    'veryydiag://current-plugin/visibility',
+    'veryydiag://current_plugin/visibility',
     'Visibility of the current plugin',
     'Returns true if the plugin is visible, false otherwise',
     getVisibility,
@@ -133,9 +133,9 @@ export function createServer(
   ) => {
     // Getter
     server.registerTool(
-      `get${object}`,
+      `get_${object}`,
       {
-        description: `Gets ${object}, ${description}. See also set${object} to modify it.`,
+        description: `Gets ${object}, ${description}. See also set_${object} to modify it.`,
         outputSchema: schema
       },
       async () => {
@@ -149,9 +149,9 @@ export function createServer(
     );
     // Setter
     server.registerTool(
-      `set${object}`,
+      `set_${object}`,
       {
-        description: `sets ${object}, ${description}. See also get${object} to get it.`,
+        description: `sets ${object}, ${description}. See also get_${object} to get it.`,
         inputSchema: schema
       },
       async (x: unknown) => {
@@ -166,7 +166,7 @@ export function createServer(
     myRegisterResource(
       uri,
       '${object}',
-      `This resource outputs the serialized object ${object}, ${description}, and primarily serve to provide a way to listen to changes to this object. To get the non-serialized version you can also call the get${object} tool, and update it using the set${object} tool.`,
+      `This resource outputs the serialized object ${object}, ${description}, and primarily serve to provide a way to listen to changes to this object. To get the non-serialized version you can also call the get_${object} tool, and update it using the set_${object} tool.`,
       getter,
     )
   }
@@ -174,17 +174,19 @@ export function createServer(
   getSetDiagramConfObject({
     object: "File",
     description: "containing the whole system configuration",
-    uri: "veryydiag://internal_state/File",
+    uri: "veryydiag://internal_state/file",
     getter: () => diagramConfClass.getConfig(),
     setter: (config) => diagramConfClass.setConfig(config),
     schema: typesSchema.diagramConfSchema,
   })
 
   getSetDiagramConfObject({
-    object: "CurrentDiagram",
+    object: "current_diagram",
     description: "containing the current diagram under edition",
-    uri: "veryydiag://internal_state/currentDiagram",
-    getter: () => diagramConfClass.getCurrentDiagram(),
+    uri: "veryydiag://internal_state/current_diagram",
+    // $state.snapshot is needed otherwise it trigger a notif only when changing the
+    // diagram reference itself but not internal nodes.
+    getter: () => $state.snapshot(diagramConfClass.getCurrentDiagram()),
     setter: (newDiagram) => {
       if (diagramConfClass.isInProofMode()) {
         throw new Error(`Can't set the diagram, we are in proof mode`)
