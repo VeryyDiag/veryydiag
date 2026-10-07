@@ -12,7 +12,6 @@ VeryyDiag is the first step of our bigger project that aims to build a new frame
 > [!TIP]
 > You will soon be able to try the app at https://veryydiag.github.io/veryydiag/
 
-
 ## Why this name "VeryyDiag" and how do you pronounce it?
 
 Pronounce `VeryyDiag` like `Verydiag` (but you may spend more time on the `y` if you enjoy it!). `Diag` stands for `diagrams` (surprising no?) and `Veryy` for `verification` as we aim to provide formal verification tool based on diagram rewriting rules. Why `Veryy` and not `Veri`? For a bunch of reasons:
